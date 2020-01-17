@@ -34,9 +34,7 @@ train_data, valid_data, test_data = PPIDataset().load_data()
 test_data = [graph.convert_data_to_tensor() for graph in test_data]
 
 
-
-
-# Basic (OOP) ====================================
+# ==================================== Basic OOP API ====================================
 # OOP Style GCN
 gcn_layer = GCN(units=20, activation=tf.nn.relu)
 
@@ -45,9 +43,7 @@ for graph in test_data:
     print(outputs)
 
 
-
-
-# Basic (Functional) ====================================
+# ==================================== Basic Functional API ====================================
 # Functional Style GCN
 # Functional API is more flexible for advanced algorithms
 # You can pass both data and parameters to functional APIs
@@ -59,9 +55,7 @@ for graph in test_data:
     print(outputs)
 
 
-
-
-# Advanced (OOP) ====================================
+# ==================================== Advanced OOP API ====================================
 # All APIs are implemented with Map-Reduce Style
 # This is a gcn without weight normalization and transformation.
 # Create your own GNN Layer by subclassing the MapReduceGNN class
@@ -83,8 +77,7 @@ for graph in test_data:
     print(naive_gcn(graph))
 
 
-
-# Advanced (Functional) ====================================
+# ==================================== Advanced Functional API ====================================
 # All APIs are implemented with Map-Reduce Style
 # This is a gcn without without weight normalization and transformation
 # Just pass the mapper/reducer/updater functions to the Functional API
