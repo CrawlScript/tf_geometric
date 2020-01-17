@@ -16,7 +16,7 @@ We provide map-reduce style APIs for programmers.
 We provide both OOP and Functional API, with which you can make some cool things.
 
 
-```
+```python
 # coding=utf-8
 import os
 
