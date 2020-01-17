@@ -11,7 +11,7 @@ class Graph(object):
         self.edge_weight = edge_weight
         self.y = y
 
-        self.cached_normed_graph = None
+        self.cached_normed_edge_weight = None
 
     @property
     def num_nodes(self):

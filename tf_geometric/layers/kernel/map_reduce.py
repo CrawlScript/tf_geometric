@@ -30,11 +30,12 @@ class MapReduceGNN(keras.Model):
             return self.update(x, reduced_neighbor_msg)
         return updater
 
-    def call(self, graph: Graph, training=None, mask=None):
+    def call(self, inputs, training=None, mask=None):
+        x, edge_index, edge_weight = inputs
         return aggregate_neighbors(
-            graph.x,
-            graph.edge_index,
-            graph.edge_weight,
+            x,
+            edge_index,
+            edge_weight,
             self.get_mapper(),
             self.get_reducer(),
             self.get_updater()

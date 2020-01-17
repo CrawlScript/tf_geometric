@@ -25,28 +25,25 @@ class GCN(MapReduceGNN):
     def update(self, x, reduced_neighbor_msg):
         return sum_updater(x, reduced_neighbor_msg)
 
-
     @classmethod
-    def create_normed_graph(cls, graph: Graph, use_cache=True):
-        if use_cache and graph.cached_normed_graph is not None:
-            return graph.cached_normed_graph
+    def create_normed_edge_weight(cls, graph: Graph, use_cache=True):
+        if use_cache and graph.cached_normed_edge_weight is not None:
+            return graph.cached_normed_edge_weight
         else:
             normed_edge_weight = gcn_norm(graph.edge_index, graph.num_nodes, graph.edge_weight)
-            normed_graph = Graph(x=graph.x, edge_index=graph.edge_index, y=graph.y, edge_weight=normed_edge_weight)
-
             if use_cache:
-                graph.cached_normed_graph = normed_graph
-            return normed_graph
+                graph.cached_normed_edge_weight = normed_edge_weight
+            return normed_edge_weight
 
-    def call(self, graph: Graph, training=None, mask=None):
-        normed_graph = GCN.create_normed_graph(graph, self.use_cache)
+    def call(self, inputs, training=None, mask=None):
 
-        x = self.dense(normed_graph.x)
+        x, edge_index, normed_edge_weight = inputs
+        x = self.dense(x)
 
         h = aggregate_neighbors(
             x,
-            normed_graph.edge_index,
-            normed_graph.edge_weight,
+            edge_index,
+            normed_edge_weight,
             self.get_mapper(),
             self.get_reducer(),
             self.get_updater()

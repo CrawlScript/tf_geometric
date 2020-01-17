@@ -20,7 +20,8 @@ test_data = [graph.convert_data_to_tensor() for graph in test_data]
 gcn_layer = GCN(units=20, activation=tf.nn.relu)
 
 for graph in test_data:
-    outputs = gcn_layer(graph)
+    normed_edge_weight = GCN.create_normed_edge_weight(graph, use_cache=True)
+    outputs = gcn_layer([graph.x, graph.edge_index, normed_edge_weight])
     print(outputs)
 
 
@@ -55,7 +56,7 @@ class NaiveGCN(MapReduceGNN):
 naive_gcn = NaiveGCN()
 
 for graph in test_data:
-    print(naive_gcn(graph))
+    print(naive_gcn([graph.x, graph.edge_index, graph.edge_weight]))
 
 
 # ==================================== Advanced Functional API ====================================
