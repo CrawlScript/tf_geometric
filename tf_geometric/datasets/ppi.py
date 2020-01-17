@@ -26,16 +26,16 @@ class PPIDataset(DownloadableDataset):
 
     def process(self):
 
-        processed_data = {
-            "train": [],
-            "valid": [],
-            "test": []
+        splits = ["train", "valid", "test"]
+
+        split_data_dict = {
+            split: [] for split in splits
         }
 
-        for split in processed_data.keys():
+        for split in split_data_dict.keys():
             split_graph_ids = np.load(os.path.join(self.raw_root_path, "{}_graph_id.npy".format(split)))
-            split_features = np.load(os.path.join(self.raw_root_path, "{}_feats.npy".format(split)))
-            split_labels = np.load(os.path.join(self.raw_root_path, "{}_labels.npy".format(split)))
+            split_features = np.load(os.path.join(self.raw_root_path, "{}_feats.npy".format(split))).astype(np.float32)
+            split_labels = np.load(os.path.join(self.raw_root_path, "{}_labels.npy".format(split))).astype(np.int32)
 
             nx_graph_path = os.path.join(self.raw_root_path, "{}_graph.json".format(split))
             with open(nx_graph_path, "r", encoding="utf-8") as f:
@@ -55,11 +55,15 @@ class PPIDataset(DownloadableDataset):
                 row, col = edge_index
                 upper_mask = row < col
                 edge_index = edge_index[:, upper_mask]
+                # edge_index = tf.concat([edge_index, tf.gather(edge_index, [1, 0])], axis=1)
+                edge_index = np.concatenate([edge_index, edge_index[[1, 0]]], axis=1)
                 graph = Graph(
                     x=split_features[mask_indices],
                     edge_index=edge_index,
-                    y=split_labels[mask_indices],
-                    directed=False
+                    y=split_labels[mask_indices]
                 )
-                processed_data[split].append(graph)
-            return processed_data
+                split_data_dict[split].append(graph)
+                # print("split: ", split)
+
+        processed_data = [split_data_dict[split] for split in splits]
+        return processed_data

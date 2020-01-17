@@ -53,7 +53,6 @@ class DownloadableDataset(object):
     def cache_enabled(self):
         return self.cache_path is not None
 
-
     def build_dirs(self):
         os.makedirs(self.download_root_path, exist_ok=True)
         os.makedirs(self.raw_root_path, exist_ok=True)

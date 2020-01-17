@@ -1,22 +1,3 @@
-# tf_geometric
-Graph Neural Network Library for TensorFlow
-
-Inspired by [rusty1s/pytorch_geometric](https://github.com/rusty1s/pytorch_geometric), we build a GNN library for TensorFlow.
-
-## Efficient and Friendly
-
-We use Message Passing mechanism to implement graph neural networks, which is way efficient than the dense matrix based implementations and more friendly than the sparse matrix based ones.
-
-## A Map-Reduce Style Implementation
-
-We provide map-reduce style APIs for programmers.
-
-## OOP and Functional API
-
-We provide both OOP and Functional API, with which you can make some cool things.
-
-
-```
 # coding=utf-8
 import os
 
@@ -99,6 +80,3 @@ for graph in test_data:
         updater=tfg.nn.sum_updater
     )
     print(outputs)
-
-
-```
