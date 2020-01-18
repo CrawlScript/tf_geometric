@@ -153,6 +153,4 @@ for graph in test_data:
         updater=tfg.nn.sum_updater
     )
     print(outputs)
-
-
 ```
