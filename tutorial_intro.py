@@ -56,7 +56,8 @@ outputs = tfg.nn.gcn(
     graph.x,
     graph.edge_index,
     graph.edge_weight,
-    tf.Variable(tf.random.truncated_normal([20, 2])), # GCN Weight
+    tf.Variable(tf.random.truncated_normal([20, 2])),  # GCN Weight
+    cache=graph.cache  # GCN use caches to avoid re-computing of the normed edge information
 )
 print(outputs)
 
@@ -94,9 +95,8 @@ test_data = [graph.convert_data_to_tensor() for graph in test_data]
 gcn_layer = GCN(units=20, activation=tf.nn.relu)
 
 for graph in test_data:
-    # GCN use an updated adjacency matrix and normed weights
-    updated_edge_index, normed_edge_weight = GCN.norm_edge(graph, use_cache=True)
-    outputs = gcn_layer([graph.x, updated_edge_index, normed_edge_weight])
+    # Cache can speed-up GCN by caching the normed edge information
+    outputs = gcn_layer([graph.x, graph.edge_index, graph.edge_weight], cache=graph.cache)
     print(outputs)
 
 
@@ -115,8 +115,7 @@ for graph in test_data:
 
 dense_w = tf.Variable(tf.random.truncated_normal([test_data[0].num_features, 20]))
 for graph in test_data:
-    updated_edge_index, normed_edge_weight = tfg.nn.gcn_norm_edge(graph.edge_index, graph.num_nodes)
-    outputs = tfg.nn.gcn(graph.x, updated_edge_index, normed_edge_weight, dense_w, activation=tf.nn.relu)
+    outputs = tfg.nn.gcn(graph.x, edge_index, edge_weight, dense_w, activation=tf.nn.relu)
     print(outputs)
 
 

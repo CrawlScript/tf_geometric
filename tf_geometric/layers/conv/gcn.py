@@ -1,6 +1,8 @@
 # coding=utf-8
 
 import tensorflow as tf
+from tensorflow.python.keras.layers import Dense
+
 from tf_geometric import Graph
 from tf_geometric.nn.conv.gcn import gcn_norm_edge, gcn
 from tf_geometric.layers.kernel.map_reduce import MapReduceGNN
@@ -8,34 +10,38 @@ from tf_geometric.layers.kernel.map_reduce import MapReduceGNN
 
 class GCN(MapReduceGNN):
 
-    def __init__(self, units, activation=None, use_cache=True, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.units = units
-        self.use_cache = use_cache
-
-        self.acvitation = activation
-        self.weight = None
-        self.bias = None
-
-
     def build(self, input_shapes):
         x_shape = input_shapes[0]
         num_features = x_shape[-1]
 
-        self.weight = tf.Variable(tf.truncated_normal([num_features, self.units]))
-        self.bias = tf.Variable(tf.zeros([self.units]))
+        self.kernel = self.add_weight("kernel", shape=[num_features, self.units], initializer="glorot_uniform")
+        self.bias = self.add_weight("bias", shape=[self.units], initializer="zeros")
 
-    @classmethod
-    def norm_edge(cls, graph: Graph, use_cache=True, improved=False):
-        cache_key = "gcn"
-        if use_cache and cache_key in graph.cache and graph.cache[cache_key] is not None:
-            return graph.cache[cache_key]
+    def __init__(self, units, activation=None, improved=False, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.units = units
+
+        self.acvitation = activation
+        self.kernel = None
+        self.bias = None
+
+        self.improved = improved
+
+    def call(self, inputs, training=None, mask=None, cache=None):
+        """
+
+        :param inputs:
+        :param training:
+        :param mask:
+        :param graph: If graph is provided, it is used for caching normed edge info
+        :return:
+        """
+
+        if len(inputs) == 3:
+            x, edge_index, edge_weight = inputs
         else:
-            edge_index, edge_weight = gcn_norm_edge(graph.edge_index, graph.num_nodes, graph.edge_weight, improved=improved)
-            if use_cache:
-                graph.cache[cache_key] = edge_index, edge_weight
-            return edge_index, edge_weight
+            x, edge_index = inputs
+            edge_weight = None
 
-    def call(self, inputs, training=None, mask=None):
-        x, updated_edge_index, normed_edge_weight = inputs
-        return gcn(x, updated_edge_index, normed_edge_weight, self.weight, self.bias, activation=self.acvitation)
+        return gcn(x, edge_index, edge_weight, self.kernel, self.bias,
+                   activation=self.acvitation, improved=self.improved, cache=cache)

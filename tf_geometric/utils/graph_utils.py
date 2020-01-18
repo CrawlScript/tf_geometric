@@ -33,5 +33,7 @@ def add_diagonal_edge_index(edge_index, num_nodes, edge_weight=None, fill_weight
 
         if not tf.is_tensor(edge_weight):
             updated_edge_weight = updated_edge_weight.numpy()
+    else:
+        updated_edge_weight = None
 
     return updated_edge_index, updated_edge_weight

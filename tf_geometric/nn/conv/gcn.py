@@ -1,11 +1,17 @@
 # coding=utf-8
 import tensorflow as tf
 
-from tf_geometric.nn.kernel.map_reduce import aggregate_neighbors, sum_updater, sum_reducer
+from tf_geometric.nn.kernel.map_reduce import aggregate_neighbors, sum_updater, sum_reducer, identity_updater
 from tf_geometric.utils.graph_utils import add_diagonal_edge_index
 
 
-def gcn_norm_edge(edge_index, num_nodes, edge_weight=None, improved=False):
+def gcn_norm_edge(edge_index, num_nodes, edge_weight=None, improved=False, cache=None):
+    cache_key = "gcn_normed_edge"
+
+    if cache is not None and cache_key in cache and cache[cache_key] is not None:
+        return cache[cache_key]
+
+
     if edge_weight is None:
         edge_weight = tf.ones([edge_index.shape[1]], dtype=tf.float32)
 
@@ -20,6 +26,9 @@ def gcn_norm_edge(edge_index, num_nodes, edge_weight=None, improved=False):
 
     noremd_edge_weight = tf.gather(deg_inv_sqrt, row) * edge_weight * tf.gather(deg_inv_sqrt, col)
 
+    if cache is not None:
+        cache[cache_key] = edge_index, noremd_edge_weight
+
     return edge_index, noremd_edge_weight
 
 
@@ -27,17 +36,19 @@ def gcn_mapper(repeated_x, neighbor_x, edge_weight=None):
     return neighbor_x * tf.expand_dims(edge_weight, 1)
 
 
-def gcn(x, updated_edge_index, normed_edge_weight, dense_w, dense_b=None, activation=None):
-    x = x @ dense_w
+def gcn(x, edge_index, edge_weight, kernel, bias=None, activation=None, improved=False, cache=None):
+    updated_edge_index, normed_edge_weight = gcn_norm_edge(edge_index, x.shape[0], edge_weight,
+                                                           improved, cache)
+    x = x @ kernel
     h = aggregate_neighbors(
         x, updated_edge_index, normed_edge_weight,
         gcn_mapper,
         sum_reducer,
-        sum_updater
+        identity_updater
     )
 
-    if dense_b is not None:
-        h += dense_b
+    if bias is not None:
+        h += bias
 
     if activation is not None:
         h = activation(h)
@@ -45,10 +56,10 @@ def gcn(x, updated_edge_index, normed_edge_weight, dense_w, dense_b=None, activa
     return h
 
 
-def norm_and_gcn(x, edge_index, num_nodes, dense_w, edge_weight=None, dense_b=None, activation=None):
-    updated_edge_index, normed_edge_weight = gcn_norm_edge(edge_index, num_nodes, edge_weight)
-    outputs = gcn(x, updated_edge_index, normed_edge_weight, dense_w, dense_b, activation)
-    return outputs
+# def norm_and_gcn(x, edge_index, num_nodes, dense_w, edge_weight=None, dense_b=None, activation=None):
+#     updated_edge_index, normed_edge_weight = gcn_norm_edge(edge_index, num_nodes, edge_weight)
+#     outputs = gcn(x, updated_edge_index, normed_edge_weight, dense_w, dense_b, activation)
+#     return outputs
 
 
 

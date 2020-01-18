@@ -2,15 +2,21 @@
 import tensorflow as tf
 import numpy as np
 
+
 class Graph(object):
     def __init__(self, x, edge_index, y=None,
                  edge_weight=None):
         self.x = x
         self.edge_index = edge_index
-        self.edge_weight = edge_weight
         self.y = y
-
         self.cache = {}
+
+        if edge_weight is not None:
+            self.edge_weight = edge_weight
+        else:
+            self.edge_weight = np.full([len(self.edge_index[0])], 1.0, dtype=np.float32)
+            if tf.is_tensor(self.x):
+                self.edge_weight = tf.convert_to_tensor(self.edge_weight)
 
     @property
     def num_nodes(self):

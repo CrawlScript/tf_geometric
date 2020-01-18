@@ -58,7 +58,12 @@ class CoraDataset(DownloadableDataset):
         train_index = list(range(len(y)))
         valid_index = list(range(len(y), len(y)+500))
 
-        x = features.todense().astype(np.float32)
+        x = np.array(features.todense()).astype(np.float32)
+        inv_sum_x = 1.0 / np.sum(x, axis=-1, keepdims=True)
+        inv_sum_x[np.isnan(inv_sum_x)] = 1.0
+        inv_sum_x[np.isinf(inv_sum_x)] = 1.0
+        x *= inv_sum_x
+
         edge_index = np.array(nx.from_dict_of_lists(graph).edges).T
         edge_index, _ = convert_edge_index_to_undirected(edge_index, edge_weight=None)
         y = labels.astype(np.int32)

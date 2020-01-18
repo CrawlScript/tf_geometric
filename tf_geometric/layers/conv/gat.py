@@ -6,20 +6,19 @@ from tf_geometric.layers.kernel.map_reduce import MapReduceGNN
 
 class GAT(MapReduceGNN):
 
-    def __init__(self, units, activation=None, use_cache=True, query_activation=tf.nn.relu, key_activation=tf.nn.relu, *args, **kwargs):
+    def __init__(self, units, activation=None, query_activation=tf.nn.relu, key_activation=tf.nn.relu, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.units = units
-        self.use_cache = use_cache
 
-        self.query_weight = None
+        self.query_kernel = None
         self.query_bias = None
         self.query_activation = query_activation
 
-        self.key_weight = None
+        self.key_kernel = None
         self.key_bias = None
         self.key_activation = key_activation
 
-        self.weight = None
+        self.kernel = None
         self.bias = None
 
         self.acvitation = activation
@@ -28,23 +27,22 @@ class GAT(MapReduceGNN):
         x_shape = input_shapes[0]
         num_features = x_shape[-1]
 
-        self.query_weight = tf.Variable(tf.truncated_normal([num_features, self.units]))
-        self.query_bias = tf.Variable(tf.zeros([self.units]))
+        query_units = 1
+        key_units = 1
 
-        self.key_weight = tf.Variable(tf.truncated_normal([num_features, self.units]))
-        self.key_bias = tf.Variable(tf.zeros([self.units]))
+        self.query_kernel = self.add_weight("query_kernel", shape=[num_features, query_units], initializer="glorot_uniform")
+        self.query_bias = self.add_weight("query_bias", shape=[query_units], initializer="zeros")
 
-        self.weight = tf.Variable(tf.truncated_normal([num_features, self.units]))
-        self.bias = tf.Variable(tf.zeros([self.units]))
+        self.key_kernel = self.add_weight("key_kernel", shape=[num_features, key_units], initializer="glorot_uniform")
+        self.key_bias = self.add_weight("key_bias", shape=[key_units], initializer="zeros")
+
+        self.kernel = self.add_weight("kernel", shape=[num_features, self.units], initializer="glorot_uniform")
+        self.bias = self.add_weight("bias", shape=[self.units], initializer="zeros")
 
     def call(self, inputs, training=None, mask=None):
-        if len(inputs) == 2:
-            x, edge_index = inputs
-            edge_weight = None
-        else:
-            x, edge_index, edge_weight = inputs
+        x, edge_index = inputs
 
-        return gat(x, edge_index, edge_weight,
-                   self.query_weight, self.query_bias, self.query_activation,
-                   self.key_weight, self.key_bias, self.key_activation,
-                   self.weight, self.bias, self.acvitation)
+        return gat(x, edge_index,
+                   self.query_kernel, self.query_bias, self.query_activation,
+                   self.key_kernel, self.key_bias, self.key_activation,
+                   self.kernel, self.bias, self.acvitation)
