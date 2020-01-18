@@ -1,6 +1,9 @@
 # coding=utf-8
 import tensorflow as tf
-tf.enable_eager_execution()
+
+if tf.__version__[0] == "1":
+    tf.enable_eager_execution()
+
 from tf_geometric.data.graph import Graph
 
 import tf_geometric.nn as nn

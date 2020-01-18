@@ -1,7 +1,7 @@
 # coding=utf-8
-from tensorflow.python.keras.utils import get_file
+from tensorflow import keras
 import pickle
-import os
+
 
 
 def download_file(path, url_or_urls):
@@ -13,7 +13,7 @@ def download_file(path, url_or_urls):
     last_except = None
     for url in urls:
         try:
-            return get_file(path, origin=url)
+            return keras.utils.get_file(path, origin=url)
         except Exception as e:
             last_except = e
             print(e)

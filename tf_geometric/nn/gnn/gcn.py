@@ -2,7 +2,6 @@
 import tensorflow as tf
 
 from tf_geometric.nn.kernel.map_reduce import aggregate_neighbors, sum_updater, sum_reducer
-from tf_geometric.nn.kernel.segment import segment_sum_with_pad
 
 
 def gcn_norm(edge_index, num_nodes, edge_weight=None):
@@ -10,10 +9,10 @@ def gcn_norm(edge_index, num_nodes, edge_weight=None):
         edge_weight = tf.ones([edge_index.shape[1]], dtype=tf.float32)
 
     row, col = edge_index
-    deg = segment_sum_with_pad(edge_weight, row, num_nodes)
+    deg = tf.math.unsorted_segment_sum(edge_weight, row, num_segments=num_nodes)
     deg_inv_sqrt = tf.pow(deg, -0.5)
-    deg_inv_sqrt = tf.where(tf.is_inf(deg_inv_sqrt), tf.zeros_like(deg_inv_sqrt), deg_inv_sqrt)
-    deg_inv_sqrt = tf.where(tf.is_nan(deg_inv_sqrt), tf.zeros_like(deg_inv_sqrt), deg_inv_sqrt)
+    deg_inv_sqrt = tf.where(tf.math.is_inf(deg_inv_sqrt), tf.zeros_like(deg_inv_sqrt), deg_inv_sqrt)
+    deg_inv_sqrt = tf.where(tf.math.is_nan(deg_inv_sqrt), tf.zeros_like(deg_inv_sqrt), deg_inv_sqrt)
 
     return tf.gather(deg_inv_sqrt, row) * edge_weight * tf.gather(deg_inv_sqrt, col)
 

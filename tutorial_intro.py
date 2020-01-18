@@ -30,7 +30,7 @@ for graph in test_data:
 # Functional API is more flexible for advanced algorithms
 # You can pass both data and parameters to functional APIs
 
-dense_w = tf.Variable(tf.truncated_normal([test_data[0].num_features, 20]))
+dense_w = tf.Variable(tf.random.truncated_normal([test_data[0].num_features, 20]))
 for graph in test_data:
     normed_edge_weight = tfg.nn.gcn_norm(graph.edge_index, graph.num_nodes)
     outputs = tfg.nn.gcn(graph.x, graph.edge_index, normed_edge_weight, dense_w, activation=tf.nn.relu)

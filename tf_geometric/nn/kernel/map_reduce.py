@@ -2,7 +2,7 @@
 
 import tensorflow as tf
 
-from tf_geometric.nn.kernel.segment import segment_sum_with_pad
+
 
 
 def identity_mapper(repeated_x, neighbor_x, edge_weight=None):
@@ -14,7 +14,7 @@ def neighbor_count_mapper(repeated_x, neighbor_x, edge_weight=None):
 
 
 def sum_reducer(neighbor_msg, node_index, num_nodes=None):
-    return segment_sum_with_pad(neighbor_msg, node_index, total=num_nodes)
+    return tf.math.unsorted_segment_sum(neighbor_msg, node_index, num_segments=num_nodes)
 
 
 def sum_updater(x, reduced_neighbor_msg):
