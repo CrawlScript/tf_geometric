@@ -1,8 +1,8 @@
-from tensorflow.python.keras.layers import Dense
+# coding=utf-8
 
 import tensorflow as tf
 from tf_geometric import Graph
-from tf_geometric.nn import gcn_mapper, sum_reducer, sum_updater, gcn_norm, aggregate_neighbors
+from tf_geometric.nn.gnn.gcn import gcn_norm, gcn
 from tf_geometric.layers.kernel.map_reduce import MapReduceGNN
 
 
@@ -10,20 +10,19 @@ class GCN(MapReduceGNN):
 
     def __init__(self, units, activation=None, use_cache=True, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.units = units
         self.use_cache = use_cache
 
         self.acvitation = activation
-        self.dense = Dense(units=units, use_bias=False)
-        self.bias = tf.Variable(tf.zeros([units]))
+        self.weight = None
+        self.bias = None
 
-    def map(self, repeated_x, neighbor_x, edge_weight=None):
-        return gcn_mapper(repeated_x, neighbor_x, edge_weight)
+    def build(self, input_shapes):
+        x_shape = input_shapes[0]
+        num_features = x_shape[-1]
 
-    def reduce(self, neighbor_msg, node_index, num_nodes=None):
-        return sum_reducer(neighbor_msg, node_index, num_nodes)
-
-    def update(self, x, reduced_neighbor_msg):
-        return sum_updater(x, reduced_neighbor_msg)
+        self.weight = tf.Variable(tf.truncated_normal([num_features, self.units]))
+        self.bias = tf.Variable(tf.zeros([self.units]))
 
     @classmethod
     def create_normed_edge_weight(cls, graph: Graph, use_cache=True):
@@ -36,22 +35,5 @@ class GCN(MapReduceGNN):
             return normed_edge_weight
 
     def call(self, inputs, training=None, mask=None):
-
         x, edge_index, normed_edge_weight = inputs
-        x = self.dense(x)
-
-        h = aggregate_neighbors(
-            x,
-            edge_index,
-            normed_edge_weight,
-            self.get_mapper(),
-            self.get_reducer(),
-            self.get_updater()
-        )
-
-        h += self.bias
-
-        if self.acvitation is not None:
-            h = self.acvitation(h)
-
-        return h
+        return gcn(x, edge_index, normed_edge_weight, self.weight, self.bias, activation=self.acvitation)

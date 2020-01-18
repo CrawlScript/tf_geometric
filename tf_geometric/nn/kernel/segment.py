@@ -16,3 +16,10 @@ import tensorflow as tf
 #
 # def segment_sum_with_pad(data, segment_ids, total):
 #     return segment_op_with_pad(tf.math.segment_sum, data, segment_ids, total)
+
+def segment_softmax(data, segment_ids, num_segments):
+    exp = tf.exp(data)
+    denominator = tf.math.unsorted_segment_sum(data, segment_ids, num_segments=num_segments)
+    gathered_denominator = tf.gather(denominator, segment_ids)
+    score = exp * tf.pow(gathered_denominator, -1)
+    return score
