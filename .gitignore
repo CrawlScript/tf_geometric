@@ -1,6 +1,7 @@
 # Byte-compiled / optimized / DLL files
 *.zip
 /data/
+/demo/data/
 **/__pycache_/
 **/.idea/
 __pycache__/

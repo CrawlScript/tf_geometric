@@ -3,6 +3,8 @@ import os
 
 
 # Enable GPU 0
+from tf_geometric.utils.graph_utils import convert_edge_index_to_undirected
+
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 import tf_geometric as tfg
@@ -20,13 +22,18 @@ import numpy as np
 x = np.random.randn(5, 20).astype(np.float32) # 5 nodes, 20 features
 
 # Edge Index => (2, num_edges)
+# edge_index is directed
 edge_index = np.array([
-    [0, 0, 1, 3, 4],
-    [1, 2, 2, 1, 3]
+    [0, 0, 1, 3],
+    [1, 2, 2, 1]
 ])
 
 # Edge Weight => (num_edges)
-edge_weight = np.array([0.9, 0.8, 0.1, 0.2, 0.3]).astype(np.float32)
+edge_weight = np.array([0.9, 0.8, 0.1, 0.2]).astype(np.float32)
+
+# Make the edge_index undirected such that we can use it as the input of GCN
+edge_index, edge_weight = convert_edge_index_to_undirected(edge_index, edge_weight=edge_weight)
+
 
 # We can convert these numpy array as TensorFlow Tensors and pass them to gnn functions
 outputs = tfg.nn.gcn(
@@ -87,8 +94,9 @@ test_data = [graph.convert_data_to_tensor() for graph in test_data]
 gcn_layer = GCN(units=20, activation=tf.nn.relu)
 
 for graph in test_data:
-    normed_edge_weight = GCN.create_normed_edge_weight(graph, use_cache=True)
-    outputs = gcn_layer([graph.x, graph.edge_index, normed_edge_weight])
+    # GCN use an updated adjacency matrix and normed weights
+    updated_edge_index, normed_edge_weight = GCN.norm_edge(graph, use_cache=True)
+    outputs = gcn_layer([graph.x, updated_edge_index, normed_edge_weight])
     print(outputs)
 
 
@@ -107,8 +115,8 @@ for graph in test_data:
 
 dense_w = tf.Variable(tf.random.truncated_normal([test_data[0].num_features, 20]))
 for graph in test_data:
-    normed_edge_weight = tfg.nn.gcn_norm(graph.edge_index, graph.num_nodes)
-    outputs = tfg.nn.gcn(graph.x, graph.edge_index, normed_edge_weight, dense_w, activation=tf.nn.relu)
+    updated_edge_index, normed_edge_weight = tfg.nn.gcn_norm_edge(graph.edge_index, graph.num_nodes)
+    outputs = tfg.nn.gcn(graph.x, updated_edge_index, normed_edge_weight, dense_w, activation=tf.nn.relu)
     print(outputs)
 
 

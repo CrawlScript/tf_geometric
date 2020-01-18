@@ -15,7 +15,8 @@ setup(
     install_requires=[
         "tensorflow-gpu >= 1.14.0",
         "numpy >= 1.17.4",
-        "networkx >= 2.1"
+        "networkx >= 2.1",
+        "scipy >= 1.1.0"
 
     ],
     description="""
