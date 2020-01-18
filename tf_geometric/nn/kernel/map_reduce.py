@@ -21,7 +21,7 @@ def sum_updater(x, reduced_neighbor_msg):
     return x + reduced_neighbor_msg
 
 
-def aggregate_neighbors(x, edge_index, edge_weight=None, mapper=identity_mapper, reducer=sum_reducer, updater=sum_updater, ):
+def aggregate_neighbors(x, edge_index, edge_weight=None, mapper=identity_mapper, reducer=sum_reducer, updater=sum_updater):
     """
     :param x:
     :param edge_index:
@@ -40,6 +40,9 @@ def aggregate_neighbors(x, edge_index, edge_weight=None, mapper=identity_mapper,
 
     udpated = updater(x, reduced_msg)
     return udpated
+
+
+
 
 
 

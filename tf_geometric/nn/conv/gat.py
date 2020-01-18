@@ -3,11 +3,7 @@ import tensorflow as tf
 
 from tf_geometric.nn.kernel.map_reduce import aggregate_neighbors, sum_updater, sum_reducer
 from tf_geometric.nn.kernel.segment import segment_softmax
-from tf_geometric.nn.gnn.gcn import gcn_mapper
-
-
-def gat_mapper(repeated_x, neighbor_x, edge_weight=None):
-    return neighbor_x * tf.expand_dims(edge_weight, 1)
+from tf_geometric.nn.conv.gcn import gcn_mapper
 
 
 # follow Transformer-Style Attention

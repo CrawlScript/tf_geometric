@@ -11,6 +11,7 @@ from tf_geometric.datasets.ppi import PPIDataset
 import tensorflow as tf
 import numpy as np
 
+
 # ==================================== Graph Data Structure ====================================
 # In tf_geometric, graph data can be either individual Tensors or Graph objects
 # A graph usually consists of x(node features), edge_index and edge_weight(optional)
@@ -53,6 +54,22 @@ outputs = tfg.nn.gcn(
 print(outputs)
 
 
+# For algorithms that deal with batches of graphs, we can pack a batch of graph into a BatchGraph object
+# Batch graph wrap a batch of graphs into a single graph, where each nodes has an unique index and a graph index.
+# The node_graph_index is the index of the corresponding graph for each node in the batch.
+# The edge_graph_index is the index of the corresponding edge for each node in the batch.
+batch_graph = tfg.BatchGraph.from_graphs([graph, graph, graph, graph])
+
+# Graph Pooling algorithms often rely on such batch data structure
+# Most of them accept a BatchGraph's data as input and output a feature vector for each graph in the batch
+outputs = tfg.nn.mean_pooling(batch_graph.x, batch_graph.node_graph_index, num_graphs=batch_graph.num_graphs)
+print(outputs)
+
+# We can reversely split a BatchGraph object into Graphs objects
+graphs = batch_graph.to_graphs()
+
+
+
 
 # ==================================== Built-in Datasets ====================================
 # all graph data are in numpy format
@@ -60,6 +77,8 @@ train_data, valid_data, test_data = PPIDataset().load_data()
 
 # we can convert them into tensorflow format
 test_data = [graph.convert_data_to_tensor() for graph in test_data]
+
+
 
 
 

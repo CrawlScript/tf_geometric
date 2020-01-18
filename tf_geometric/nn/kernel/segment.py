@@ -23,3 +23,11 @@ def segment_softmax(data, segment_ids, num_segments):
     gathered_denominator = tf.gather(denominator, segment_ids)
     score = exp * tf.pow(gathered_denominator, -1)
     return score
+
+
+def segment_count(index, num_segments=None):
+    data = tf.ones_like(index)
+    if num_segments is None:
+        return tf.math.segment_sum(data, index)
+    else:
+        return tf.math.unsorted_segment_sum(data, index, num_segments=num_segments)

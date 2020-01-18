@@ -1,6 +1,6 @@
 # coding=utf-8
 import tensorflow as tf
-from tf_geometric.nn.gnn.gat import gat
+from tf_geometric.nn.conv.gat import gat
 from tf_geometric.layers.kernel.map_reduce import MapReduceGNN
 
 

@@ -2,7 +2,7 @@
 
 import tensorflow as tf
 from tf_geometric import Graph
-from tf_geometric.nn.gnn.gcn import gcn_norm, gcn
+from tf_geometric.nn.conv.gcn import gcn_norm, gcn
 from tf_geometric.layers.kernel.map_reduce import MapReduceGNN
 
 
