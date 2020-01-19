@@ -15,30 +15,43 @@ from tf_geometric.utils.graph_utils import add_diagonal_edge_index
 def gat(x, edge_index,
         query_kernel, query_bias, query_activation,
         key_kernel, key_bias, key_activation,
-        kernel, bias=None, activation=None):
+        kernel, bias=None, activation=None, num_heads=1, drop_rate=0.0, training=False):
+
+    num_nodes = x.shape[0]
 
     # self-attention
-    edge_index, edge_weight = add_diagonal_edge_index(edge_index, len(x))
+    edge_index, edge_weight = add_diagonal_edge_index(edge_index, num_nodes)
 
     row, col = edge_index
 
-    query = tf.gather(x, row) @ query_kernel + query_bias
-    query = query_activation(query)
+    Q = tf.gather(x, row) @ query_kernel + query_bias
+    Q = query_activation(Q)
 
-    key = tf.gather(x, col) @ key_kernel + key_bias
-    key = key_activation(key)
+    K = tf.gather(x, col) @ key_kernel + key_bias
+    K = key_activation(K)
 
-    att_score = tf.reduce_sum(query * key, axis=-1)
-    normed_att_score = segment_softmax(att_score, row, len(x))
+    V = x @ kernel
 
-    value = x @ kernel
+    # xxxxx_ denotes the multi-head style stuff
+    Q_ = tf.concat(tf.split(Q, num_heads, axis=-1), axis=0)
+    K_ = tf.concat(tf.split(K, num_heads, axis=-1), axis=0)
+    V_ = tf.concat(tf.split(V, num_heads, axis=-1), axis=0)
+    edge_index_ = tf.concat([edge_index + i * num_nodes for i in range(num_heads)], axis=1)
 
-    h = aggregate_neighbors(
-        value, edge_index, normed_att_score,
+    att_score_ = tf.reduce_sum(Q_ * K_, axis=-1)
+    normed_att_score_ = segment_softmax(att_score_, edge_index_[0], num_nodes * num_heads)
+
+    if training and drop_rate > 0.0:
+        normed_att_score_ = tf.compat.v2.nn.dropout(normed_att_score_, drop_rate)
+
+    h_ = aggregate_neighbors(
+        V_, edge_index_, normed_att_score_,
         gcn_mapper,
         sum_reducer,
         identity_updater
     )
+
+    h = tf.concat(tf.split(h_, num_heads, axis=0), axis=-1)
 
     if bias is not None:
         h += bias

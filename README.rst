@@ -33,6 +33,8 @@ We provide both OOP and Functional API, with which you can make some cool things
 
 
    # Enable GPU 0
+   from tf_geometric.utils.graph_utils import convert_edge_index_to_undirected
+
    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
    import tf_geometric as tfg
@@ -50,13 +52,18 @@ We provide both OOP and Functional API, with which you can make some cool things
    x = np.random.randn(5, 20).astype(np.float32) # 5 nodes, 20 features
 
    # Edge Index => (2, num_edges)
+   # edge_index is directed
    edge_index = np.array([
-       [0, 0, 1, 3, 4],
-       [1, 2, 2, 1, 3]
+       [0, 0, 1, 3],
+       [1, 2, 2, 1]
    ])
 
    # Edge Weight => (num_edges)
-   edge_weight = np.array([0.9, 0.8, 0.1, 0.2, 0.3]).astype(np.float32)
+   edge_weight = np.array([0.9, 0.8, 0.1, 0.2]).astype(np.float32)
+
+   # Make the edge_index undirected such that we can use it as the input of GCN
+   edge_index, edge_weight = convert_edge_index_to_undirected(edge_index, edge_weight=edge_weight)
+
 
    # We can convert these numpy array as TensorFlow Tensors and pass them to gnn functions
    outputs = tfg.nn.gcn(
@@ -79,7 +86,8 @@ We provide both OOP and Functional API, with which you can make some cool things
        graph.x,
        graph.edge_index,
        graph.edge_weight,
-       tf.Variable(tf.random.truncated_normal([20, 2])), # GCN Weight
+       tf.Variable(tf.random.truncated_normal([20, 2])),  # GCN Weight
+       cache=graph.cache  # GCN use caches to avoid re-computing of the normed edge information
    )
    print(outputs)
 
@@ -117,13 +125,13 @@ We provide both OOP and Functional API, with which you can make some cool things
    gcn_layer = GCN(units=20, activation=tf.nn.relu)
 
    for graph in test_data:
-       normed_edge_weight = GCN.create_normed_edge_weight(graph, use_cache=True)
-       outputs = gcn_layer([graph.x, graph.edge_index, normed_edge_weight])
+       # Cache can speed-up GCN by caching the normed edge information
+       outputs = gcn_layer([graph.x, graph.edge_index, graph.edge_weight], cache=graph.cache)
        print(outputs)
 
 
-   # OOP Style GAT (Graph Attention Network)
-   gat_layer = GAT(units=20, activation=tf.nn.relu)
+   # OOP Style GAT (Multi-head Graph Attention Network)
+   gat_layer = GAT(units=20, activation=tf.nn.relu, num_heads=4)
    for graph in test_data:
        outputs = gat_layer([graph.x, graph.edge_index])
        print(outputs)
@@ -137,8 +145,7 @@ We provide both OOP and Functional API, with which you can make some cool things
 
    dense_w = tf.Variable(tf.random.truncated_normal([test_data[0].num_features, 20]))
    for graph in test_data:
-       normed_edge_weight = tfg.nn.gcn_norm(graph.edge_index, graph.num_nodes)
-       outputs = tfg.nn.gcn(graph.x, graph.edge_index, normed_edge_weight, dense_w, activation=tf.nn.relu)
+       outputs = tfg.nn.gcn(graph.x, edge_index, edge_weight, dense_w, activation=tf.nn.relu)
        print(outputs)
 
 

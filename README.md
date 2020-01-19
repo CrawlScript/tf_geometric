@@ -123,8 +123,8 @@ for graph in test_data:
     print(outputs)
 
 
-# OOP Style GAT (Graph Attention Network)
-gat_layer = GAT(units=20, activation=tf.nn.relu)
+# OOP Style GAT (Multi-head Graph Attention Network)
+gat_layer = GAT(units=20, activation=tf.nn.relu, num_heads=4)
 for graph in test_data:
     outputs = gat_layer([graph.x, graph.edge_index])
     print(outputs)

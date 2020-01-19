@@ -1,8 +1,6 @@
 # coding=utf-8
 import os
 
-from tensorflow.python.keras.layers import Dense
-
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 import tensorflow as tf
 from tensorflow import keras
@@ -12,16 +10,19 @@ from tf_geometric.layers import GAT
 graph, (train_index, valid_index, test_index) = CoraDataset().load_data()
 
 num_classes = graph.y.shape[-1]
+drop_rate = 0.2
 
-gat0 = GAT(64, activation=tf.nn.relu)
-gat1 = GAT(num_classes)
-dropout = keras.layers.Dropout(0.6)
+gat0 = GAT(64, activation=tf.nn.relu, num_heads=8, drop_rate=drop_rate, attention_units=8)
+gat1 = GAT(num_classes, drop_rate=0.6, attention_units=1)
+dropout = keras.layers.Dropout(drop_rate)
 
 
 def forward(graph, training=False):
-    h = gat0([graph.x, graph.edge_index])
+    h = graph.x
     h = dropout(h, training=training)
-    h = gat1([h, graph.edge_index])
+    h = gat0([h, graph.edge_index], training=training)
+    h = dropout(h, training=training)
+    h = gat1([h, graph.edge_index], training=training)
     return h
 
 
@@ -52,7 +53,7 @@ def evaluate():
     return accuracy
 
 
-optimizer = tf.train.AdamOptimizer(learning_rate=1e-3)
+optimizer = tf.train.AdamOptimizer(learning_rate=5e-3)
 
 for step in range(1000):
     with tf.GradientTape() as tape:
