@@ -23,13 +23,19 @@ graph = tfg.Graph(
     edge_index=np.array([
         [0, 0, 1, 3],
         [1, 2, 2, 1]
-    ])  # 4 edges
-).convert_edge_to_directed()  # pre-process edges
-print(graph.edge_index)
+    ])  # 4 undirected edges
+)
 
-gat_layer = tfg.layers.GAT(units=20, num_heads=4, activation=tf.nn.relu)
+print("Graph Desc: \n", graph)
+
+graph.convert_edge_to_directed()  # pre-process edges
+print("Processed Graph Desc: \n", graph)
+print("Processed Edge Index:\n", graph.edge_index)
+
+# Multi-head Graph Attention Network (GAT)
+gat_layer = tfg.layers.GAT(units=4, num_heads=4, activation=tf.nn.relu)
 output = gat_layer([graph.x, graph.edge_index])
-print(output.shape)
+print("Output of GAT: \n", output)
 ```
 
 output:

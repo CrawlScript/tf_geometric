@@ -8,7 +8,7 @@ graph = tfg.Graph(
     edge_index=np.array([
         [0, 0, 1, 3],
         [1, 2, 2, 1]
-    ])  # 4 edges
+    ])  # 4 undirected edges
 )
 
 print("Graph Desc: \n", graph)
