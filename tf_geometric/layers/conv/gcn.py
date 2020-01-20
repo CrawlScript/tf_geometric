@@ -3,7 +3,7 @@
 import tensorflow as tf
 from tensorflow.python.keras.layers import Dense
 
-from tf_geometric import Graph
+from tf_geometric.data.graph import Graph
 from tf_geometric.nn.conv.gcn import gcn_norm_edge, gcn
 from tf_geometric.layers.kernel.map_reduce import MapReduceGNN
 

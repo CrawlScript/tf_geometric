@@ -2,7 +2,7 @@
 import tensorflow as tf
 
 from tf_geometric.nn.kernel.map_reduce import aggregate_neighbors, sum_updater, sum_reducer, identity_updater
-from tf_geometric.utils.graph_utils import add_diagonal_edge_index
+from tf_geometric.utils.graph_utils import add_self_loop_edge
 
 
 def gcn_norm_edge(edge_index, num_nodes, edge_weight=None, improved=False, cache=None):
@@ -16,7 +16,7 @@ def gcn_norm_edge(edge_index, num_nodes, edge_weight=None, improved=False, cache
         edge_weight = tf.ones([edge_index.shape[1]], dtype=tf.float32)
 
     fill_weight = 2.0 if improved else 1.0
-    edge_index, edge_weight = add_diagonal_edge_index(edge_index, num_nodes, edge_weight=edge_weight, fill_weight=fill_weight)
+    edge_index, edge_weight = add_self_loop_edge(edge_index, num_nodes, edge_weight=edge_weight, fill_weight=fill_weight)
 
     row, col = edge_index
     deg = tf.math.unsorted_segment_sum(edge_weight, row, num_segments=num_nodes)

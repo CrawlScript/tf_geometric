@@ -1,24 +1,68 @@
 # coding=utf-8
 import tensorflow as tf
 import numpy as np
+import networkx as nx
 
 
-# [[1,3,5], [2,1,4]] => [[1,3,5,2,1,4], [2,1,4,1,3,5]]
-def convert_edge_index_to_undirected(edge_index, edge_weight=None):
+def remove_self_loop_edge(edge_index, edge_weight=None):
+    edge_index_is_tensor = tf.is_tensor(edge_index)
+    edge_weight_is_tensor = edge_weight is not None and tf.is_tensor(edge_weight)
+
+    if edge_index_is_tensor:
+        edge_index = edge_index.numpy()
+
+    if edge_weight_is_tensor:
+        edge_weight = edge_weight.numpy()
+
     row, col = edge_index
-    upper_mask = row < col
-    edge_index = edge_index[:, upper_mask]
-
-    edge_index = np.concatenate([edge_index, edge_index[[1, 0]]], axis=1)
-
+    mask = row != col
+    edge_index = edge_index[:, mask]
     if edge_weight is not None:
-        edge_weight = edge_weight[upper_mask]
-        edge_weight = np.concatenate([edge_weight, edge_weight], axis=0)
+        edge_weight = edge_weight[mask]
+
+    if edge_index_is_tensor:
+        edge_index = tf.convert_to_tensor(edge_index)
+
+    if edge_weight_is_tensor:
+        edge_weight = tf.convert_to_tensor(edge_weight)
 
     return edge_index, edge_weight
 
 
-def add_diagonal_edge_index(edge_index, num_nodes, edge_weight=None, fill_weight=1.0):
+
+# [[1,3,5], [2,1,4]] => [[1,3,5,2,1,4], [2,1,4,1,3,5]]
+def convert_edge_to_directed(edge_index, edge_weight=None):
+
+    edge_index_is_tensor = tf.is_tensor(edge_index)
+    edge_weight_is_tensor = edge_weight is not None and tf.is_tensor(edge_weight)
+
+    if edge_index_is_tensor:
+        edge_index = edge_index.numpy()
+
+    if edge_weight_is_tensor:
+        edge_weight = edge_weight.numpy()
+
+    g = nx.Graph()
+    for i in range(edge_index.shape[1]):
+        g.add_edge(edge_index[0, i], edge_index[1, i],
+                   w=edge_weight[i] if edge_weight is not None else None)
+
+    g = g.to_directed()
+
+    edge_index = np.array(g.edges).T
+    if edge_weight is not None:
+        edge_weight = np.array([item[2] for item in g.edges.data("w")])
+
+    if edge_index_is_tensor:
+        edge_index = tf.convert_to_tensor(edge_index)
+
+    if edge_weight_is_tensor:
+        edge_weight = tf.convert_to_tensor(edge_weight)
+
+    return edge_index, edge_weight
+
+
+def add_self_loop_edge(edge_index, num_nodes, edge_weight=None, fill_weight=1.0):
     diagnal_edges = [[node_index, node_index] for node_index in range(num_nodes)]
     diagnal_edge_index = np.array(diagnal_edges).T.astype(np.int32)
 

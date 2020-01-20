@@ -9,7 +9,7 @@ from tf_geometric.nn.conv.gcn import gcn_mapper
 
 # follow Transformer-Style Attention
 # Attention is all you need
-from tf_geometric.utils.graph_utils import add_diagonal_edge_index
+from tf_geometric.utils.graph_utils import add_self_loop_edge
 
 
 def gat(x, edge_index,
@@ -20,7 +20,7 @@ def gat(x, edge_index,
     num_nodes = x.shape[0]
 
     # self-attention
-    edge_index, edge_weight = add_diagonal_edge_index(edge_index, num_nodes)
+    edge_index, edge_weight = add_self_loop_edge(edge_index, num_nodes)
 
     row, col = edge_index
 

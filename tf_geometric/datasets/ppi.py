@@ -4,12 +4,12 @@ import numpy as np
 import os
 
 import networkx as nx
-from tf_geometric import Graph
+from tf_geometric.data.graph import Graph
 from tf_geometric.data.dataset import DownloadableDataset
 import json
 
 from tf_geometric.utils.data_utils import load_cache
-from tf_geometric.utils.graph_utils import convert_edge_index_to_undirected
+from tf_geometric.utils.graph_utils import convert_edge_to_directed
 
 
 class PPIDataset(DownloadableDataset):
@@ -52,7 +52,7 @@ class PPIDataset(DownloadableDataset):
                 edge_index = nx_graph.subgraph(mask_indices).edges
                 edge_index = np.array(edge_index).T - min_node_index
 
-                edge_index, _ = convert_edge_index_to_undirected(edge_index, edge_weight=None)
+                edge_index, _ = convert_edge_to_directed(edge_index, edge_weight=None)
 
                 graph = Graph(
                     x=split_features[mask_indices],

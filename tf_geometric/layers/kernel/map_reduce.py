@@ -1,6 +1,7 @@
-from tensorflow.python.keras.api._v1 import keras
+# coding=utf-8
+from tensorflow import keras
 
-from tf_geometric import Graph
+
 from tf_geometric.nn import aggregate_neighbors
 
 

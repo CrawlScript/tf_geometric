@@ -2,11 +2,14 @@
 import tensorflow as tf
 import numpy as np
 
+from tf_geometric.utils.graph_utils import convert_edge_to_directed
+
 
 class Graph(object):
     def __init__(self, x, edge_index, y=None,
                  edge_weight=None):
-        self.x = x
+
+        self.x = Graph.cast_x(x)
         self.edge_index = edge_index
         self.y = y
         self.cache = {}
@@ -17,6 +20,16 @@ class Graph(object):
             self.edge_weight = np.full([len(self.edge_index[0])], 1.0, dtype=np.float32)
             if tf.is_tensor(self.x):
                 self.edge_weight = tf.convert_to_tensor(self.edge_weight)
+
+    @classmethod
+    def cast_x(cls, x):
+        if isinstance(x, list):
+            x = np.array(x).astype(np.float32)
+        elif isinstance(x, np.ndarray):
+            x = x.astype(np.float32)
+        elif tf.is_tensor(x):
+            x = tf.cast(x, tf.float32)
+        return x
 
     @property
     def num_nodes(self):
@@ -49,6 +62,10 @@ class Graph(object):
 
             if data is not None and not tf.is_tensor(data):
                 setattr(self, key, tf.convert_to_tensor(data))
+        return self
+
+    def convert_edge_to_directed(self):
+        self.edge_index, self.edge_weight = convert_edge_to_directed(self.edge_index, self.edge_weight)
         return self
 
 

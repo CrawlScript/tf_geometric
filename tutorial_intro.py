@@ -1,17 +1,13 @@
 # coding=utf-8
 import os
 
-
 # Enable GPU 0
-from tf_geometric.utils.graph_utils import convert_edge_index_to_undirected
-
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 import tf_geometric as tfg
-from tf_geometric.layers import GCN, MapReduceGNN, GAT
-from tf_geometric.datasets.ppi import PPIDataset
 import tensorflow as tf
 import numpy as np
+from tf_geometric.utils.graph_utils import convert_edge_to_directed
 
 
 # ==================================== Graph Data Structure ====================================
@@ -22,7 +18,11 @@ import numpy as np
 x = np.random.randn(5, 20).astype(np.float32) # 5 nodes, 20 features
 
 # Edge Index => (2, num_edges)
-# edge_index is directed
+# Each column of edge_index (u, v) represents an directed edge from u to v.
+# Note that it does not cover the edge from v to u. You should provide (v, u) to cover it.
+# This is not convenient for users.
+# Thus, we allow users to provide edge_index in undirected form and convert it later.
+# That is, we can only provide (u, v) and convert it to (u, v) and (v, u) with `convert_edge_to_directed` method.
 edge_index = np.array([
     [0, 0, 1, 3],
     [1, 2, 2, 1]
@@ -31,8 +31,8 @@ edge_index = np.array([
 # Edge Weight => (num_edges)
 edge_weight = np.array([0.9, 0.8, 0.1, 0.2]).astype(np.float32)
 
-# Make the edge_index undirected such that we can use it as the input of GCN
-edge_index, edge_weight = convert_edge_index_to_undirected(edge_index, edge_weight=edge_weight)
+# Make the edge_index directed such that we can use it as the input of GCN
+edge_index, edge_weight = convert_edge_to_directed(edge_index, edge_weight=edge_weight)
 
 
 # We can convert these numpy array as TensorFlow Tensors and pass them to gnn functions
@@ -40,7 +40,7 @@ outputs = tfg.nn.gcn(
     tf.Variable(x),
     tf.constant(edge_index),
     tf.constant(edge_weight),
-    tf.Variable(tf.random.truncated_normal([20, 2])), # GCN Weight
+    tf.Variable(tf.random.truncated_normal([20, 2])) # GCN Weight
 )
 print(outputs)
 
@@ -81,7 +81,7 @@ graphs = batch_graph.to_graphs()
 
 # ==================================== Built-in Datasets ====================================
 # all graph data are in numpy format
-train_data, valid_data, test_data = PPIDataset().load_data()
+train_data, valid_data, test_data = tfg.datasets.PPIDataset().load_data()
 
 # we can convert them into tensorflow format
 test_data = [graph.convert_data_to_tensor() for graph in test_data]
@@ -92,7 +92,7 @@ test_data = [graph.convert_data_to_tensor() for graph in test_data]
 
 # ==================================== Basic OOP API ====================================
 # OOP Style GCN (Graph Convolutional Network)
-gcn_layer = GCN(units=20, activation=tf.nn.relu)
+gcn_layer = tfg.layers.GCN(units=20, activation=tf.nn.relu)
 
 for graph in test_data:
     # Cache can speed-up GCN by caching the normed edge information
@@ -101,7 +101,7 @@ for graph in test_data:
 
 
 # OOP Style GAT (Multi-head Graph Attention Network)
-gat_layer = GAT(units=20, activation=tf.nn.relu, num_heads=4)
+gat_layer = tfg.layers.GAT(units=20, activation=tf.nn.relu, num_heads=4)
 for graph in test_data:
     outputs = gat_layer([graph.x, graph.edge_index])
     print(outputs)
@@ -113,9 +113,9 @@ for graph in test_data:
 # Functional API is more flexible for advanced algorithms
 # You can pass both data and parameters to functional APIs
 
-dense_w = tf.Variable(tf.random.truncated_normal([test_data[0].num_features, 20]))
+gcn_w = tf.Variable(tf.random.truncated_normal([test_data[0].num_features, 20]))
 for graph in test_data:
-    outputs = tfg.nn.gcn(graph.x, edge_index, edge_weight, dense_w, activation=tf.nn.relu)
+    outputs = tfg.nn.gcn(graph.x, edge_index, edge_weight, gcn_w, activation=tf.nn.relu)
     print(outputs)
 
 
@@ -123,7 +123,7 @@ for graph in test_data:
 # All APIs are implemented with Map-Reduce Style
 # This is a gcn without weight normalization and transformation.
 # Create your own GNN Layer by subclassing the MapReduceGNN class
-class NaiveGCN(MapReduceGNN):
+class NaiveGCN(tfg.layers.MapReduceGNN):
 
     def map(self, repeated_x, neighbor_x, edge_weight=None):
         return tfg.nn.identity_mapper(repeated_x, neighbor_x, edge_weight)
