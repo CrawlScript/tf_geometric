@@ -12,18 +12,13 @@ This library is compatible with both TensorFlow 1.x and 2.x
 We use Message Passing mechanism to implement graph neural networks, which is way efficient than the dense matrix based implementations and more friendly than the sparse matrix based ones.
 
 
-## A Map-Reduce Style Implementation
-
-We provide map-reduce style APIs for programmers.
-
-
 ## Installation
 
 Requirements:
 + Operation System: Windows / Linux / Mac OS
 + Python: version >= 3.5
 + Python Packages:
-    + tensorflow /tensorflow-gpu: >= 1.14.0 or >= 2.0.0b1
+    + tensorflow/tensorflow-gpu: >= 1.14.0 or >= 2.0.0b1
     + numpy >= 1.17.4
     + networkx >= 2.1
     + scipy >= 1.1.0
@@ -37,6 +32,11 @@ pip install -U tf_geometric[tf1-gpu] # this will install TensorFlow 1.x GPU vers
 pip install -U tf_geometric[tf2-cpu] # this will install TensorFlow 2.x CPU version
 pip install -U tf_geometric[tf2-gpu] # this will install TensorFlow 2.x GPU version
 ```
+
+
+## A Map-Reduce Style Implementation
+
+We provide map-reduce style APIs for programmers.
 
 
 ## OOP and Functional API
