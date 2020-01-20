@@ -3,8 +3,31 @@ Efficient and Friendly Graph Neural Network Library for TensorFlow 1.x and 2.x.
 
 Inspired by [rusty1s/pytorch_geometric](https://github.com/rusty1s/pytorch_geometric), we build a GNN library for TensorFlow.
 
-## Support both TensorFlow 1.x and 2.x
-This library is compatible with both TensorFlow 1.x and 2.x
+
+## Installation
+
+Requirements:
++ Operation System: Windows / Linux / Mac OS
++ Python: version >= 3.5
++ Python Packages:
+    + tensorflow/tensorflow-gpu: >= 1.14.0 or >= 2.0.0b1
+    + numpy >= 1.17.4
+    + networkx >= 2.1
+    + scipy >= 1.1.0
+
+
+Use one of the following commands below:
+```bash
+pip install -U tf_geometric # this will not install the tensorflow/tensorflow-gpu package
+
+pip install -U tf_geometric[tf1-cpu] # this will install TensorFlow 1.x CPU version
+
+pip install -U tf_geometric[tf1-gpu] # this will install TensorFlow 1.x GPU version
+
+pip install -U tf_geometric[tf2-cpu] # this will install TensorFlow 2.x CPU version
+
+pip install -U tf_geometric[tf2-gpu] # this will install TensorFlow 2.x GPU version
+```
 
 
 ## Efficient and Friendly
@@ -36,7 +59,7 @@ output = gat_layer([graph.x, graph.edge_index])
 print("Output of GAT: \n", output)
 ```
 
-output:
+Output:
 ```
 Graph Desc:
  Graph Shape: x => (5, 20)	edge_index => (2, 4)	y => None
@@ -58,26 +81,7 @@ Output of GAT:
 ```
 
 
-## Installation
 
-Requirements:
-+ Operation System: Windows / Linux / Mac OS
-+ Python: version >= 3.5
-+ Python Packages:
-    + tensorflow/tensorflow-gpu: >= 1.14.0 or >= 2.0.0b1
-    + numpy >= 1.17.4
-    + networkx >= 2.1
-    + scipy >= 1.1.0
-
-
-Use one of the following command below:
-```bash
-pip install -U tf_geometric # this will not install the tensorflow/tensorflow-gpu package
-pip install -U tf_geometric[tf1-cpu] # this will install TensorFlow 1.x CPU version
-pip install -U tf_geometric[tf1-gpu] # this will install TensorFlow 1.x GPU version
-pip install -U tf_geometric[tf2-cpu] # this will install TensorFlow 2.x CPU version
-pip install -U tf_geometric[tf2-gpu] # this will install TensorFlow 2.x GPU version
-```
 
 
 
