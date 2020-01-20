@@ -10,7 +10,7 @@ class Graph(object):
                  edge_weight=None):
 
         self.x = Graph.cast_x(x)
-        self.edge_index = edge_index
+        self.edge_index = Graph.cast_edge_index(edge_index)
         self.y = y
         self.cache = {}
 
@@ -20,6 +20,16 @@ class Graph(object):
             self.edge_weight = np.full([len(self.edge_index[0])], 1.0, dtype=np.float32)
             if tf.is_tensor(self.x):
                 self.edge_weight = tf.convert_to_tensor(self.edge_weight)
+
+    @classmethod
+    def cast_edge_index(cls, x):
+        if isinstance(x, list):
+            x = np.array(x).astype(np.int32)
+        elif isinstance(x, np.ndarray):
+            x = x.astype(np.int32)
+        elif tf.is_tensor(x):
+            x = tf.cast(x, tf.int32)
+        return x
 
     @classmethod
     def cast_x(cls, x):

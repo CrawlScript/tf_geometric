@@ -20,10 +20,8 @@ import tensorflow as tf
 
 graph = tfg.Graph(
     x=np.random.randn(5, 20),  # 5 nodes, 20 features,
-    edge_index=np.array([
-        [0, 0, 1, 3],
-        [1, 2, 2, 1]
-    ])  # 4 undirected edges
+    edge_index=[[0, 0, 1, 3],
+                [1, 2, 2, 1]]  # 4 undirected edges
 )
 
 print("Graph Desc: \n", graph)
