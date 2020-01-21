@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 setup(
     name="tf_geometric",
     python_requires='>3.5.0',
-    version="0.0.9",
+    version="0.0.10",
     author="Jun Hu",
     author_email="hujunxianligong@gmail.com",
     packages=find_packages(
@@ -18,8 +18,8 @@ setup(
         "scipy >= 1.1.0"
     ],
     extras_require={
-        'tf1-cpu': ["tensorflow >= 1.14.0"],
-        'tf1-gpu_': ["tensorflow-gpu >= 1.14.0"],
+        'tf1-cpu': ["tensorflow >= 1.14.0,<2.0.0"],
+        'tf1-gpu': ["tensorflow-gpu >= 1.14.0,<2.0.0"],
         'tf2-cpu': ["tensorflow >= 2.0.0b1"],
         'tf2-gpu': ["tensorflow-gpu >= 2.0.0b1"]
     },

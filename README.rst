@@ -6,21 +6,6 @@ Efficient and Friendly Graph Neural Network Library for TensorFlow 1.x and 2.x.
 
 Inspired by `rusty1s/pytorch_geometric <https://github.com/rusty1s/pytorch_geometric>`_\ , we build a GNN library for TensorFlow.
 
-Support both TensorFlow 1.x and 2.x
------------------------------------
-
-This library is compatible with both TensorFlow 1.x and 2.x
-
-Efficient and Friendly
-----------------------
-
-We use Message Passing mechanism to implement graph neural networks, which is way efficient than the dense matrix based implementations and more friendly than the sparse matrix based ones.
-
-A Map-Reduce Style Implementation
----------------------------------
-
-We provide map-reduce style APIs for programmers.
-
 Installation
 ------------
 
@@ -31,20 +16,77 @@ Requirements:
 * Python: version >= 3.5
 * Python Packages:
 
-  * tensorflow /tensorflow-gpu: >= 1.14.0 or >= 2.0.0b1
+  * tensorflow/tensorflow-gpu: >= 1.14.0 or >= 2.0.0b1
   * numpy >= 1.17.4
   * networkx >= 2.1
   * scipy >= 1.1.0
 
-Use one of the following command below:
+Use one of the following commands below:
 
 .. code-block:: bash
 
    pip install -U tf_geometric # this will not install the tensorflow/tensorflow-gpu package
+
    pip install -U tf_geometric[tf1-cpu] # this will install TensorFlow 1.x CPU version
+
    pip install -U tf_geometric[tf1-gpu] # this will install TensorFlow 1.x GPU version
+
    pip install -U tf_geometric[tf2-cpu] # this will install TensorFlow 2.x CPU version
+
    pip install -U tf_geometric[tf2-gpu] # this will install TensorFlow 2.x GPU version
+
+Efficient and Friendly
+----------------------
+
+We use Message Passing mechanism to implement graph neural networks, which is way efficient than the dense matrix based implementations and more friendly than the sparse matrix based ones.
+In addition, we provide easy to elegant APIs for complex GNN APIs.
+The following example constructs a graph and applies a Multi-head Graph Attention Network (GAT) on it:
+
+.. code-block:: python
+
+   # coding=utf-8
+   import numpy as np
+   import tf_geometric as tfg
+   import tensorflow as tf
+
+   graph = tfg.Graph(
+       x=np.random.randn(5, 20),  # 5 nodes, 20 features,
+       edge_index=[[0, 0, 1, 3],
+                   [1, 2, 2, 1]]  # 4 undirected edges
+   )
+
+   print("Graph Desc: \n", graph)
+
+   graph.convert_edge_to_directed()  # pre-process edges
+   print("Processed Graph Desc: \n", graph)
+   print("Processed Edge Index:\n", graph.edge_index)
+
+   # Multi-head Graph Attention Network (GAT)
+   gat_layer = tfg.layers.GAT(units=4, num_heads=4, activation=tf.nn.relu)
+   output = gat_layer([graph.x, graph.edge_index])
+   print("Output of GAT: \n", output)
+
+Output:
+
+.. code-block::
+
+   Graph Desc:
+    Graph Shape: x => (5, 20)  edge_index => (2, 4)    y => None
+
+   Processed Graph Desc:
+    Graph Shape: x => (5, 20)  edge_index => (2, 8)    y => None
+
+   Processed Edge Index:
+    [[0 0 1 1 1 2 2 3]
+    [1 2 0 2 3 0 1 1]]
+
+   Output of GAT:
+    tf.Tensor(
+   [[0.22443159 0.         0.58263206 0.32468423]
+    [0.29810357 0.         0.19403605 0.35630274]
+    [0.18071976 0.         0.58263206 0.32468423]
+    [0.36123228 0.         0.88897204 0.450244  ]
+    [0.         0.         0.8013462  0.        ]], shape=(5, 4), dtype=float32)
 
 OOP and Functional API
 ----------------------
@@ -56,17 +98,13 @@ We provide both OOP and Functional API, with which you can make some cool things
    # coding=utf-8
    import os
 
-
    # Enable GPU 0
-   from tf_geometric.utils.graph_utils import convert_edge_index_to_undirected
-
    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
    import tf_geometric as tfg
-   from tf_geometric.layers import GCN, MapReduceGNN, GAT
-   from tf_geometric.datasets.ppi import PPIDataset
    import tensorflow as tf
    import numpy as np
+   from tf_geometric.utils.graph_utils import convert_edge_to_directed
 
 
    # ==================================== Graph Data Structure ====================================
@@ -77,7 +115,11 @@ We provide both OOP and Functional API, with which you can make some cool things
    x = np.random.randn(5, 20).astype(np.float32) # 5 nodes, 20 features
 
    # Edge Index => (2, num_edges)
-   # edge_index is directed
+   # Each column of edge_index (u, v) represents an directed edge from u to v.
+   # Note that it does not cover the edge from v to u. You should provide (v, u) to cover it.
+   # This is not convenient for users.
+   # Thus, we allow users to provide edge_index in undirected form and convert it later.
+   # That is, we can only provide (u, v) and convert it to (u, v) and (v, u) with `convert_edge_to_directed` method.
    edge_index = np.array([
        [0, 0, 1, 3],
        [1, 2, 2, 1]
@@ -86,8 +128,8 @@ We provide both OOP and Functional API, with which you can make some cool things
    # Edge Weight => (num_edges)
    edge_weight = np.array([0.9, 0.8, 0.1, 0.2]).astype(np.float32)
 
-   # Make the edge_index undirected such that we can use it as the input of GCN
-   edge_index, edge_weight = convert_edge_index_to_undirected(edge_index, edge_weight=edge_weight)
+   # Make the edge_index directed such that we can use it as the input of GCN
+   edge_index, edge_weight = convert_edge_to_directed(edge_index, edge_weight=edge_weight)
 
 
    # We can convert these numpy array as TensorFlow Tensors and pass them to gnn functions
@@ -95,7 +137,7 @@ We provide both OOP and Functional API, with which you can make some cool things
        tf.Variable(x),
        tf.constant(edge_index),
        tf.constant(edge_weight),
-       tf.Variable(tf.random.truncated_normal([20, 2])), # GCN Weight
+       tf.Variable(tf.random.truncated_normal([20, 2])) # GCN Weight
    )
    print(outputs)
 
@@ -136,7 +178,7 @@ We provide both OOP and Functional API, with which you can make some cool things
 
    # ==================================== Built-in Datasets ====================================
    # all graph data are in numpy format
-   train_data, valid_data, test_data = PPIDataset().load_data()
+   train_data, valid_data, test_data = tfg.datasets.PPIDataset().load_data()
 
    # we can convert them into tensorflow format
    test_data = [graph.convert_data_to_tensor() for graph in test_data]
@@ -147,7 +189,7 @@ We provide both OOP and Functional API, with which you can make some cool things
 
    # ==================================== Basic OOP API ====================================
    # OOP Style GCN (Graph Convolutional Network)
-   gcn_layer = GCN(units=20, activation=tf.nn.relu)
+   gcn_layer = tfg.layers.GCN(units=20, activation=tf.nn.relu)
 
    for graph in test_data:
        # Cache can speed-up GCN by caching the normed edge information
@@ -156,7 +198,7 @@ We provide both OOP and Functional API, with which you can make some cool things
 
 
    # OOP Style GAT (Multi-head Graph Attention Network)
-   gat_layer = GAT(units=20, activation=tf.nn.relu, num_heads=4)
+   gat_layer = tfg.layers.GAT(units=20, activation=tf.nn.relu, num_heads=4)
    for graph in test_data:
        outputs = gat_layer([graph.x, graph.edge_index])
        print(outputs)
@@ -168,9 +210,9 @@ We provide both OOP and Functional API, with which you can make some cool things
    # Functional API is more flexible for advanced algorithms
    # You can pass both data and parameters to functional APIs
 
-   dense_w = tf.Variable(tf.random.truncated_normal([test_data[0].num_features, 20]))
+   gcn_w = tf.Variable(tf.random.truncated_normal([test_data[0].num_features, 20]))
    for graph in test_data:
-       outputs = tfg.nn.gcn(graph.x, edge_index, edge_weight, dense_w, activation=tf.nn.relu)
+       outputs = tfg.nn.gcn(graph.x, edge_index, edge_weight, gcn_w, activation=tf.nn.relu)
        print(outputs)
 
 
@@ -178,7 +220,7 @@ We provide both OOP and Functional API, with which you can make some cool things
    # All APIs are implemented with Map-Reduce Style
    # This is a gcn without weight normalization and transformation.
    # Create your own GNN Layer by subclassing the MapReduceGNN class
-   class NaiveGCN(MapReduceGNN):
+   class NaiveGCN(tfg.layers.MapReduceGNN):
 
        def map(self, repeated_x, neighbor_x, edge_weight=None):
            return tfg.nn.identity_mapper(repeated_x, neighbor_x, edge_weight)
@@ -211,3 +253,15 @@ We provide both OOP and Functional API, with which you can make some cool things
            updater=tfg.nn.sum_updater
        )
        print(outputs)
+
+DEMO
+----
+
+
+* Graph Convolutional Network (GCN)
+
+  * `demo_gcn.py <demo/demo_gcn.py>`_
+
+* Multi-head Graph Attention Network (GAT)
+
+  * `demo_gat.py <demo/demo_gat.py>`_
