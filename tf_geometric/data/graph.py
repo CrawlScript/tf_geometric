@@ -43,11 +43,17 @@ class Graph(object):
 
     @property
     def num_nodes(self):
-        return len(self.x)
+        if tf.is_tensor(self.x):
+            return self.x.shape.as_list()[0]
+        else:
+            return len(self.x)
 
     @property
     def num_edges(self):
-        return len(self.edge_index[0])
+        if tf.is_tensor(self.edge_index):
+            return self.edge_index.shape.as_list()[1]
+        else:
+            return len(self.edge_index[0])
 
     @property
     def num_features(self):
