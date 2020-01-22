@@ -33,7 +33,7 @@ pip install -U tf_geometric[tf2-gpu] # this will install TensorFlow 2.x GPU vers
 ## Efficient and Friendly
 
 We use Message Passing mechanism to implement graph neural networks, which is way efficient than the dense matrix based implementations and more friendly than the sparse matrix based ones.
-In addition, we provide easy to elegant APIs for complex GNN APIs.
+In addition, we provide easy and elegant APIs for complex GNN operations.
 The following example constructs a graph and applies a Multi-head Graph Attention Network (GAT) on it:
 ```python
 # coding=utf-8
