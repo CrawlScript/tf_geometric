@@ -4,7 +4,12 @@ tf_geometric
 
 Efficient and Friendly Graph Neural Network Library for TensorFlow 1.x and 2.x.
 
-Inspired by `rusty1s/pytorch_geometric <https://github.com/rusty1s/pytorch_geometric>`_\ , we build a GNN library for TensorFlow.
+Inspired by **rusty1s/pytorch_geometric**\ , we build a GNN library for TensorFlow.
+
+HomePage
+--------
+
+`https://github.com/CrawlScript/tf_geometric <https://github.com/CrawlScript/tf_geometric>`_
 
 Installation
 ------------
@@ -39,7 +44,7 @@ Efficient and Friendly
 ----------------------
 
 We use Message Passing mechanism to implement graph neural networks, which is way efficient than the dense matrix based implementations and more friendly than the sparse matrix based ones.
-In addition, we provide easy to elegant APIs for complex GNN APIs.
+In addition, we provide easy and elegant APIs for complex GNN operations.
 The following example constructs a graph and applies a Multi-head Graph Attention Network (GAT) on it:
 
 .. code-block:: python
