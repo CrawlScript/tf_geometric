@@ -108,19 +108,20 @@ def add_self_loop_edge(edge_index, num_nodes, edge_weight=None, fill_weight=1.0)
     return updated_edge_index, updated_edge_weight
 
 
-def negative_sampling(num_samples, num_nodes, edge_index=None, replace=True, mode="undirected", num_batches=None):
+def negative_sampling(num_samples, num_nodes, edge_index=None, replace=True, mode="undirected",
+                      batch_size=None):
     """
 
     :param num_samples:
     :param num_nodes:
     :param edge_index: if edge_index is provided, sampled positive edges will be filtered
     :param replace: only works when edge_index is provided, deciding whether sampled edges should be unique
-    :param if num_batches is None, return edge_index, otherwise return a list of num_batches edge_index
+    :param if batch_size is None, return edge_index, otherwise return a list of batch_size edge_index
     :return:
     """
 
     edge_index = convert_union_to_numpy(edge_index, np.int32)
-    fake_batch_size = 1 if num_batches is None else num_batches
+    fake_batch_size = 1 if batch_size is None else batch_size
 
     if edge_index is None:
         sampled_edge_index_list = [np.random.randint(0, num_nodes, [2, num_samples]).astype(np.int32)
@@ -147,7 +148,7 @@ def negative_sampling(num_samples, num_nodes, edge_index=None, replace=True, mod
         sampled_edge_index_list = [tf.convert_to_tensor(sampled_edge_index)
                                    for sampled_edge_index in sampled_edge_index_list]
 
-    if num_batches is None:
+    if batch_size is None:
         return sampled_edge_index_list[0]
     else:
         return sampled_edge_index_list
