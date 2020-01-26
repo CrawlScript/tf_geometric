@@ -1,14 +1,14 @@
 # coding=utf-8
 import os
 
-from sklearn.metrics import roc_auc_score
-
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+
 import tf_geometric as tfg
 import tensorflow as tf
 from tensorflow import keras
 from tf_geometric.utils.graph_utils import edge_train_test_split, negative_sampling
 import numpy as np
+from sklearn.metrics import roc_auc_score
 
 
 graph, (train_index, valid_index, test_index) = tfg.datasets.CoraDataset().load_data()
