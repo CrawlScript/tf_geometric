@@ -8,7 +8,7 @@ from tf_geometric.layers import GCN
 
 graph, (train_index, valid_index, test_index) = CoraDataset().load_data()
 
-num_classes = graph.y.shape[-1]
+num_classes = graph.y.max() + 1
 
 gcn0 = GCN(32, activation=tf.nn.relu)
 gcn1 = GCN(num_classes)
@@ -25,7 +25,7 @@ def compute_losses(logits, mask_index):
     masked_labels = tf.gather(graph.y, mask_index)
     losses = tf.nn.softmax_cross_entropy_with_logits(
         logits=masked_logits,
-        labels=masked_labels
+        labels=tf.one_hot(masked_labels, depth=num_classes)
     )
     return losses
 
@@ -35,10 +35,9 @@ def evaluate():
     masked_logits = tf.gather(logits, test_index)
     masked_labels = tf.gather(graph.y, test_index)
 
-    y_pred = tf.argmax(masked_logits, axis=-1)
-    y_true = tf.argmax(masked_labels, axis=-1)
+    y_pred = tf.argmax(masked_logits, axis=-1, output_type=tf.int32)
 
-    corrects = tf.cast(tf.equal(y_pred, y_true), tf.float32)
+    corrects = tf.cast(tf.equal(y_pred, masked_labels), tf.float32)
     accuracy = tf.reduce_mean(corrects)
     return accuracy
 

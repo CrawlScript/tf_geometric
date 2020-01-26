@@ -2,18 +2,17 @@
 import os
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+import tf_geometric as tfg
 import tensorflow as tf
 from tensorflow import keras
-from tf_geometric.datasets.cora import CoraDataset
-from tf_geometric.layers import GAT
 
-graph, (train_index, valid_index, test_index) = CoraDataset().load_data()
+graph, (train_index, valid_index, test_index) = tfg.datasets.CoraDataset().load_data()
 
-num_classes = graph.y.shape[-1]
+num_classes = graph.y.max() + 1
 drop_rate = 0.2
 
-gat0 = GAT(64, activation=tf.nn.relu, num_heads=8, drop_rate=drop_rate, attention_units=8)
-gat1 = GAT(num_classes, drop_rate=0.6, attention_units=1)
+gat0 = tfg.layers.GAT(64, activation=tf.nn.relu, num_heads=8, drop_rate=drop_rate, attention_units=8)
+gat1 = tfg.layers.GAT(num_classes, drop_rate=0.6, attention_units=1)
 dropout = keras.layers.Dropout(drop_rate)
 
 
@@ -31,7 +30,7 @@ def compute_loss(logits, mask_index, vars):
     masked_labels = tf.gather(graph.y, mask_index)
     losses = tf.nn.softmax_cross_entropy_with_logits(
         logits=masked_logits,
-        labels=masked_labels
+        labels=tf.one_hot(masked_labels, depth=num_classes)
     )
 
     kernel_vals = [var for var in vars if "kernel" in var.name]
@@ -45,10 +44,9 @@ def evaluate():
     masked_logits = tf.gather(logits, test_index)
     masked_labels = tf.gather(graph.y, test_index)
 
-    y_pred = tf.argmax(masked_logits, axis=-1)
-    y_true = tf.argmax(masked_labels, axis=-1)
+    y_pred = tf.argmax(masked_logits, axis=-1, output_type=tf.int32)
 
-    corrects = tf.cast(tf.equal(y_pred, y_true), tf.float32)
+    corrects = tf.cast(tf.equal(y_pred, masked_labels), tf.float32)
     accuracy = tf.reduce_mean(corrects)
     return accuracy
 

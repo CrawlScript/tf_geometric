@@ -1,0 +1,116 @@
+# coding=utf-8
+import os
+
+from sklearn.metrics import roc_auc_score
+
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+import tf_geometric as tfg
+import tensorflow as tf
+from tensorflow import keras
+from tf_geometric.utils.graph_utils import edge_train_test_split, negative_sampling
+import numpy as np
+
+
+graph, (train_index, valid_index, test_index) = tfg.datasets.CoraDataset().load_data()
+
+
+# train_edge_index, test_edge_index, train_edge_weight, test_edge_weight
+train_edge_index, test_edge_index, _, _ = edge_train_test_split(
+    edge_index=graph.edge_index,
+    num_nodes=graph.num_nodes,
+    test_size=0.15
+)
+
+# use negative_sampling with replace=False to create negative edges for test
+test_neg_edge_index = negative_sampling(
+    num_samples=test_edge_index.shape[1],
+    num_nodes=graph.num_nodes,
+    edge_index=graph.edge_index,
+    replace=False
+)
+
+
+train_graph = tfg.Graph(x=graph.x, edge_index=train_edge_index)
+
+
+embedding_size = 16
+drop_rate = 0.2
+
+gcn0 = tfg.layers.GCN(32, activation=tf.nn.relu)
+gcn1 = tfg.layers.GCN(embedding_size)
+dropout = keras.layers.Dropout(drop_rate)
+
+
+def encode(graph, training=False):
+    h = gcn0([graph.x, graph.edge_index, graph.edge_weight], cache=graph.cache)
+    h = dropout(h, training=training)
+    h = gcn1([h, graph.edge_index, graph.edge_weight], cache=graph.cache)
+    return h
+
+
+def predict_edge(embedded, edge_index):
+    row, col = edge_index
+    embedded_row = tf.gather(embedded, row)
+    embedded_col = tf.gather(embedded, col)
+
+    # dot product
+    logits = tf.reduce_sum(embedded_row * embedded_col, axis=-1)
+    return logits
+
+
+def compute_loss(pos_edge_logits, neg_edge_logits):
+    pos_losses = tf.nn.sigmoid_cross_entropy_with_logits(
+        logits=pos_edge_logits,
+        labels=tf.ones_like(pos_edge_logits)
+    )
+
+    neg_losses = tf.nn.sigmoid_cross_entropy_with_logits(
+        logits=neg_edge_logits,
+        labels=tf.zeros_like(neg_edge_logits)
+    )
+
+    return tf.reduce_mean(pos_losses) + tf.reduce_mean(neg_losses)
+
+
+def evaluate():
+    embedded = encode(train_graph)
+
+    pos_edge_logits = predict_edge(embedded, test_edge_index)
+    neg_edge_logits = predict_edge(embedded, test_neg_edge_index)
+
+    pos_edge_scores = tf.nn.sigmoid(pos_edge_logits).numpy()
+    neg_edge_scores = tf.nn.sigmoid(neg_edge_logits).numpy()
+
+    y_true = np.concatenate([np.ones_like(pos_edge_scores), np.zeros_like(neg_edge_scores)], axis=0)
+    y_pred = np.concatenate([pos_edge_scores, neg_edge_scores], axis=0)
+
+    auc_score = roc_auc_score(y_true, y_pred)
+
+    return auc_score
+
+
+optimizer = tf.train.AdamOptimizer(learning_rate=1e-2)
+
+for step in range(1000):
+    with tf.GradientTape() as tape:
+        embedded = encode(train_graph, training=True)
+
+        # negative sampling for training
+        train_neg_edge_index = negative_sampling(
+            train_edge_index.shape[1],
+            graph.num_nodes,
+            edge_index=train_edge_index
+        )
+
+        pos_edge_logits = predict_edge(embedded, train_edge_index)
+        neg_edge_logits = predict_edge(embedded, train_neg_edge_index)
+
+        loss = compute_loss(pos_edge_logits, neg_edge_logits)
+
+    vars = tape.watched_variables()
+    grads = tape.gradient(loss, vars)
+    optimizer.apply_gradients(zip(grads, vars))
+
+    if step % 20 == 0:
+        auc_score = evaluate()
+        print("step = {}\tloss = {}\tauc_score = {}".format(step, loss, auc_score))

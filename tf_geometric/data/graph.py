@@ -3,6 +3,7 @@ import tensorflow as tf
 import numpy as np
 
 from tf_geometric.utils.graph_utils import convert_edge_to_directed
+from tf_geometric.utils.union_utils import union_len
 
 
 class Graph(object):
@@ -53,17 +54,15 @@ class Graph(object):
 
     @property
     def num_nodes(self):
-        if tf.is_tensor(self.x):
-            return self.x.shape.as_list()[0]
-        else:
-            return len(self.x)
+        return union_len(self.x)
 
     @property
     def num_edges(self):
-        if tf.is_tensor(self.edge_index):
-            return self.edge_index.shape.as_list()[1]
-        else:
-            return len(self.edge_index[0])
+        return union_len(self.edge_index[0])
+        # if tf.is_tensor(self.edge_index):
+        #     return self.edge_index.shape.as_list()[1]
+        # else:
+        #     return len(self.edge_index[0])
 
     @property
     def num_features(self):
