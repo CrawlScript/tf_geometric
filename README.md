@@ -265,3 +265,5 @@ for graph in test_data:
     + [demo_gcn.py](demo/demo_gcn.py)
 + Multi-head Graph Attention Network (GAT)
     + [demo_gat.py](demo/demo_gat.py)
++ Graph Auto-Encoder (GAE)
+    + [demo_gae.py](demo/demo_gae.py)
