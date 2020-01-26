@@ -13,23 +13,23 @@ from sklearn.metrics import roc_auc_score
 graph, (train_index, valid_index, test_index) = tfg.datasets.CoraDataset().load_data()
 
 
-# train_edge_index, test_edge_index, train_edge_weight, test_edge_weight
-train_edge_index, test_edge_index, _, _ = edge_train_test_split(
+# undirected edges can be used for evaluation
+undirected_train_edge_index, undirected_test_edge_index, _, _ = edge_train_test_split(
     edge_index=graph.edge_index,
     num_nodes=graph.num_nodes,
     test_size=0.15
 )
 
 # use negative_sampling with replace=False to create negative edges for test
-test_neg_edge_index = negative_sampling(
-    num_samples=test_edge_index.shape[1],
+undirected_test_neg_edge_index = negative_sampling(
+    num_samples=undirected_test_edge_index.shape[1],
     num_nodes=graph.num_nodes,
     edge_index=graph.edge_index,
     replace=False
 )
 
-
-train_graph = tfg.Graph(x=graph.x, edge_index=train_edge_index)
+# for training, you should convert undirected edges to directed edges for correct GCN propagation
+train_graph = tfg.Graph(x=graph.x, edge_index=undirected_train_edge_index).convert_edge_to_directed()
 
 
 embedding_size = 16
@@ -74,8 +74,8 @@ def compute_loss(pos_edge_logits, neg_edge_logits):
 def evaluate():
     embedded = encode(train_graph)
 
-    pos_edge_logits = predict_edge(embedded, test_edge_index)
-    neg_edge_logits = predict_edge(embedded, test_neg_edge_index)
+    pos_edge_logits = predict_edge(embedded, undirected_test_edge_index)
+    neg_edge_logits = predict_edge(embedded, undirected_test_neg_edge_index)
 
     pos_edge_scores = tf.nn.sigmoid(pos_edge_logits).numpy()
     neg_edge_scores = tf.nn.sigmoid(neg_edge_logits).numpy()
@@ -96,12 +96,12 @@ for step in range(1000):
 
         # negative sampling for training
         train_neg_edge_index = negative_sampling(
-            train_edge_index.shape[1],
+            train_graph.num_edges,
             graph.num_nodes,
-            edge_index=train_edge_index
+            edge_index=train_graph.edge_index
         )
 
-        pos_edge_logits = predict_edge(embedded, train_edge_index)
+        pos_edge_logits = predict_edge(embedded, train_graph.edge_index)
         neg_edge_logits = predict_edge(embedded, train_neg_edge_index)
 
         loss = compute_loss(pos_edge_logits, neg_edge_logits)

@@ -270,3 +270,7 @@ DEMO
 * Multi-head Graph Attention Network (GAT)
 
   * `demo_gat.py <demo/demo_gat.py>`_
+
+* Graph Auto-Encoder (GAE)
+
+  * `demo_gae.py <demo/demo_gae.py>`_
