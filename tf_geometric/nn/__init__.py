@@ -3,6 +3,7 @@
 # nn package contains functional APIs for tf_geometric
 from tf_geometric.nn.conv.gcn import *
 from tf_geometric.nn.kernel.map_reduce import *
-from tf_geometric.nn.pooling.mean_pooling import *
+from tf_geometric.nn.pool.mean_pool import *
+from tf_geometric.nn.pool.topk_pool import *
 
 

@@ -7,7 +7,7 @@ from tf_geometric.nn.kernel.segment import segment_count
 
 # follow Transformer-Style Attention
 # Attention is all you need
-def mean_pooling(x, node_graph_index, num_graphs=None):
+def mean_pool(x, node_graph_index, num_graphs=None):
     if num_graphs is None:
         num_graphs = tf.reduce_max(node_graph_index) + 1
     num_nodes_of_graphs = segment_count(node_graph_index, num_segments=num_graphs)

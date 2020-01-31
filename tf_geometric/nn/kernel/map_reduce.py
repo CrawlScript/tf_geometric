@@ -3,8 +3,6 @@
 import tensorflow as tf
 
 
-
-
 def identity_mapper(repeated_x, neighbor_x, edge_weight=None):
     return neighbor_x
 

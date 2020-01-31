@@ -68,13 +68,20 @@ print(outputs)
 # The edge_graph_index is the index of the corresponding edge for each node in the batch.
 batch_graph = tfg.BatchGraph.from_graphs([graph, graph, graph, graph])
 
-# Graph Pooling algorithms often rely on such batch data structure
-# Most of them accept a BatchGraph's data as input and output a feature vector for each graph in the batch
-outputs = tfg.nn.mean_pooling(batch_graph.x, batch_graph.node_graph_index, num_graphs=batch_graph.num_graphs)
-print(outputs)
-
 # We can reversely split a BatchGraph object into Graphs objects
 graphs = batch_graph.to_graphs()
+
+# Graph Pooling algorithms often rely on such batch data structure
+# Most of them accept a BatchGraph's data as input and output a feature vector for each graph in the batch
+outputs = tfg.nn.mean_pool(batch_graph.x, batch_graph.node_graph_index, num_graphs=batch_graph.num_graphs)
+print(outputs)
+
+# We provide some advanced graph pooling operations such as topk_pool
+sampled_edge_index, sampled_edge_score, sample_index = \
+    tfg.nn.topk_pool(batch_graph.edge_index, batch_graph.edge_weight, ratio=0.4)
+print(sampled_edge_index, sampled_edge_score, sample_index)
+
+
 
 
 
