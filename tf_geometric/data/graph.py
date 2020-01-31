@@ -2,8 +2,8 @@
 import tensorflow as tf
 import numpy as np
 
-from tf_geometric.utils.graph_utils import convert_edge_to_directed
-from tf_geometric.utils.union_utils import union_len
+from tf_geometric.utils.graph_utils import convert_edge_to_directed, compute_edge_mask_by_node_index
+from tf_geometric.utils.union_utils import union_len, convert_union_to_numpy
 
 
 class Graph(object):
@@ -92,6 +92,74 @@ class Graph(object):
     def convert_edge_to_directed(self):
         self.edge_index, self.edge_weight = convert_edge_to_directed(self.edge_index, self.edge_weight)
         return self
+
+    def sample_new_graph_by_node_index(self, sampled_node_index):
+        is_batch_graph = isinstance(self, BatchGraph)
+
+        x = self.x
+        edge_index = self.edge_index
+        y = self.y
+        edge_weight = self.edge_weight
+        if is_batch_graph:
+            node_graph_index = self.node_graph_index
+            edge_graph_index = self.edge_graph_index
+
+        def sample_common_data(data):
+            if data is not None:
+                data_is_tensor = tf.is_tensor(data)
+                if data_is_tensor:
+                    data = tf.gather(data, sampled_node_index)
+                else:
+                    data = convert_union_to_numpy(data)
+                    data = data[sampled_node_index]
+
+                if data_is_tensor:
+                    data = tf.convert_to_tensor(data)
+            return data
+
+        x = sample_common_data(x)
+        y = sample_common_data(y)
+        if is_batch_graph:
+            node_graph_index = sample_common_data(node_graph_index)
+
+        if edge_index is not None:
+
+            sampled_node_index = convert_union_to_numpy(sampled_node_index)
+
+            edge_index_is_tensor = tf.is_tensor(edge_index)
+            edge_index = convert_union_to_numpy(edge_index)
+            edge_mask = compute_edge_mask_by_node_index(edge_index, sampled_node_index)
+
+            edge_index = edge_index[:, edge_mask]
+            row, col = edge_index
+
+            max_sampled_node_index = np.max(sampled_node_index) + 1
+            new_node_range = list(range(len(sampled_node_index)))
+            reverse_index = np.full([max_sampled_node_index + 1], -1, dtype=np.int32)
+            reverse_index[sampled_node_index] = new_node_range
+
+            row = reverse_index[row]
+            col = reverse_index[col]
+            edge_index = np.stack([row, col], axis=0)
+            if edge_index_is_tensor:
+                edge_index = tf.convert_to_tensor(edge_index)
+
+            def sample_by_edge_mask(data):
+                if data is not None:
+                    data_is_tensor = tf.is_tensor(data)
+                    data = convert_union_to_numpy(data)
+                    data = data[edge_mask]
+                    if data_is_tensor:
+                        data = tf.convert_to_tensor(data)
+                return data
+
+            edge_weight = sample_by_edge_mask(edge_weight)
+            if is_batch_graph:
+                edge_graph_index = sample_by_edge_mask(edge_graph_index)
+
+        if is_batch_graph:
+            return BatchGraph(x=x, edge_index=edge_index, node_graph_index=node_graph_index,
+                              edge_graph_index=edge_graph_index, y=y, edge_weight=edge_weight)
 
 
 class BatchGraph(Graph):

@@ -16,7 +16,6 @@ graph, (train_index, valid_index, test_index) = tfg.datasets.CoraDataset().load_
 # undirected edges can be used for evaluation
 undirected_train_edge_index, undirected_test_edge_index, _, _ = edge_train_test_split(
     edge_index=graph.edge_index,
-    num_nodes=graph.num_nodes,
     test_size=0.15
 )
 

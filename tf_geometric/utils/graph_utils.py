@@ -3,6 +3,7 @@ import tensorflow as tf
 import numpy as np
 import networkx as nx
 from sklearn.model_selection import train_test_split
+import warnings
 
 from tf_geometric.utils.union_utils import convert_union_to_numpy
 
@@ -227,16 +228,20 @@ def extract_unique_edge(edge_index, edge_weight=None, mode="undirected"):
     return edge_index, edge_weight
 
 
-def edge_train_test_split(edge_index, num_nodes, test_size, edge_weight=None, mode="undirected"):
+def edge_train_test_split(edge_index, test_size, edge_weight=None, mode="undirected", **kwargs):
     """
 
     :param edge_index:
-    :param num_nodes:
     :param test_size:
     :param edge_weight:
     :param mode:
     :return:
     """
+
+    # todo: warn user if they pass into "num_nodes", deprecated
+    if "num_nodes" in kwargs:
+        warnings.warn("argument \"num_nodes\" is deprecated for the method \"edge_train_test_split\", you can remove it")
+
     if mode == "undirected":
         is_edge_index_tensor = tf.is_tensor(edge_index)
         is_edge_weight_tensor = tf.is_tensor(edge_weight)
@@ -270,3 +275,26 @@ def edge_train_test_split(edge_index, num_nodes, test_size, edge_weight=None, mo
 
     else:
         raise NotImplementedError()
+
+
+def compute_edge_mask_by_node_index(edge_index, node_index):
+
+    edge_index_is_tensor = tf.is_tensor(edge_index)
+
+    node_index = convert_union_to_numpy(node_index)
+    edge_index = convert_union_to_numpy(edge_index)
+
+    max_node_index = np.max(edge_index)
+    node_mask = np.zeros([max_node_index + 1]).astype(np.bool)
+    node_mask[node_index] = True
+    row, col = edge_index
+    row_mask = node_mask[row]
+    col_mask = node_mask[col]
+    edge_mask = np.logical_and(row_mask, col_mask)
+
+    if edge_index_is_tensor:
+        edge_mask = tf.convert_to_tensor(edge_mask, dtype=tf.bool)
+
+    return edge_mask
+
+

@@ -4,9 +4,6 @@ import tensorflow as tf
 from tf_geometric.nn.kernel.segment import segment_count
 
 
-
-# follow Transformer-Style Attention
-# Attention is all you need
 def mean_pool(x, node_graph_index, num_graphs=None):
     if num_graphs is None:
         num_graphs = tf.reduce_max(node_graph_index) + 1

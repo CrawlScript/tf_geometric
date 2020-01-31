@@ -9,7 +9,6 @@ import tensorflow as tf
 import numpy as np
 from tf_geometric.utils.graph_utils import convert_edge_to_directed
 
-
 # ==================================== Graph Data Structure ====================================
 # In tf_geometric, graph data can be either individual Tensors or Graph objects
 # A graph usually consists of x(node features), edge_index and edge_weight(optional)
@@ -77,11 +76,16 @@ outputs = tfg.nn.mean_pool(batch_graph.x, batch_graph.node_graph_index, num_grap
 print(outputs)
 
 # We provide some advanced graph pooling operations such as topk_pool
-sampled_edge_index, sampled_edge_score, sample_index = \
-    tfg.nn.topk_pool(batch_graph.edge_index, batch_graph.edge_weight, ratio=0.4)
-print(sampled_edge_index, sampled_edge_score, sample_index)
-
-
+node_score = tfg.nn.gcn(
+    batch_graph.x,
+    batch_graph.edge_index,
+    batch_graph.edge_weight,
+    tf.Variable(tf.random.truncated_normal([20, 1])),  # GCN Weight
+    cache=graph.cache  # GCN use caches to avoid re-computing of the normed edge information
+)
+node_score = tf.reshape(node_score, [-1])
+topk_node_index = tfg.nn.topk_pool(batch_graph.node_graph_index, node_score, ratio=0.6)
+print(topk_node_index)
 
 
 
