@@ -284,7 +284,7 @@ def compute_edge_mask_by_node_index(edge_index, node_index):
     node_index = convert_union_to_numpy(node_index)
     edge_index = convert_union_to_numpy(edge_index)
 
-    max_node_index = np.max(edge_index)
+    max_node_index = np.maximum(np.max(edge_index), np.max(node_index))
     node_mask = np.zeros([max_node_index + 1]).astype(np.bool)
     node_mask[node_index] = True
     row, col = edge_index

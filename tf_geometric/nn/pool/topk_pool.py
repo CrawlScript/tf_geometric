@@ -20,6 +20,8 @@ def topk_pool(source_index, score, k=None, ratio=None):
     elif k is not None and ratio is not None:
         raise Exception("you should provide either k or ratio for topk_pool, not both of them")
 
+    score = tf.reshape(score, [-1])
+
     num_targets = union_len(source_index)
     target_ones = tf.ones([num_targets], dtype=tf.int32)
     num_targets_for_sources = tf.math.segment_sum(target_ones, source_index)
@@ -36,7 +38,7 @@ def topk_pool(source_index, score, k=None, ratio=None):
         tf.math.cumsum(num_targets_for_sources)[:-1]
     ], axis=0)
 
-    target_index_for_source = tf.range(0, num_targets) - tf.gather(num_targets_before, source_index[0])
+    target_index_for_source = tf.range(0, num_targets) - tf.gather(num_targets_before, source_index)
 
     score_matrix = tf.cast(tf.fill([num_seen_sources, num_cols], min_score - 1.0), dtype=tf.float32)
     score_index = tf.stack([source_index, target_index_for_source], axis=1)
@@ -58,6 +60,7 @@ def topk_pool(source_index, score, k=None, ratio=None):
     left_k_index = [[row_index, col_index]
                     for row_index, num_cols in enumerate(node_k.numpy())
                     for col_index in range(num_cols)]
+
     left_k_index = tf.convert_to_tensor(left_k_index, dtype=tf.int32)
 
     sample_col_index = tf.gather_nd(sort_index, left_k_index)

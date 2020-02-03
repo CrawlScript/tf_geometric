@@ -29,8 +29,10 @@ class TUDataset(DownloadableDataset):
 
     def process(self):
 
-        edges = self.read_txt_as_array("A", dtype=np.int32) - 1
-        node_graph_index = self.read_txt_as_array("graph_indicator", dtype=np.int32) - 1
+        node_graph_index = self.read_txt_as_array("graph_indicator", dtype=np.int32)
+        graph_index_offset = node_graph_index.min()
+        node_graph_index -= graph_index_offset
+        edges = self.read_txt_as_array("A", dtype=np.int32) - graph_index_offset
         edge_graph_index = node_graph_index[edges[:, 0]]
         num_graphs = node_graph_index.max() + 1
 
@@ -74,7 +76,6 @@ class TUDataset(DownloadableDataset):
         for graph_index, edge in zip(edge_graph_index, edges):
             graph = graphs[graph_index]
             graph["edge_index"].append(edge)
-
 
         if node_labels is not None:
             node_labels -= node_labels.min()

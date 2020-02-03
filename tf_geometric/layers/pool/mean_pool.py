@@ -1,7 +1,7 @@
 # coding=utf-8
 import tensorflow as tf
 from tensorflow import keras
-from tf_geometric.nn.pool.mean_pool import mean_pool
+from tf_geometric.nn.pool.common_pool import mean_pool
 
 
 class MeanPool(keras.Model):

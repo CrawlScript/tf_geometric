@@ -160,6 +160,8 @@ class Graph(object):
         if is_batch_graph:
             return BatchGraph(x=x, edge_index=edge_index, node_graph_index=node_graph_index,
                               edge_graph_index=edge_graph_index, y=y, edge_weight=edge_weight)
+        else:
+            return Graph(x=x, edge_index=edge_index, y=y, edge_weight=edge_weight)
 
 
 class BatchGraph(Graph):
