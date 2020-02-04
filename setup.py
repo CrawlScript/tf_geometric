@@ -17,7 +17,8 @@ setup(
     install_requires=[
         "numpy >= 1.17.4",
         "networkx >= 2.1",
-        "scipy >= 1.1.0"
+        "scipy >= 1.1.0",
+        "scikit-learn >= 0.22"
     ],
     extras_require={
         'tf1-cpu': ["tensorflow >= 1.14.0,<2.0.0"],
