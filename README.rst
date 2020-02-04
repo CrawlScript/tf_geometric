@@ -11,35 +11,6 @@ HomePage
 
 `https://github.com/CrawlScript/tf_geometric <https://github.com/CrawlScript/tf_geometric>`_
 
-Installation
-------------
-
-Requirements:
-
-
-* Operation System: Windows / Linux / Mac OS
-* Python: version >= 3.5
-* Python Packages:
-
-  * tensorflow/tensorflow-gpu: >= 1.14.0 or >= 2.0.0b1
-  * numpy >= 1.17.4
-  * networkx >= 2.1
-  * scipy >= 1.1.0
-
-Use one of the following commands below:
-
-.. code-block:: bash
-
-   pip install -U tf_geometric # this will not install the tensorflow/tensorflow-gpu package
-
-   pip install -U tf_geometric[tf1-cpu] # this will install TensorFlow 1.x CPU version
-
-   pip install -U tf_geometric[tf1-gpu] # this will install TensorFlow 1.x GPU version
-
-   pip install -U tf_geometric[tf2-cpu] # this will install TensorFlow 2.x CPU version
-
-   pip install -U tf_geometric[tf2-gpu] # this will install TensorFlow 2.x GPU version
-
 Efficient and Friendly
 ----------------------
 
@@ -93,6 +64,60 @@ Output:
     [0.36123228 0.         0.88897204 0.450244  ]
     [0.         0.         0.8013462  0.        ]], shape=(5, 4), dtype=float32)
 
+DEMO
+----
+
+We recommend you to get started with some demo.
+
+Node Classification
+^^^^^^^^^^^^^^^^^^^
+
+
+* `Graph Convolutional Network (GCN) <demo/demo_gcn.py>`_
+* `Multi-head Graph Attention Network (GAT) <demo/demo_gat.py>`_
+
+Link Prediction
+^^^^^^^^^^^^^^^
+
+
+* `MeanPooling <demo/demo_mean_pool.py>`_
+* `SAGPooling <demo/demo_sag_pool_h.py>`_
+
+Graph Classification
+^^^^^^^^^^^^^^^^^^^^
+
+
+* `Graph Auto-Encoder (GAE) <demo/demo_gae.py>`_
+
+Installation
+------------
+
+Requirements:
+
+
+* Operation System: Windows / Linux / Mac OS
+* Python: version >= 3.5
+* Python Packages:
+
+  * tensorflow/tensorflow-gpu: >= 1.14.0 or >= 2.0.0b1
+  * numpy >= 1.17.4
+  * networkx >= 2.1
+  * scipy >= 1.1.0
+
+Use one of the following commands below:
+
+.. code-block:: bash
+
+   pip install -U tf_geometric # this will not install the tensorflow/tensorflow-gpu package
+
+   pip install -U tf_geometric[tf1-cpu] # this will install TensorFlow 1.x CPU version
+
+   pip install -U tf_geometric[tf1-gpu] # this will install TensorFlow 1.x GPU version
+
+   pip install -U tf_geometric[tf2-cpu] # this will install TensorFlow 2.x CPU version
+
+   pip install -U tf_geometric[tf2-gpu] # this will install TensorFlow 2.x GPU version
+
 OOP and Functional API
 ----------------------
 
@@ -110,7 +135,6 @@ We provide both OOP and Functional API, with which you can make some cool things
    import tensorflow as tf
    import numpy as np
    from tf_geometric.utils.graph_utils import convert_edge_to_directed
-
 
    # ==================================== Graph Data Structure ====================================
    # In tf_geometric, graph data can be either individual Tensors or Graph objects
@@ -134,7 +158,7 @@ We provide both OOP and Functional API, with which you can make some cool things
    edge_weight = np.array([0.9, 0.8, 0.1, 0.2]).astype(np.float32)
 
    # Make the edge_index directed such that we can use it as the input of GCN
-   edge_index, edge_weight = convert_edge_to_directed(edge_index, edge_weight=edge_weight)
+   edge_index, [edge_weight] = convert_edge_to_directed(edge_index, [edge_weight])
 
 
    # We can convert these numpy array as TensorFlow Tensors and pass them to gnn functions
@@ -179,11 +203,16 @@ We provide both OOP and Functional API, with which you can make some cool things
    print(outputs)
 
    # We provide some advanced graph pooling operations such as topk_pool
-   sampled_edge_index, sampled_edge_score, sample_index = \
-       tfg.nn.topk_pool(batch_graph.edge_index, batch_graph.edge_weight, ratio=0.4)
-   print(sampled_edge_index, sampled_edge_score, sample_index)
-
-
+   node_score = tfg.nn.gcn(
+       batch_graph.x,
+       batch_graph.edge_index,
+       batch_graph.edge_weight,
+       tf.Variable(tf.random.truncated_normal([20, 1])),  # GCN Weight
+       cache=graph.cache  # GCN use caches to avoid re-computing of the normed edge information
+   )
+   node_score = tf.reshape(node_score, [-1])
+   topk_node_index = tfg.nn.topk_pool(batch_graph.node_graph_index, node_score, ratio=0.6)
+   print(topk_node_index)
 
 
 
@@ -265,19 +294,3 @@ We provide both OOP and Functional API, with which you can make some cool things
            updater=tfg.nn.sum_updater
        )
        print(outputs)
-
-DEMO
-----
-
-
-* Graph Convolutional Network (GCN)
-
-  * `demo_gcn.py <demo/demo_gcn.py>`_
-
-* Multi-head Graph Attention Network (GAT)
-
-  * `demo_gat.py <demo/demo_gat.py>`_
-
-* Graph Auto-Encoder (GAE)
-
-  * `demo_gae.py <demo/demo_gae.py>`_

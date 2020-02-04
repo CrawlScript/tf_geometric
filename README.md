@@ -4,10 +4,10 @@ Efficient and Friendly Graph Neural Network Library for TensorFlow 1.x and 2.x.
 
 Inspired by __rusty1s/pytorch_geometric__, we build a GNN library for TensorFlow.
 
-## HomePage
+## Homepage and Documentation
 
-[https://github.com/CrawlScript/tf_geometric](https://github.com/CrawlScript/tf_geometric)
-
++ Homepage: [https://github.com/CrawlScript/tf_geometric](https://github.com/CrawlScript/tf_geometric)
++ Documentation: https://tf-geometric.readthedocs.io/en/latest/
 
 
 ## Efficient and Friendly
