@@ -91,29 +91,24 @@ Output of GAT:
 ## OOP and Functional API
 
 We provide both OOP and Functional API, with which you can make some cool things.
-
-+ Graph Convolutional Network (GCN):
-    + OOP API: tfg.layers.GCN
-    + Functional API: tfg.nn.gcn
-+ Multi-head Graph Attention Network (GAT):
-    + OOP API: tfg.layers.GAT
-    + Functional API: tfg.nn.gat [[code](tf_geometric/nn/conv/gat.py)] | [doc]
-+ Topk Pool:
-    + Functional API: tfg.nn.topk_pool [[code](tf_geometric/nn/pool/topk_pool.py)] | [doc]
-+ Mean Pool:
-    + Functional API: tfg.nn.mean_pool [[code](tf_geometric/nn/pool/common_pool.py)] | [doc]
-+ Max Pool:
-    + Functional API: tfg.nn.max_pool [[code](tf_geometric/nn/pool/common_pool.py)] | [doc]
-+ Min Pool:
-    + Functional API: tfg.nn.min_pool [[code](tf_geometric/nn/pool/common_pool.py)] | [doc]
+You can learn more about them in the document.
 
 
 
 ## DEMO
 
-+ Graph Convolutional Network (GCN) for Node Classification
-    + [demo_gcn.py](demo/demo_gcn.py)
-+ Multi-head Graph Attention Network (GAT) for Node Classification
-    + [demo_gat.py](demo/demo_gat.py)
-+ Graph Auto-Encoder (GAE) for Link Prediction
-    + [demo_gae.py](demo/demo_gae.py)
+### Node Classification
+
++ [Graph Convolutional Network (GCN)](demo/demo_gcn.py)
++ [Multi-head Graph Attention Network (GAT)](demo/demo_gat.py)
+
+### Link Prediction
+
++ [MeanPooling](demo/demo_mean_pool.py)
++ [SAGPooling](demo/demo_sag_pool_h.py)
+
+
+### Graph Classification
+
++ [Graph Auto-Encoder (GAE)](demo/demo_gae.py)
+
