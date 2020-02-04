@@ -37,6 +37,19 @@ def gcn_mapper(repeated_x, neighbor_x, edge_weight=None):
 
 
 def gcn(x, edge_index, edge_weight, kernel, bias=None, activation=None, improved=False, cache=None):
+    """
+
+    :param x: Tensor, shape: [num_nodes, num_features], node features
+    :param edge_index: Tensor, shape: [2, num_edges], edge information
+    :param edge_weight: Tensor or None, shape: [num_edges]
+    :param kernel: Tensor, shape: [num_features, num_output_features], Transformation Matrix
+    :param bias: Tensor, shape: [num_output_features], Bias
+    :param activation: Activation function to use.
+    :param improved: Whether use improved GCN or not.
+    :param cache: A dict for caching A' for GCN. Different graph should not share the same cache dict.
+    :return: Updated node features (x)
+    """
+
     updated_edge_index, normed_edge_weight = gcn_norm_edge(edge_index, x.shape[0], edge_weight,
                                                            improved, cache)
     x = x @ kernel

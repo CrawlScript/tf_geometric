@@ -1,14 +1,13 @@
 # coding=utf-8
 
-import tensorflow as tf
-from tensorflow.python.keras.layers import Dense
-
-from tf_geometric.data.graph import Graph
-from tf_geometric.nn.conv.gcn import gcn_norm_edge, gcn
+from tf_geometric.nn.conv.gcn import gcn
 from tf_geometric.layers.kernel.map_reduce import MapReduceGNN
 
 
 class GCN(MapReduceGNN):
+    """
+    Graph Convolutional Layer
+    """
 
     def build(self, input_shapes):
         x_shape = input_shapes[0]
@@ -18,6 +17,12 @@ class GCN(MapReduceGNN):
         self.bias = self.add_weight("bias", shape=[self.units], initializer="zeros")
 
     def __init__(self, units, activation=None, improved=False, *args, **kwargs):
+        """
+
+        :param units: Positive integer, dimensionality of the output space.
+        :param activation: Activation function to use.
+        :param improved: Whether use improved GCN or not.
+        """
         super().__init__(*args, **kwargs)
         self.units = units
 
@@ -27,14 +32,12 @@ class GCN(MapReduceGNN):
 
         self.improved = improved
 
-    def call(self, inputs, training=None, mask=None, cache=None):
+    def call(self, inputs, cache=None, training=None, mask=None):
         """
 
-        :param inputs:
-        :param training:
-        :param mask:
-        :param graph: If graph is provided, it is used for caching normed edge info
-        :return:
+        :param inputs: List of graph info: [x, edge_index, edge_weight]
+        :param cache: A dict for caching A' for GCN. Different graph should not share the same cache dict.
+        :return: Updated node features (x) with the same shape of x
         """
 
         if len(inputs) == 3:

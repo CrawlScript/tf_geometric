@@ -5,6 +5,10 @@
 **/__pycache_/
 **/.idea/
 __pycache__/
+
+/doc/build/
+/docs/build/
+
 *.py[cod]
 *$py.class
 

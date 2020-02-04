@@ -9,7 +9,9 @@ setup(
     packages=find_packages(
         exclude=[
             'data',
-            'demo'
+            'demo',
+            'doc',
+            'docs'
         ]
     ),
     install_requires=[
