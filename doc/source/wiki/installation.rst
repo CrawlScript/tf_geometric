@@ -2,8 +2,8 @@ Installation
 ============
 
 
-Requirements:
-
+Requirements
+------------
 
 * Operation System: Windows / Linux / Mac OS
 * Python: version >= 3.5
@@ -13,6 +13,10 @@ Requirements:
   * numpy >= 1.17.4
   * networkx >= 2.1
   * scipy >= 1.1.0
+
+
+Install with pip
+------------
 
 Use one of the following commands below:
 

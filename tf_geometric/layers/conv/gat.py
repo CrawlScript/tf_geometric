@@ -15,6 +15,16 @@ class GAT(MapReduceGNN):
                  key_activation=tf.nn.relu,
                  drop_rate=0.0,
                  *args, **kwargs):
+        """
+
+        :param units: Positive integer, dimensionality of the output space.
+        :param attention_units: Positive integer, dimensionality of the output space for Q and K in attention.
+        :param activation: Activation function to use.
+        :param num_heads: Number of attention heads.
+        :param query_activation: Activation function for Q in attention.
+        :param key_activation: Activation function for K in attention.
+        :param drop_rate: Dropout rate.
+        """
         super().__init__(*args, **kwargs)
         self.units = units
         self.attention_units = units if attention_units is None else attention_units

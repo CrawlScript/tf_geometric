@@ -3,9 +3,16 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to tf_geometric's documentation!
-========================================
+tf_geometric Documentation
+==========================
 
+Efficient and Friendly Graph Neural Network Library for TensorFlow 1.x and 2.x.
+
+
+Inspired by **rusty1s/pytorch_geometric**\ , we build a GNN library for TensorFlow.
+`tf_geometric <https://github.com/CrawlScript/tf_geometric>`_ provide both OOP and Functional API, with which you can make some cool things.
+
+**Github:**\  `https://github.com/CrawlScript/tf_geometric <https://github.com/CrawlScript/tf_geometric>`_
 
 
 .. toctree::
@@ -14,7 +21,10 @@ Welcome to tf_geometric's documentation!
 
    wiki/installation
    wiki/quickstart
+   wiki/demo
 
+
+.. _Packages:
 
 .. toctree::
    :glob:
@@ -31,10 +41,10 @@ Welcome to tf_geometric's documentation!
 
 
 
+..
+   Indices and tables
+   ==================
 
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+   * :ref:`genindex`
+   * :ref:`modindex`
+   * :ref:`search`
