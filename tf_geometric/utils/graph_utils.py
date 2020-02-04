@@ -33,59 +33,78 @@ def remove_self_loop_edge(edge_index, edge_weight=None):
     return edge_index, edge_weight
 
 
-def convert_edge_to_nx_graph(edge_index, edge_weight=None, convert_to_directed=False):
+def convert_edge_to_nx_graph(edge_index, edge_properties=[], convert_to_directed=False):
     edge_index = convert_union_to_numpy(edge_index, dtype=np.int32)
-    edge_weight = convert_union_to_numpy(edge_weight, dtype=np.float32)
+    edge_properties = [convert_union_to_numpy(edge_property) for edge_property in edge_properties]
 
     g = nx.Graph()
     for i in range(edge_index.shape[1]):
-        g.add_edge(edge_index[0, i], edge_index[1, i],
-                   w=edge_weight[i] if edge_weight is not None else None)
+        property_dict = {
+        }
+
+        for j, edge_property in enumerate(edge_properties):
+            if edge_property is not None:
+                property_dict["p_{}".format(j)] = edge_property[i]
+
+        g.add_edge(edge_index[0, i], edge_index[1, i], **property_dict)
+
     if convert_to_directed:
         g = g.to_directed()
+
     return g
 
 
-def convert_edge_to_upper(edge_index, edge_weight=None):
+def convert_edge_to_upper(edge_index, edge_properties=[]):
     edge_index_is_tensor = tf.is_tensor(edge_index)
-    edge_weight_is_tensor = tf.is_tensor(edge_weight)
+    edge_properties_is_tensor = [tf.is_tensor(edge_property) for edge_property in edge_properties]
 
-    g = convert_edge_to_nx_graph(edge_index, edge_weight, convert_to_directed=False)
+    g = convert_edge_to_nx_graph(edge_index, edge_properties, convert_to_directed=False)
 
     sorted_edges = [sorted(edge) for edge in g.edges]
     edge_index = np.array(sorted_edges).T
 
-    if edge_weight is not None:
-        edge_weight = np.array([item[2] for item in g.edges.data("w")])
+    edge_properties = [
+        np.array([item[2] for item in g.edges.data("p_{}".format(i))])
+        if edge_property is not None else None
+        for i, edge_property in enumerate(edge_properties)
+    ]
 
     if edge_index_is_tensor:
         edge_index = tf.convert_to_tensor(edge_index)
 
-    if edge_weight_is_tensor:
-        edge_weight = tf.convert_to_tensor(edge_weight)
+    edge_properties = [
+        tf.convert_to_tensor(edge_property) if edge_properties_is_tensor[i] else edge_property
+        for i, edge_property in enumerate(edge_properties)
+    ]
 
-    return edge_index, edge_weight
+    return edge_index, edge_properties
 
 
 # [[1,3,5], [2,1,4]] => [[1,3,5,2,1,4], [2,1,4,1,3,5]]
-def convert_edge_to_directed(edge_index, edge_weight=None):
-    edge_index_is_tensor = tf.is_tensor(edge_index)
-    edge_weight_is_tensor = tf.is_tensor(edge_weight)
+def convert_edge_to_directed(edge_index, edge_properties=[]):
 
-    g = convert_edge_to_nx_graph(edge_index, edge_weight, convert_to_directed=True)
+    edge_index_is_tensor = tf.is_tensor(edge_index)
+    edge_properties_is_tensor = [tf.is_tensor(edge_property) for edge_property in edge_properties]
+
+    g = convert_edge_to_nx_graph(edge_index, edge_properties, convert_to_directed=True)
 
     edge_index = np.array(g.edges).T
 
-    if edge_weight is not None:
-        edge_weight = np.array([item[2] for item in g.edges.data("w")])
+    edge_properties = [
+        np.array([item[2] for item in g.edges.data("p_{}".format(i))])
+        if edge_property is not None else None
+        for i, edge_property in enumerate(edge_properties)
+    ]
 
     if edge_index_is_tensor:
         edge_index = tf.convert_to_tensor(edge_index)
 
-    if edge_weight_is_tensor:
-        edge_weight = tf.convert_to_tensor(edge_weight)
+    edge_properties = [
+        tf.convert_to_tensor(edge_property) if edge_properties_is_tensor[i] else edge_property
+        for i, edge_property in enumerate(edge_properties)
+    ]
 
-    return edge_index, edge_weight
+    return edge_index, edge_properties
 
 
 def add_self_loop_edge(edge_index, num_nodes, edge_weight=None, fill_weight=1.0):
@@ -249,7 +268,7 @@ def edge_train_test_split(edge_index, test_size, edge_weight=None, mode="undirec
         edge_index = convert_union_to_numpy(edge_index, dtype=np.int32)
         edge_weight = convert_union_to_numpy(edge_weight, dtype=np.float32)
 
-        upper_edge_index, upper_edge_weight = convert_edge_to_upper(edge_index, edge_weight)
+        upper_edge_index, [upper_edge_weight] = convert_edge_to_upper(edge_index, [edge_weight])
 
         num_unique_edges = upper_edge_index.shape[1]
         train_indices, test_indices = train_test_split(list(range(num_unique_edges)), test_size=test_size)

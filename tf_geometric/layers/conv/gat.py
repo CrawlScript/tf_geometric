@@ -48,6 +48,11 @@ class GAT(MapReduceGNN):
         self.bias = self.add_weight("bias", shape=[self.units], initializer="zeros")
 
     def call(self, inputs, training=None, mask=None):
+        """
+
+        :param inputs: List of graph info: [x, edge_index]
+        :return: Updated node features (x), shape: [num_nodes, units]
+        """
         x, edge_index = inputs
 
         return gat(x, edge_index,

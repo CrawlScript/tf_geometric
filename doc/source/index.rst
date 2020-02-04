@@ -6,17 +6,28 @@
 Welcome to tf_geometric's documentation!
 ========================================
 
-.. autoclass:: tf_geometric.layers.GCN
-   :members: __init__, call
 
-.. autofunction:: tf_geometric.nn.gcn
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
    wiki/installation
+   wiki/quickstart
 
+
+.. toctree::
+   :glob:
+   :maxdepth: 1
+   :caption: Package Reference
+
+   modules/root
+   modules/layers
+   modules/nn
+
+..
+   modules/datasets
+   modules/utils
 
 
 

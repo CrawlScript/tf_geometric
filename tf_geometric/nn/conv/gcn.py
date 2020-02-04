@@ -42,12 +42,12 @@ def gcn(x, edge_index, edge_weight, kernel, bias=None, activation=None, improved
     :param x: Tensor, shape: [num_nodes, num_features], node features
     :param edge_index: Tensor, shape: [2, num_edges], edge information
     :param edge_weight: Tensor or None, shape: [num_edges]
-    :param kernel: Tensor, shape: [num_features, num_output_features], Transformation Matrix
-    :param bias: Tensor, shape: [num_output_features], Bias
+    :param kernel: Tensor, shape: [num_features, num_output_features], weight
+    :param bias: Tensor, shape: [num_output_features], bias
     :param activation: Activation function to use.
     :param improved: Whether use improved GCN or not.
     :param cache: A dict for caching A' for GCN. Different graph should not share the same cache dict.
-    :return: Updated node features (x)
+    :return: Updated node features (x), shape: [num_nodes, num_output_features]
     """
 
     updated_edge_index, normed_edge_weight = gcn_norm_edge(edge_index, x.shape[0], edge_weight,

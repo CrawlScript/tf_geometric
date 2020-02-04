@@ -37,7 +37,7 @@ class GCN(MapReduceGNN):
 
         :param inputs: List of graph info: [x, edge_index, edge_weight]
         :param cache: A dict for caching A' for GCN. Different graph should not share the same cache dict.
-        :return: Updated node features (x) with the same shape of x
+        :return: Updated node features (x), shape: [num_nodes, units]
         """
 
         if len(inputs) == 3:

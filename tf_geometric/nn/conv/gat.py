@@ -1,6 +1,5 @@
 # coding=utf-8
 import tensorflow as tf
-from tensorflow.python.keras.layers import Dense
 
 from tf_geometric.nn.kernel.map_reduce import aggregate_neighbors, sum_updater, sum_reducer, identity_updater
 from tf_geometric.nn.kernel.segment import segment_softmax
@@ -16,6 +15,25 @@ def gat(x, edge_index,
         query_kernel, query_bias, query_activation,
         key_kernel, key_bias, key_activation,
         kernel, bias=None, activation=None, num_heads=1, drop_rate=0.0, training=False):
+    """
+
+    :param x: Tensor, shape: [num_nodes, num_features], node features
+    :param edge_index: Tensor, shape: [2, num_edges], edge information
+    :param query_kernel: Tensor, shape: [num_features, num_query_features], weight for Q in attention
+    :param query_bias: Tensor, shape: [num_query_features], bias for Q in attention
+    :param query_activation: Activation function for Q in attention.
+    :param key_kernel: Tensor, shape: [num_features, num_key_features], weight for K in attention
+    :param key_bias: Tensor, shape: [num_key_features], bias for K in attention
+    :param key_activation: Activation function for K in attention.
+    :param kernel: Tensor, shape: [num_features, num_output_features], weight
+    :param bias: Tensor, shape: [num_output_features], bias
+    :param activation: Activation function to use.
+    :param num_heads: Number of attention heads.
+    :param drop_rate: Dropout rate.
+    :param training: Python boolean indicating whether the layer should behave in
+        training mode (adding dropout) or in inference mode (doing nothing).
+    :return: Updated node features (x), shape: [num_nodes, num_output_features]
+    """
 
     num_nodes = x.shape[0]
 

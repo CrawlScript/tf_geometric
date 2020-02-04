@@ -31,7 +31,7 @@ edge_index = np.array([
 edge_weight = np.array([0.9, 0.8, 0.1, 0.2]).astype(np.float32)
 
 # Make the edge_index directed such that we can use it as the input of GCN
-edge_index, edge_weight = convert_edge_to_directed(edge_index, edge_weight=edge_weight)
+edge_index, [edge_weight] = convert_edge_to_directed(edge_index, [edge_weight])
 
 
 # We can convert these numpy array as TensorFlow Tensors and pass them to gnn functions

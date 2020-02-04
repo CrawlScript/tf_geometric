@@ -52,7 +52,7 @@ class PPIDataset(DownloadableDataset):
                 edge_index = nx_graph.subgraph(mask_indices).edges
                 edge_index = np.array(edge_index).T - min_node_index
 
-                edge_index, _ = convert_edge_to_directed(edge_index, edge_weight=None)
+                edge_index, _ = convert_edge_to_directed(edge_index)
 
                 graph = Graph(
                     x=split_features[mask_indices],

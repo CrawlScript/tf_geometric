@@ -7,8 +7,25 @@ from tf_geometric.utils.union_utils import union_len, convert_union_to_numpy
 
 
 class Graph(object):
-    def __init__(self, x, edge_index, y=None,
-                 edge_weight=None):
+    """
+    A Graph object wrappers all the data of a graph,
+    including node features, edge info (index and weight) and graph label
+    """
+
+    def __init__(self, x, edge_index, y=None, edge_weight=None):
+        """
+
+        :param x: Tensor/NDArray, shape: [num_nodes, num_features], node features
+        :param edge_index: Tensor/NDArray, shape: [2, num_edges], edge information.
+            Each column of edge_index (u, v) represents an directed edge from u to v.
+            Note that it does not cover the edge from v to u. You should provide (v, u) to cover it.
+            This is not convenient for users.
+            Thus, we allow users to provide edge_index in undirected form and convert it later.
+            That is, we can only provide (u, v) and convert it to (u, v) and (v, u) with `convert_edge_to_directed` method.
+        :param y: Tensor/NDArray/None, any shape, graph label.
+            If you want to use this object to construct a BatchGraph object, y cannot be a scalar Tensor.
+        :param edge_weight: Tensor/NDArray/None, shape: [num_edges]
+        """
 
         self.x = Graph.cast_x(x)
         self.edge_index = Graph.cast_edge_index(edge_index)
@@ -54,10 +71,18 @@ class Graph(object):
 
     @property
     def num_nodes(self):
+        """
+        Number of nodes
+        :return: Number of nodes
+        """
         return union_len(self.x)
 
     @property
     def num_edges(self):
+        """
+        Number of edges
+        :return: Number of edges
+        """
         return union_len(self.edge_index[0])
         # if tf.is_tensor(self.edge_index):
         #     return self.edge_index.shape.as_list()[1]
@@ -66,6 +91,10 @@ class Graph(object):
 
     @property
     def num_features(self):
+        """
+        Number of node features
+        :return: Number of node features
+        """
         return self.x.shape[-1]
 
     def get_shape(self, data):
@@ -81,19 +110,41 @@ class Graph(object):
     def __str__(self):
         return self.get_shape_desc()
 
-    def convert_data_to_tensor(self):
-        for key in ["x", "edge_index", "edge_weight", "y"]:
+    def _convert_data_to_tensor(self, keys):
+        for key in keys:
             data = getattr(self, key)
 
             if data is not None and not tf.is_tensor(data):
                 setattr(self, key, tf.convert_to_tensor(data))
         return self
 
+    def convert_data_to_tensor(self):
+        """
+        Convert all graph data into Tensors. All corresponding properties will be replaces by their Tensor versions.
+        :return: The Graph object itself.
+        """
+        return self._convert_data_to_tensor(["x", "edge_index", "edge_weight", "y"])
+
     def convert_edge_to_directed(self):
-        self.edge_index, self.edge_weight = convert_edge_to_directed(self.edge_index, self.edge_weight)
+        """
+
+        Each column of edge_index (u, v) represents an directed edge from u to v.
+        Note that it does not cover the edge from v to u. You should provide (v, u) to cover it.
+        This is not convenient for users.
+        Thus, we allow users to provide edge_index in undirected form and convert it later.
+        That is, we can only provide (u, v) and convert it to (u, v) and (v, u) with `convert_edge_to_directed` method.
+        :return:
+        """
+        self.edge_index, [self.edge_weight] = convert_edge_to_directed(self.edge_index, [self.edge_weight])
         return self
 
     def sample_new_graph_by_node_index(self, sampled_node_index):
+        """
+
+        :param sampled_node_index: Tensor/NDArray, shape: [num_sampled_nodes]
+        :return: A new cloned graph where nodes that are not in sampled_node_index are removed,
+            as well as the associated information, such as edges.
+        """
         is_batch_graph = isinstance(self, BatchGraph)
 
         x = self.x
@@ -171,7 +222,21 @@ class BatchGraph(Graph):
     The edge_graph_index is the index of the corresponding edge for each node in the batch.
     """
 
-    def __init__(self, x, edge_index, node_graph_index, edge_graph_index, graphs=None, y=None, edge_weight=None):
+    def __init__(self, x, edge_index, node_graph_index, edge_graph_index,
+                 y=None, edge_weight=None, graphs=None):
+        """
+
+        :param x: Tensor/NDArray, shape: [num_nodes, num_features], node features
+        :param edge_index: Tensor/NDArray, shape: [2, num_edges], edge information.
+            Each column of edge_index (u, v) represents an directed edge from u to v.
+            Note that it does not cover the edge from v to u. You should provide (v, u) to cover it.
+        :param node_graph_index: Tensor/NDArray, shape: [num_nodes], graph index for each node
+        :param edge_graph_index: Tensor/NDArray/None, shape: [num_edges], graph index for each edge
+        :param y: Tensor/NDArray/None, any shape, graph label.
+            If you want to use this object to construct a BatchGraph object, y cannot be a scalar Tensor.
+        :param edge_weight: Tensor/NDArray/None, shape: [num_edges]
+        :param graphs: list[Graph], original graphs
+        """
         super().__init__(x, edge_index, y, edge_weight)
         self.node_graph_index = node_graph_index
         self.edge_graph_index = edge_graph_index
@@ -293,6 +358,28 @@ class BatchGraph(Graph):
             return tf.concat([
                 graph.y for graph in graphs
             ], axis=0)
+
+    def convert_data_to_tensor(self):
+        """
+        Convert all graph data into Tensors. All corresponding properties will be replaces by their Tensor versions.
+        :return: The Graph object itself.
+        """
+        return self._convert_data_to_tensor(["x", "edge_index", "edge_weight", "y",
+                                             "node_graph_index", "edge_graph_index"])
+
+    def convert_edge_to_directed(self):
+        """
+
+        Each column of edge_index (u, v) represents an directed edge from u to v.
+        Note that it does not cover the edge from v to u. You should provide (v, u) to cover it.
+        This is not convenient for users.
+        Thus, we allow users to provide edge_index in undirected form and convert it later.
+        That is, we can only provide (u, v) and convert it to (u, v) and (v, u) with `convert_edge_to_directed` method.
+        :return:
+        """
+        self.edge_index, [self.edge_weight, self.edge_graph_index] = \
+            convert_edge_to_directed(self.edge_index, [self.edge_weight, self.edge_graph_index])
+        return self
 
 
 

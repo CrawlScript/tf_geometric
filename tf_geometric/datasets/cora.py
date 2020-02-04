@@ -65,8 +65,8 @@ class CoraDataset(DownloadableDataset):
         x *= inv_sum_x
 
         edge_index = np.array(nx.from_dict_of_lists(graph).edges).T
-        edge_index, _ = remove_self_loop_edge(edge_index, edge_weight=None)
-        edge_index, _ = convert_edge_to_directed(edge_index, edge_weight=None)
+        edge_index, _ = remove_self_loop_edge(edge_index)
+        edge_index, _ = convert_edge_to_directed(edge_index)
         y = np.argmax(labels, axis=-1).astype(np.int32)
 
         graph = Graph(x=x, edge_index=edge_index, y=y)
