@@ -296,4 +296,3 @@ We provide both OOP and Functional API, with which you can make some cool things
            updater=tfg.nn.sum_updater
        )
        print(outputs)
-

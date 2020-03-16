@@ -2,16 +2,16 @@
 import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 import tensorflow as tf
-from tensorflow import keras
+import tf_geometric as tfg
 from tf_geometric.datasets.cora import CoraDataset
-from tf_geometric.layers import GCN
+
 
 graph, (train_index, valid_index, test_index) = CoraDataset().load_data()
 
 num_classes = graph.y.max() + 1
 
-gcn0 = GCN(32, activation=tf.nn.relu)
-gcn1 = GCN(num_classes)
+gcn0 = tfg.layers.GCN(32, activation=tf.nn.relu)
+gcn1 = tfg.layers.GCN(num_classes)
 
 
 def forward(graph):
