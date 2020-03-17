@@ -10,7 +10,7 @@ graph, (train_index, valid_index, test_index) = CoraDataset().load_data()
 
 num_classes = graph.y.max() + 1
 
-gcn0 = tfg.layers.GCN(32, activation=tf.nn.relu)
+gcn0 = tfg.layers.GCN(16, activation=tf.nn.relu)
 gcn1 = tfg.layers.GCN(num_classes)
 
 
@@ -20,14 +20,18 @@ def forward(graph):
     return h
 
 
-def compute_losses(logits, mask_index):
+def compute_loss(logits, mask_index, vars):
     masked_logits = tf.gather(logits, mask_index)
     masked_labels = tf.gather(graph.y, mask_index)
     losses = tf.nn.softmax_cross_entropy_with_logits(
         logits=masked_logits,
         labels=tf.one_hot(masked_labels, depth=num_classes)
     )
-    return losses
+
+    kernel_vals = [var for var in vars if "kernel" in var.name]
+    l2_losses = [tf.nn.l2_loss(kernel_var) for kernel_var in kernel_vals]
+
+    return tf.reduce_mean(losses) + tf.add_n(l2_losses) * 5e-4
 
 
 def evaluate():
@@ -47,13 +51,12 @@ optimizer = tf.keras.optimizers.Adam(learning_rate=1e-2)
 for step in range(1000):
     with tf.GradientTape() as tape:
         logits = forward(graph)
-        losses = compute_losses(logits, train_index)
+        loss = compute_loss(logits, train_index, tape.watched_variables())
 
     vars = tape.watched_variables()
-    grads = tape.gradient(losses, vars)
+    grads = tape.gradient(loss, vars)
     optimizer.apply_gradients(zip(grads, vars))
 
     if step % 20 == 0:
-        mean_loss = tf.reduce_mean(losses)
         accuracy = evaluate()
-        print("step = {}\tloss = {}\taccuracy = {}".format(step, mean_loss, accuracy))
+        print("step = {}\tloss = {}\taccuracy = {}".format(step, loss, accuracy))
