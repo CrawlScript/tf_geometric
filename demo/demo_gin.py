@@ -1,8 +1,3 @@
-# coding=utf-8
-import os
-
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-
 import tf_geometric as tfg
 import tensorflow as tf
 from tensorflow import keras
@@ -10,8 +5,13 @@ import numpy as np
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+
+
 # TU Datasets: https://ls11-www.cs.tu-dortmund.de/staff/morris/graphkerneldatasets
 graph_dicts = tfg.datasets.TUDataset("NCI1").load_data()
+
 
 # Since a TU dataset may contain node_labels, node_attributes etc., each of which can be used as node features
 # We process each graph as a dict and return a list of dict for graphs
@@ -60,21 +60,29 @@ def create_graph_generator(graphs, batch_size, infinite=False, shuffle=False):
 
 batch_size = 256
 
-drop_rate = 0.4
-gcn0 = tfg.layers.GCN(64, activation=tf.nn.relu)
-gcn1 = tfg.layers.GCN(32, activation=tf.nn.relu)
+drop_rate = 0.2
+gin0 = tfg.layers.GIN(64, activation=tf.nn.relu)
+gin1 = tfg.layers.GIN(32, activation=tf.nn.relu)
 dropout = keras.layers.Dropout(drop_rate)
 dense = keras.layers.Dense(num_classes)
 
 
-def forward(batch_graph, training=False):
+def forward(batch_graph, training=False, pooling="mean"):
     # GCN Encoder
-    h = gcn0([batch_graph.x, batch_graph.edge_index, batch_graph.edge_weight])
+    h = gin0([batch_graph.x, batch_graph.edge_index, batch_graph.edge_weight])
     h = dropout(h, training=training)
-    h = gcn1([h, batch_graph.edge_index, batch_graph.edge_weight])
+    h = gin1([h, batch_graph.edge_index, batch_graph.edge_weight])
 
-    # Mean Pooling
-    h = tfg.nn.mean_pool(h, batch_graph.node_graph_index)
+    # Pooling
+    if pooling == "mean":
+        h = tfg.nn.mean_pool(h, batch_graph.node_graph_index)
+    elif pooling == "sum":
+        h = tfg.nn.mean_pool(h, batch_graph.node_graph_index)
+    elif pooling == "max":
+        h = tfg.nn.max_pool(h, batch_graph.node_graph_index)
+    elif pooling == "min":
+        h = tfg.nn.min_pool(h, batch_graph.node_graph_index)
+
     h = dropout(h, training=training)
 
     # Predict Graph Labels
