@@ -51,9 +51,9 @@ def evaluate():
     return accuracy
 
 
-optimizer = tf.train.AdamOptimizer(learning_rate=5e-3)
+optimizer = tf.keras.optimizers.Adam(learning_rate=5e-3)
 
-for step in range(1000):
+for step in range(2000):
     with tf.GradientTape() as tape:
         logits = forward(graph, training=True)
         loss = compute_loss(logits, train_index, tape.watched_variables())

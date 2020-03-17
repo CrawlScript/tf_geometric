@@ -42,7 +42,7 @@ def evaluate():
     return accuracy
 
 
-optimizer = tf.train.AdamOptimizer(learning_rate=1e-2)
+optimizer = tf.keras.optimizers.Adam(learning_rate=1e-2)
 
 for step in range(1000):
     with tf.GradientTape() as tape:

@@ -22,8 +22,9 @@ num_node_labels = np.max([np.max(graph_dict["node_labels"]) for graph_dict in gr
 
 
 def convert_node_labels_to_one_hot(node_labels):
-    x = np.zeros([len(node_labels), num_node_labels], dtype=np.float32)
-    x[:, node_labels] = 1.0
+    num_nodes = len(node_labels)
+    x = np.zeros([num_nodes, num_node_labels], dtype=np.float32)
+    x[list(range(num_nodes)), node_labels] = 1.0
     return x
 
 
@@ -140,7 +141,7 @@ def evaluate():
     return accuracy
 
 
-optimizer = tf.train.AdamOptimizer(learning_rate=5e-4)
+optimizer = tf.keras.optimizers.Adam(learning_rate=5e-4)
 
 train_batch_generator = create_graph_generator(train_graphs, batch_size, shuffle=True, infinite=True)
 
