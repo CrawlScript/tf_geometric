@@ -6,8 +6,6 @@ import tf_geometric as tfg
 import tensorflow as tf
 from tensorflow import keras
 from tf_geometric.utils.graph_utils import edge_train_test_split, negative_sampling
-import numpy as np
-from sklearn.metrics import roc_auc_score
 
 
 graph, (train_index, valid_index, test_index) = tfg.datasets.CoraDataset().load_data()
@@ -76,15 +74,16 @@ def evaluate():
     pos_edge_logits = predict_edge(embedded, undirected_test_edge_index)
     neg_edge_logits = predict_edge(embedded, undirected_test_neg_edge_index)
 
-    pos_edge_scores = tf.nn.sigmoid(pos_edge_logits).numpy()
-    neg_edge_scores = tf.nn.sigmoid(neg_edge_logits).numpy()
+    pos_edge_scores = tf.nn.sigmoid(pos_edge_logits)
+    neg_edge_scores = tf.nn.sigmoid(neg_edge_logits)
 
-    y_true = np.concatenate([np.ones_like(pos_edge_scores), np.zeros_like(neg_edge_scores)], axis=0)
-    y_pred = np.concatenate([pos_edge_scores, neg_edge_scores], axis=0)
+    y_true = tf.concat([tf.ones_like(pos_edge_scores), tf.zeros_like(neg_edge_scores)], axis=0)
+    y_pred = tf.concat([pos_edge_scores, neg_edge_scores], axis=0)
 
-    auc_score = roc_auc_score(y_true, y_pred)
+    auc_m = keras.metrics.AUC()
+    auc_m.update_state(y_true, y_pred)
 
-    return auc_score
+    return auc_m.result().numpy()
 
 
 optimizer = tf.train.AdamOptimizer(learning_rate=1e-2)

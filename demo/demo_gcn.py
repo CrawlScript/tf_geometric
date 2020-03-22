@@ -2,6 +2,7 @@
 import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 import tensorflow as tf
+from tensorflow import keras
 import tf_geometric as tfg
 from tf_geometric.datasets.cora import CoraDataset
 
@@ -41,9 +42,9 @@ def evaluate():
 
     y_pred = tf.argmax(masked_logits, axis=-1, output_type=tf.int32)
 
-    corrects = tf.cast(tf.equal(y_pred, masked_labels), tf.float32)
-    accuracy = tf.reduce_mean(corrects)
-    return accuracy
+    accuracy_m = keras.metrics.Accuracy()
+    accuracy_m.update_state(masked_labels, y_pred)
+    return accuracy_m.result().numpy()
 
 
 optimizer = tf.keras.optimizers.Adam(learning_rate=1e-2)

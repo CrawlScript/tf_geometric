@@ -62,6 +62,7 @@ def gcn(x, edge_index, edge_weight, kernel, bias=None, activation=None,
     updated_edge_index, normed_edge_weight = gcn_norm_edge(edge_index, x.shape[0], edge_weight,
                                                            renorm, improved, cache)
     x = x @ kernel
+
     h = aggregate_neighbors(
         x, updated_edge_index, normed_edge_weight,
         gcn_mapper,
