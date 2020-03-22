@@ -46,9 +46,10 @@ def evaluate():
 
     y_pred = tf.argmax(masked_logits, axis=-1, output_type=tf.int32)
 
-    corrects = tf.cast(tf.equal(y_pred, masked_labels), tf.float32)
-    accuracy = tf.reduce_mean(corrects)
-    return accuracy
+    accuracy_m = keras.metrics.Accuracy()
+    accuracy_m.update_state(masked_labels, y_pred)
+
+    return accuracy_m.result().numpy()
 
 
 optimizer = tf.keras.optimizers.Adam(learning_rate=5e-3)

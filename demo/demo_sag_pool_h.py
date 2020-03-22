@@ -6,7 +6,6 @@ import tf_geometric as tfg
 import tensorflow as tf
 from tensorflow import keras
 import numpy as np
-from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 
 
@@ -126,19 +125,14 @@ def forward(batch_graph, training=False):
 
 
 def evaluate():
-    preds_list = []
-    y_list = []
+    accuracy_m = keras.metrics.Accuracy()
+
     for test_batch_graph in create_graph_generator(test_graphs, batch_size, shuffle=False, infinite=False):
         logits = forward(test_batch_graph)
         preds = tf.argmax(logits, axis=-1)
+        accuracy_m.update_state(test_batch_graph.y, preds)
 
-        preds_list.append(preds.numpy())
-        y_list.append(test_batch_graph.y)
-
-    preds = np.concatenate(preds_list, axis=0)
-    y = np.concatenate(y_list, axis=0)
-    accuracy = accuracy_score(y, preds)
-    return accuracy
+    return accuracy_m.result().numpy()
 
 
 optimizer = tf.keras.optimizers.Adam(learning_rate=5e-4)

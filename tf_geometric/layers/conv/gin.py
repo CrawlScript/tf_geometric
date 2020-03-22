@@ -14,19 +14,24 @@ class GIN(MapReduceGNN):
         num_features = x_shape[-1]
 
         self.kernel = self.add_weight("kernel", shape=[num_features, self.units], initializer="glorot_uniform")
-        self.bias = self.add_weight("bias", shape=[self.units], initializer="zeros")
+        if self.use_bias:
+            self.bias = self.add_weight("bias", shape=[self.units], initializer="zeros")
 
-    def __init__(self, units, eps=0, train_eps=False, activation=None, improved=False, *args, **kwargs):
+    def __init__(self, units, eps=0, train_eps=False, activation=None, use_bias=True,
+                 improved=False, *args, **kwargs):
         """
 
         :param units: Positive integer, dimensionality of the output space.
         :param activation: Activation function to use.
+        :param use_bias: Boolean, whether the layer uses a bias vector.
         :param improved: Whether use improved GIN or not.
         """
         super().__init__(*args, **kwargs)
         self.units = units
 
         self.acvitation = activation
+        self.use_bias = use_bias
+
         self.kernel = None
         self.bias = None
 

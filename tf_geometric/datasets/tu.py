@@ -2,7 +2,7 @@
 
 import numpy as np
 import os
-
+from tqdm import tqdm
 import networkx as nx
 from tf_geometric.data.graph import Graph
 from tf_geometric.data.dataset import DownloadableDataset
@@ -21,7 +21,7 @@ class TUDataset(DownloadableDataset):
                              "{}/{}.zip".format(tu_base_url, dataset_name)
                          ],
                          download_file_name="{}.zip".format(dataset_name),
-                         cache_name=None,
+                         cache_name="{}.p".format(dataset_name),
                          dataset_root_path=dataset_root_path,
                          )
         self.txt_root_path = os.path.join(self.raw_root_path, self.dataset_name)
@@ -29,9 +29,11 @@ class TUDataset(DownloadableDataset):
 
     def process(self):
 
+        print("reading graph_indicator...")
         node_graph_index = self.read_txt_as_array("graph_indicator", dtype=np.int32)
         graph_index_offset = node_graph_index.min()
         node_graph_index -= graph_index_offset
+        print("reading edges...")
         edges = self.read_txt_as_array("A", dtype=np.int32) - graph_index_offset
         edge_graph_index = node_graph_index[edges[:, 0]]
         num_graphs = node_graph_index.max() + 1
@@ -71,6 +73,11 @@ class TUDataset(DownloadableDataset):
         for node_index, graph_index in enumerate(node_graph_index):
             if start_node_index[graph_index] < 0:
                 start_node_index[graph_index] = node_index
+
+        for graph_index, graph in enumerate(graphs):
+            end_index = start_node_index[graph_index+1] if graph_index < num_graphs - 1 else len(node_graph_index)
+            num_nodes = end_index - start_node_index[graph_index]
+            graph["num_nodes"] = num_nodes
 
         # edge_index
         for graph_index, edge in zip(edge_graph_index, edges):
@@ -116,6 +123,8 @@ class TUDataset(DownloadableDataset):
             if edge_labels is not None:
                 graph["edge_labels"] = np.array(graph["edge_labels"]).astype(np.int32)
 
+
+
         return graphs
 
 
@@ -130,7 +139,7 @@ class TUDataset(DownloadableDataset):
             return None
         data_list = []
         with open(path, "r", encoding="utf-8") as f:
-            for line in f:
+            for line in tqdm(f):
                 line = line.strip()
                 if len(line) == 0:
                     continue

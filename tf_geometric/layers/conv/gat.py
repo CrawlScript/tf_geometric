@@ -10,6 +10,7 @@ class GAT(MapReduceGNN):
     def __init__(self, units,
                  attention_units=None,
                  activation=None,
+                 use_bias=True,
                  num_heads=1,
                  query_activation=tf.nn.relu,
                  key_activation=tf.nn.relu,
@@ -20,6 +21,7 @@ class GAT(MapReduceGNN):
         :param units: Positive integer, dimensionality of the output space.
         :param attention_units: Positive integer, dimensionality of the output space for Q and K in attention.
         :param activation: Activation function to use.
+        :param use_bias: Boolean, whether the layer uses a bias vector.
         :param num_heads: Number of attention heads.
         :param query_activation: Activation function for Q in attention.
         :param key_activation: Activation function for K in attention.
@@ -42,6 +44,7 @@ class GAT(MapReduceGNN):
         self.bias = None
 
         self.acvitation = activation
+        self.use_bias = use_bias
         self.num_heads = num_heads
 
     def build(self, input_shapes):
@@ -55,7 +58,8 @@ class GAT(MapReduceGNN):
         self.key_bias = self.add_weight("key_bias", shape=[self.attention_units], initializer="zeros")
 
         self.kernel = self.add_weight("kernel", shape=[num_features, self.units], initializer="glorot_uniform")
-        self.bias = self.add_weight("bias", shape=[self.units], initializer="zeros")
+        if self.use_bias:
+            self.bias = self.add_weight("bias", shape=[self.units], initializer="zeros")
 
     def call(self, inputs, training=None, mask=None):
         """
