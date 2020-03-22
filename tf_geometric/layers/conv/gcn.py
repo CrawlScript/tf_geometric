@@ -14,13 +14,16 @@ class GCN(MapReduceGNN):
         num_features = x_shape[-1]
 
         self.kernel = self.add_weight("kernel", shape=[num_features, self.units], initializer="glorot_uniform")
-        self.bias = self.add_weight("bias", shape=[self.units], initializer="zeros")
+        if self.use_bias:
+            self.bias = self.add_weight("bias", shape=[self.units], initializer="zeros")
 
-    def __init__(self, units, activation=None, renorm=True, improved=False, *args, **kwargs):
+    def __init__(self, units, activation=None, use_bias=True,
+                 renorm=True, improved=False, *args, **kwargs):
         """
 
         :param units: Positive integer, dimensionality of the output space.
         :param activation: Activation function to use.
+        :param use_bias: Boolean, whether the layer uses a bias vector.
         :param renorm: Whether use renormalization trick (https://arxiv.org/pdf/1609.02907.pdf).
         :param improved: Whether use improved GCN or not.
         """
@@ -28,6 +31,8 @@ class GCN(MapReduceGNN):
         self.units = units
 
         self.acvitation = activation
+        self.use_bias = use_bias
+
         self.kernel = None
         self.bias = None
 
