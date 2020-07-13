@@ -6,14 +6,6 @@ import numpy as np
 from collections import defaultdict
 from typing import List, Optional, Tuple, NamedTuple
 
-class Adj(NamedTuple):
-    edge_index: tf.Tensor
-    e_id: tf.Tensor
-    size: Tuple[int, int]
-
-    def to(self, *args, **kwargs):
-        return Adj(self.edge_index.to(*args, **kwargs),
-                   self.e_id.to(*args, **kwargs), self.size)
 
 def get_neighbors(edge_index):
 
