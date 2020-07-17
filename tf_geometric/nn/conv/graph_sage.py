@@ -58,12 +58,15 @@ def mean_graph_sage(x, edge_index, edge_weight, neighs_kernel, self_kernel, bias
     :param x: Tensor, shape: [num_nodes, num_features], node features
     :param edge_index: Tensor, shape: [2, num_edges], edge information
     :param edge_weight: Tensor or None, shape: [num_edges]
-    :param kernel: Tensor, shape: [num_features, num_output_features], weight
+    :param neighs_kernel: Tensor, shape: [num_features, num_hidden_units], weight.
+    :param self_kernel: Tensor, shape: [num_features, num_hidden_units], weight
     :param bias: Tensor, shape: [num_output_features], bias
     :param activation: Activation function to use.
-    :param renorm: Whether use renormalization trick (https://arxiv.org/pdf/1609.02907.pdf).
-    :param improved: Whether use improved GCN or not.
-    :param cache: A dict for caching A' for GCN. Different graph should not share the same cache dict.
+    :param normalize: If set to :obj:`True`, output features
+                will be :math:`\ell_2`-normalized, *i.e.*,
+                :math:`\frac{\mathbf{x}^{\prime}_i}
+                {\| \mathbf{x}^{\prime}_i \|_2}`.
+                (default: :obj:`False`)
     :return: Updated node features (x), shape: [num_nodes, num_output_features]
     """
 
@@ -93,7 +96,22 @@ def mean_graph_sage(x, edge_index, edge_weight, neighs_kernel, self_kernel, bias
 
 def gcn_graph_sage(x, edge_index, edge_weight, kernel, bias=None, activation=None,
        normalize=False, cache=None):
+    """
 
+        :param x: Tensor, shape: [num_nodes, num_features], node features
+        :param edge_index: Tensor, shape: [2, num_edges], edge information
+        :param edge_weight: Tensor or None, shape: [num_edges]
+        :param kernel: Tensor, shape: [num_features, num_output_features], weight
+        :param bias: Tensor, shape: [num_output_features], bias
+        :param activation: Activation function to use.
+        :param normalize: If set to :obj:`True`, output features
+                will be :math:`\ell_2`-normalized, *i.e.*,
+                :math:`\frac{\mathbf{x}^{\prime}_i}
+                {\| \mathbf{x}^{\prime}_i \|_2}`.
+                (default: :obj:`False`)
+        :param cache: A dict for caching A' for GCN. Different graph should not share the same cache dict.
+        :return: Updated node features (x), shape: [num_nodes, num_output_features]
+        """
     if edge_weight is not None:
         edge_weight = tf.ones([edge_index.shape[1]], dtype=tf.float32)
 
@@ -121,6 +139,25 @@ def gcn_graph_sage(x, edge_index, edge_weight, kernel, bias=None, activation=Non
 
 def mean_pooling_graph_sage(x, edge_index, edge_weight, mlp_kernel,neighs_kernel, self_kernel, dropout,
                             mlp_bias=None, bias=None, activation=None, normalize=False):
+    """
+
+        :param x: Tensor, shape: [num_nodes, num_features], node features
+        :param edge_index: Tensor, shape: [2, num_edges], edge information
+        :param edge_weight: Tensor or None, shape: [num_edges]
+        :param mlp_kernel: Tensor, shape: [num_features, num_hidden_units]. weight.
+        :param neighs_kernel: Tensor, shape: [num_hidden_units, num_hidden_units], weight.
+        :param self_kernel: Tensor, shape: [num_features, num_hidden_units], weight.
+        :param dropout: Dropout function.
+        :param mlp_bias: Tensor, shape: [num_hidden_units * 2], bias
+        :param bias: Tensor, shape: [num_output_features], bias.
+        :param activation: Activation function to use.
+        :param normalize: If set to :obj:`True`, output features
+                    will be :math:`\ell_2`-normalized, *i.e.*,
+                    :math:`\frac{\mathbf{x}^{\prime}_i}
+                    {\| \mathbf{x}^{\prime}_i \|_2}`.
+                    (default: :obj:`False`)
+        :return: Updated node features (x), shape: [num_nodes, num_output_features]
+        """
 
     if edge_weight is not None:
         edge_weight = tf.ones([edge_index.shape[1]], dtype=tf.float32)
@@ -158,6 +195,25 @@ def mean_pooling_graph_sage(x, edge_index, edge_weight, mlp_kernel,neighs_kernel
 
 def max_pooling_graph_sage(x, edge_index, edge_weight, mlp_kernel,neighs_kernel, self_kernel, dropout,
                             mlp_bias=None, bias=None, activation=None, normalize=False):
+    """
+
+            :param x: Tensor, shape: [num_nodes, num_features], node features
+            :param edge_index: Tensor, shape: [2, num_edges], edge information
+            :param edge_weight: Tensor or None, shape: [num_edges]
+            :param mlp_kernel: Tensor, shape: [num_features, num_hidden_units]. weight.
+            :param neighs_kernel: Tensor, shape: [num_hidden_units, num_hidden_units], weight.
+            :param self_kernel: Tensor, shape: [num_features, num_hidden_units], weight.
+            :param dropout: Dropout function.
+            :param mlp_bias: Tensor, shape: [num_hidden_units * 2], bias
+            :param bias: Tensor, shape: [num_output_features], bias.
+            :param activation: Activation function to use.
+            :param normalize: If set to :obj:`True`, output features
+                        will be :math:`\ell_2`-normalized, *i.e.*,
+                        :math:`\frac{\mathbf{x}^{\prime}_i}
+                        {\| \mathbf{x}^{\prime}_i \|_2}`.
+                        (default: :obj:`False`)
+            :return: Updated node features (x), shape: [num_nodes, num_output_features]
+            """
     if edge_weight is not None:
         edge_weight = tf.ones([edge_index.shape[1]], dtype=tf.float32)
 
@@ -194,6 +250,24 @@ def max_pooling_graph_sage(x, edge_index, edge_weight, mlp_kernel,neighs_kernel,
 
 def lstm_graph_sage(x, edge_index, edge_weight, lstm, neighs_kernel, self_kernel,
                             bias=None, activation=None, normalize=False):
+    """
+
+            :param x: Tensor, shape: [num_nodes, num_features], node features.
+            :param edge_index: Tensor, shape: [2, num_edges], edge information.
+            :param edge_weight: Tensor or None, shape: [num_edges].
+            :param lstm: Long Short-Term Merory.
+            :param neighs_kernel: Tensor, shape: [num_hidden_units, num_hidden_units], weight.
+            :param self_kernel: Tensor, shape: [num_features, num_hidden_units], weight.
+            :param mlp_bias: Tensor, shape: [num_hidden_units * 2], bias
+            :param bias: Tensor, shape: [num_output_features], bias.
+            :param activation: Activation function to use.
+            :param normalize: If set to :obj:`True`, output features
+                        will be :math:`\ell_2`-normalized, *i.e.*,
+                        :math:`\frac{\mathbf{x}^{\prime}_i}
+                        {\| \mathbf{x}^{\prime}_i \|_2}`.
+                        (default: :obj:`False`)
+            :return: Updated node features (x), shape: [num_nodes, num_output_features]
+            """
 
     if edge_weight is not None:
         edge_weight = tf.ones([edge_index.shape[1]], dtype=tf.float32)
