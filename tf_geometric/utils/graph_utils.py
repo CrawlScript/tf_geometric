@@ -393,3 +393,56 @@ def to_scipy_sparse_matrix(edge_index, edge_weight=None, num_nodes=None):
     N = num_nodes
     out = scipy.sparse.coo_matrix((edge_weight, (row, col)), (N, N))
     return out
+
+
+class RandomNeighborSampler(object):
+    def __init__(self, edge_index, edge_weight=None):
+        self.edge_index = convert_union_to_numpy(edge_index, np.int32)
+        if edge_weight is not None:
+            self.edge_weight = convert_union_to_numpy(edge_weight)
+        else:
+            self.edge_weight = np.ones([self.edge_index.shape[1]], dtype=np.float32)
+        self.neighbor_dict = {}
+
+        for (a, b), weight in zip(self.edge_index.T, self.edge_weight):
+
+            if a not in self.neighbor_dict:
+                neighbors = []
+                self.neighbor_dict[a] = neighbors
+            else:
+                neighbors = self.neighbor_dict[a]
+            neighbors.append((b, weight))
+
+        self.num_sources = len(self.neighbor_dict)
+        self.source_index = sorted(self.neighbor_dict.keys())
+        self.neighbors_list = [self.neighbor_dict[a] for a in self.source_index]
+        self.num_neighbors_list = np.array([len(neighbors) for neighbors in self.neighbors_list])
+        self.neighbor_index_list = [np.arange(num_neighbors) for num_neighbors in self.num_neighbors_list]
+
+    def sample(self, k=None, ratio=None):
+        if k is None and ratio is None:
+            raise Exception("you should provide either k or ratio")
+        elif k is not None and ratio is not None:
+            raise Exception("you should provide either k or ratio, not both of them")
+
+        if ratio is not None:
+            num_sampled_neighbors = np.ceil(self.num_neighbors_list * ratio).astype(np.int32)
+        else:
+            num_sampled_neighbors = np.full([self.num_sources], fill_value=k)
+
+        sampled_edge_index = []
+        sampled_edge_weight = []
+
+        for i, (a, neighbors, num_sampled_neighbors, neighbor_index) in \
+                enumerate(zip(self.source_index, self.neighbors_list, num_sampled_neighbors, self.neighbor_index_list)):
+            # sampled_neighbors = np.random.choice(neighbors, num_sampled_neighbors, replace=True)
+            sampled_neighbor_index = np.random.choice(neighbor_index, num_sampled_neighbors, replace=True)
+            sampled_neighbors = [neighbors[i] for i in sampled_neighbor_index]
+
+            for (b, weight) in sampled_neighbors:
+                sampled_edge_index.append([a, b])
+                sampled_edge_weight.append(weight)
+
+        sampled_edge_index = np.array(sampled_edge_index).T
+        sampled_edge_weight = np.array(sampled_edge_weight)
+        return sampled_edge_index, sampled_edge_weight

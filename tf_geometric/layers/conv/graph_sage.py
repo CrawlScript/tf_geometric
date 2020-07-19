@@ -9,7 +9,7 @@ from tf_geometric.layers.kernel.map_reduce import MapReduceGNN
 The GraphSAGE operator from the `"Inductive Representation Learning on
 Large Graphs" <https://arxiv.org/abs/1706.02216>`_ paper
 """
-class MeanAggregator(MapReduceGNN):
+class MeanGraphSage(MapReduceGNN):
 
     def __init__(self, units, activation=tf.nn.relu, use_bias=True, dropout_rate=None,
                  normalize=False, *args, **kwargs):
@@ -49,7 +49,7 @@ class MeanAggregator(MapReduceGNN):
                                self.activation, self.normalize)
 
 
-class GCNAggregator(MapReduceGNN):
+class GCNGraphSage(MapReduceGNN):
     def __init__(self, units, activation=tf.nn.relu, use_bias=True, dropout_rate=None,
                  normalize=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
