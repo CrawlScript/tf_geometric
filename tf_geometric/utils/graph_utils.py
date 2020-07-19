@@ -7,6 +7,8 @@ import warnings
 
 from tf_geometric.utils.union_utils import convert_union_to_numpy
 
+import scipy.sparse
+
 
 def remove_self_loop_edge(edge_index, edge_weight=None):
     edge_index_is_tensor = tf.is_tensor(edge_index)
@@ -317,3 +319,77 @@ def compute_edge_mask_by_node_index(edge_index, node_index):
     return edge_mask
 
 
+def get_laplacian(edge_index, edge_weight, normalization_type, num_nodes, fill_weight=1.0):
+
+    if normalization_type is not None:
+        assert normalization_type in ['sym', 'rw']
+
+    row, col = edge_index
+    deg = tf.math.unsorted_segment_sum(edge_weight, row, num_segments=num_nodes)
+    ##L = D - A
+    if normalization_type is None:
+        edge_index, edge_weight = add_self_loop_edge(edge_index, num_nodes, edge_weight, fill_weight=fill_weight)
+        row, col = edge_index
+        deg_inv = tf.where(
+            tf.math.logical_or(tf.math.is_inf(deg), tf.math.is_nan(deg)),
+            tf.zeros_like(deg),
+            deg
+        )
+        edge_weight = tf.gather(deg_inv, row) - edge_weight
+
+    ## L^ = D^{-1/2}LD^{-1/2}
+    elif normalization_type == 'sym':
+        deg_inv_sqrt = tf.pow(deg, -0.5)
+        deg_inv_sqrt = tf.where(
+            tf.math.logical_or(tf.math.is_inf(deg_inv_sqrt), tf.math.is_nan(deg_inv_sqrt)),
+            tf.zeros_like(deg_inv_sqrt),
+            deg_inv_sqrt
+        )
+
+        normed_edge_weight = tf.gather(deg_inv_sqrt, row) * edge_weight * tf.gather(deg_inv_sqrt, col)
+        edge_index, tmp = add_self_loop_edge(edge_index, num_nodes, edge_weight=normed_edge_weight,
+                                             fill_weight=fill_weight)
+
+        assert tmp is not None
+        edge_weight = tmp
+    ##L^ = D^{-1}L
+    else:
+        deg_inv = 1.0 / deg
+        deg_inv = tf.where(
+            tf.math.logical_or(tf.math.is_inf(deg_inv), tf.math.is_nan(deg_inv)),
+            tf.zeros_like(deg_inv),
+            deg_inv
+        )
+
+        normed_edge_weight = tf.gather(deg_inv, row) * edge_weight
+
+        edge_index, tmp = add_self_loop_edge(edge_index, num_nodes, edge_weight=normed_edge_weight,
+                                             fill_weight=fill_weight)
+
+        assert tmp is not None
+        edge_weight = tmp
+
+    return edge_index, edge_weight
+
+def to_scipy_sparse_matrix(edge_index, edge_weight=None, num_nodes=None):
+    r"""Converts a graph given by edge indices and edge attributes to a scipy
+    sparse matrix.
+
+    Args:
+        edge_index (LongTensor): The edge indices.
+        edge_attr (Tensor, optional): Edge weights or multi-dimensional
+            edge features. (default: :obj:`None`)
+        num_nodes (int, optional): The number of nodes, *i.e.*
+            :obj:`max_val + 1` of :attr:`index`. (default: :obj:`None`)
+    """
+    row, col = edge_index
+
+    if edge_weight is None:
+        edge_weight = tf.ones(row.shape[0])
+    else:
+        edge_weight = tf.reshape(edge_weight, [-1])
+        assert edge_weight.shape[0] == row.shape[0]
+
+    N = num_nodes
+    out = scipy.sparse.coo_matrix((edge_weight, (row, col)), (N, N))
+    return out
