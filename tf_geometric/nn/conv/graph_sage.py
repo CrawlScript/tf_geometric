@@ -1,14 +1,18 @@
-
 import tensorflow as tf
+import numpy as np
 from tf_geometric.nn.kernel.segment import segment_count, segment_op_with_pad
 from tf_geometric.nn.conv.gcn import gcn_mapper
 from tf_geometric.utils.graph_utils import add_self_loop_edge
+from collections import Counter
+
 
 def mean_reducer(neighbor_msg, node_index, num_nodes=None):
     return tf.math.unsorted_segment_mean(neighbor_msg, node_index, num_segments=num_nodes)
 
+
 def sum_reducer(neighbor_msg, node_index, num_nodes=None):
     return tf.math.unsorted_segment_sum(neighbor_msg, node_index, num_segments=num_nodes)
+
 
 def max_reducer(neighbor_msg, node_index, num_nodes=None):
     if num_nodes is None:
@@ -16,6 +20,7 @@ def max_reducer(neighbor_msg, node_index, num_nodes=None):
     # max_x = tf.math.unsorted_segment_max(x, node_graph_index, num_segments=num_graphs)
     max_x = segment_op_with_pad(tf.math.segment_max, neighbor_msg, node_index, num_segments=num_nodes)
     return max_x
+
 
 def gcn_norm_edge(edge_index, num_nodes, edge_weight=None, renorm=True, improved=False, cache=None):
     cache_key = "gcn_normed_edge"
@@ -29,7 +34,8 @@ def gcn_norm_edge(edge_index, num_nodes, edge_weight=None, renorm=True, improved
     fill_weight = 2.0 if improved else 1.0
 
     if renorm:
-        edge_index, edge_weight = add_self_loop_edge(edge_index, num_nodes, edge_weight=edge_weight, fill_weight=fill_weight)
+        edge_index, edge_weight = add_self_loop_edge(edge_index, num_nodes, edge_weight=edge_weight,
+                                                     fill_weight=fill_weight)
 
     row, col = edge_index
     deg = tf.math.unsorted_segment_sum(edge_weight, row, num_segments=num_nodes)
@@ -51,8 +57,9 @@ def gcn_norm_edge(edge_index, num_nodes, edge_weight=None, renorm=True, improved
 
     return edge_index, normed_edge_weight
 
+
 def mean_graph_sage(x, edge_index, edge_weight, neighs_kernel, self_kernel, bias=None, activation=None,
-       normalize=False):
+                    normalize=False):
     """
 
     :param x: Tensor, shape: [num_nodes, num_features], node features
@@ -94,8 +101,9 @@ def mean_graph_sage(x, edge_index, edge_weight, neighs_kernel, self_kernel, bias
 
     return h
 
+
 def gcn_graph_sage(x, edge_index, edge_weight, kernel, bias=None, activation=None,
-       normalize=False, cache=None):
+                   normalize=False, cache=None):
     """
 
         :param x: Tensor, shape: [num_nodes, num_features], node features
@@ -137,7 +145,7 @@ def gcn_graph_sage(x, edge_index, edge_weight, kernel, bias=None, activation=Non
     return h
 
 
-def mean_pooling_graph_sage(x, edge_index, edge_weight, mlp_kernel,neighs_kernel, self_kernel, dropout,
+def mean_pooling_graph_sage(x, edge_index, edge_weight, mlp_kernel, neighs_kernel, self_kernel, dropout,
                             mlp_bias=None, bias=None, activation=None, normalize=False):
     """
 
@@ -193,8 +201,9 @@ def mean_pooling_graph_sage(x, edge_index, edge_weight, mlp_kernel,neighs_kernel
 
     return output
 
-def max_pooling_graph_sage(x, edge_index, edge_weight, mlp_kernel,neighs_kernel, self_kernel, dropout,
-                            mlp_bias=None, bias=None, activation=None, normalize=False):
+
+def max_pooling_graph_sage(x, edge_index, edge_weight, mlp_kernel, neighs_kernel, self_kernel, dropout,
+                           mlp_bias=None, bias=None, activation=None, normalize=False):
     """
 
             :param x: Tensor, shape: [num_nodes, num_features], node features
@@ -248,8 +257,9 @@ def max_pooling_graph_sage(x, edge_index, edge_weight, mlp_kernel,neighs_kernel,
 
     return output
 
+
 def lstm_graph_sage(x, edge_index, edge_weight, lstm, neighs_kernel, self_kernel,
-                            bias=None, activation=None, normalize=False):
+                    bias=None, activation=None, normalize=False):
     """
 
             :param x: Tensor, shape: [num_nodes, num_features], node features.
@@ -273,20 +283,38 @@ def lstm_graph_sage(x, edge_index, edge_weight, lstm, neighs_kernel, self_kernel
         edge_weight = tf.ones([edge_index.shape[1]], dtype=tf.float32)
 
     row, col = edge_index
-    repeated_x = tf.gather(x, row)
-    neighbor_x = tf.gather(x, col)
+    # repeated_x = tf.gather(x, row)
+    # neighbor_x = tf.gather(x, col)
+    # neighbor_x = gcn_mapper(repeated_x, neighbor_x, edge_weight=edge_weight)
+    padding_feature = tf.zeros((1, x.shape[-1]), dtype=tf.float32)
+    x_ = tf.concat((x, padding_feature), axis=0)
 
-    neighbor_x = gcn_mapper(repeated_x, neighbor_x, edge_weight=edge_weight)
-    reduced_h = tf.expand_dims(neighbor_x, axis=1)
-    ##lstm encodes features of  neighbors
-    neighbor_h = lstm(reduced_h)
+    num_neighs = Counter()
 
-    reduced_h = mean_reducer(neighbor_h, row, num_nodes=len(x))
+    col_numpy = col.numpy()
+    row_numpy = row.numpy()
+    for i in row_numpy:
+        num_neighs[i] += 1
 
-    from_neighs = reduced_h @ neighs_kernel
+    max_len = max(num_neighs.values())
+    neighbors = np.zeros((x.shape[0], max_len), dtype=np.int)
+    nums = 0
+    for i, v in num_neighs.items():
+        neighbors[i][0:v] = col_numpy[nums:nums + v]
+        nums += v
+        neighbors[i][v:max_len] = x.shape[0]
+
+    neighbor_feature = tf.gather(x_, neighbors)
+
+    reduced_h = lstm(neighbor_feature)
+    a = list(num_neighs.values())
+
+    reduced_h = [tf.reduce_mean(h[:a[i]], axis=0) for i,h in enumerate(reduced_h)]
+    reduced_h = tf.reshape(reduced_h,[x.shape[0],-1])
+
     from_x = x @ self_kernel
 
-    output = tf.concat([from_neighs, from_x], axis=1)
+    output = tf.concat([reduced_h, from_x], axis=1)
     if bias is not None:
         output += bias
 

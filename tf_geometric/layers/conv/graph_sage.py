@@ -197,7 +197,7 @@ class LSTMAggregator(MapReduceGNN):
         x_shape = input_shape[0]
         num_features = x_shape[-1]
 
-        self.lstm = tf.keras.layers.LSTM(self.units, dropout=0.5, kernel_regularizer=tf.nn.l2_normalize, return_sequences=False)
+        self.lstm = tf.keras.layers.LSTM(self.units, dropout=0.5, kernel_regularizer=tf.nn.l2_normalize, return_sequences=True)
         self.neighs_kernel = self.add_weight("neighs_kernel", shape=[self.units, self.units],
                                              initializer="glorot_uniform")
         self.self_kernel = self.add_weight("self_kernel", shape=[num_features, self.units],
