@@ -1,12 +1,13 @@
 # coding=utf-8
 import os
-from itertools import chain
+
 
 import tensorflow as tf
 from tensorflow import keras
 import numpy as np
-import tf_geometric as tfg
-from tf_geometric.layers.conv.graph_sage import MeanGraphSage
+
+from tf_geometric.layers.conv.graph_sage import  MaxPoolingGraphSage
+
 from tf_geometric.datasets.ppi import PPIDataset
 
 from sklearn.metrics import f1_score
@@ -16,6 +17,8 @@ from tf_geometric.utils.graph_utils import RandomNeighborSampler
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "5"
 
+np.random.seed(20)
+tf.random.set_seed(20)
 train_graphs, valid_graphs, test_graphs = PPIDataset().load_data()
 
 # traverse all graphs
@@ -26,8 +29,8 @@ for graph in train_graphs + valid_graphs + test_graphs:
 num_classes = train_graphs[0].y.shape[1]
 
 graph_sages = [
-    MeanGraphSage(units=128, activation=tf.nn.relu),
-    MeanGraphSage(units=128, activation=tf.nn.relu)
+    MaxPoolingGraphSage(units=128, activation=tf.nn.relu),
+    MaxPoolingGraphSage(units=128, activation=tf.nn.relu)
 ]
 
 fc = tf.keras.Sequential([
@@ -38,8 +41,10 @@ fc = tf.keras.Sequential([
 num_sampled_neighbors_list = [25, 10]
 
 
+
 def forward(graph, training=False):
     neighbor_sampler = graph.cache["sampler"]
+
 
     h = graph.x
 
@@ -91,8 +96,7 @@ def evaluate(graphs):
 optimizer = tf.keras.optimizers.Adam(learning_rate=1e-2)
 
 
-
-for epoch in tqdm(range(1000)):
+for epoch in tqdm(range(10)):
 
     for graph in train_graphs:
         with tf.GradientTape() as tape:
@@ -104,10 +108,10 @@ for epoch in tqdm(range(1000)):
         optimizer.apply_gradients(zip(grads, vars))
 
     if epoch % 1 == 0:
-
         valid_f1_mic = evaluate(valid_graphs)
         test_f1_mic = evaluate(test_graphs)
         print("epoch = {}\tloss = {}\tvalid_f1_micro = {}".format(epoch, loss, valid_f1_mic))
-
-        test_f1_mic = evaluate(test_graphs)
         print("epoch = {}\ttest_f1_micro = {}".format(epoch, test_f1_mic))
+# test_f1_mic = evaluate(test_graphs)
+# print("test_f1_micro = {}".format(test_f1_mic))
+

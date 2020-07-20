@@ -58,7 +58,7 @@ def gcn_norm_edge(edge_index, num_nodes, edge_weight=None, renorm=True, improved
     return edge_index, normed_edge_weight
 
 
-def mean_graph_sage(x, edge_index, edge_weight, neighs_kernel, self_kernel, bias=None, activation=None,
+def mean_graph_sage(x, edge_index, edge_weight, neighs_kernel, self_kernel, dropout, bias=None, activation=None,
                     normalize=False):
     """
 
@@ -84,10 +84,14 @@ def mean_graph_sage(x, edge_index, edge_weight, neighs_kernel, self_kernel, bias
     if edge_weight is not None:
         neighbor_x = gcn_mapper(repeated_x, neighbor_x, edge_weight=edge_weight)
 
+    # x = dropout(x)
+    # neighbor_x = dropout(neighbor_x)
+
     neighbor_reduced_msg = mean_reducer(neighbor_x, row, num_nodes=len(x))
 
     neighbor_msg = neighbor_reduced_msg @ neighs_kernel
     x = x @ self_kernel
+
     h = tf.concat([neighbor_msg, x], axis=1)
     # h = x @ self_kernel + neighbor_msg
 
@@ -120,7 +124,7 @@ def gcn_graph_sage(x, edge_index, edge_weight, kernel, bias=None, activation=Non
                 (default: :obj:`False`)
         :param cache: A dict for caching A' for GCN. Different graph should not share the same cache dict.
         :return: Updated node features (x), shape: [num_nodes, num_output_features]
-        """
+    """
     if edge_weight is not None:
         edge_weight = tf.ones([edge_index.shape[1]], dtype=tf.float32)
 
@@ -130,6 +134,9 @@ def gcn_graph_sage(x, edge_index, edge_weight, kernel, bias=None, activation=Non
     neighbor_x = tf.gather(x, col)
 
     neighbor_x = gcn_mapper(repeated_x, neighbor_x, edge_weight=normed_edge_weight)
+
+    # x = dropout(x)
+    # neighbor_x = dropout(neighbor_x)
 
     reduced_msg = sum_reducer(neighbor_x, row, num_nodes=x.shape[0])
 
@@ -166,7 +173,7 @@ def mean_pooling_graph_sage(x, edge_index, edge_weight, mlp_kernel, neighs_kerne
                     {\| \mathbf{x}^{\prime}_i \|_2}`.
                     (default: :obj:`False`)
         :return: Updated node features (x), shape: [num_nodes, num_output_features]
-        """
+    """
 
     if edge_weight is not None:
         edge_weight = tf.ones([edge_index.shape[1]], dtype=tf.float32)
@@ -186,6 +193,9 @@ def mean_pooling_graph_sage(x, edge_index, edge_weight, mlp_kernel, neighs_kerne
         h = activation(h)
 
     reduced_h = mean_reducer(h, row, num_nodes=len(x))
+
+    reduced_h = dropout(reduced_h)
+    x = dropout(x)
 
     from_neighs = reduced_h @ neighs_kernel
     from_x = x @ self_kernel
@@ -242,8 +252,9 @@ def max_pooling_graph_sage(x, edge_index, edge_weight, mlp_kernel, neighs_kernel
         h = activation(h)
 
     reduced_h = max_reducer(h, row, num_nodes=len(x))
-
+    reduced_h = dropout(reduced_h)
     from_neighs = reduced_h @ neighs_kernel
+    x = dropout(x)
     from_x = x @ self_kernel
 
     output = tf.concat([from_neighs, from_x], axis=1)
@@ -259,7 +270,7 @@ def max_pooling_graph_sage(x, edge_index, edge_weight, mlp_kernel, neighs_kernel
     return output
 
 
-def lstm_graph_sage(x, edge_index, edge_weight, lstm, neighs_kernel, self_kernel,
+def lstm_graph_sage(x, edge_index, edge_weight, lstm, neighs_kernel, self_kernel, dropout,
                     bias=None, activation=None, normalize=False):
     """
 
@@ -280,42 +291,34 @@ def lstm_graph_sage(x, edge_index, edge_weight, lstm, neighs_kernel, self_kernel
             :return: Updated node features (x), shape: [num_nodes, num_output_features]
             """
 
-    if edge_weight is not None:
-        edge_weight = tf.ones([edge_index.shape[1]], dtype=tf.float32)
-
     row, col = edge_index
-    # repeated_x = tf.gather(x, row)
-    # neighbor_x = tf.gather(x, col)
-    # neighbor_x = gcn_mapper(repeated_x, neighbor_x, edge_weight=edge_weight)
-    padding_feature = tf.zeros((1, x.shape[-1]), dtype=tf.float32)
-    x_ = tf.concat((x, padding_feature), axis=0)
-
-    num_neighs = Counter()
-
-    col_numpy = col.numpy()
     row_numpy = row.numpy()
+    col_numpy = col.numpy()
+    num_neighbors = 0
     for i in row_numpy:
-        num_neighs[i] += 1
+        if i == 0:
+            num_neighbors += 1
+        else:
+            break
 
-    max_len = max(num_neighs.values())
-    neighbors = np.zeros((x.shape[0], max_len), dtype=np.int)
-    nums = 0
-    for i, v in num_neighs.items():
-        neighbors[i][0:v] = col_numpy[nums:nums + v]
-        nums += v
-        neighbors[i][v:max_len] = x.shape[0]
+    neighbors = np.zeros((x.shape[0], num_neighbors), dtype=np.int)
 
-    neighbor_feature = tf.gather(x_, neighbors)
+    for i in range(x.shape[0]):
+        neighbors[i] = col_numpy[i*num_neighbors:(i+1)*num_neighbors]
 
-    reduced_h = lstm(neighbor_feature)
-    a = list(num_neighs.values())
+    neighbor_x = tf.gather(x, neighbors)
 
-    reduced_h = [tf.reduce_mean(h[:a[i]], axis=0) for i,h in enumerate(reduced_h)]
-    reduced_h = tf.reshape(reduced_h,[x.shape[0],-1])
+    neighbor_h = lstm(neighbor_x)
 
+    reduced_h = tf.reduce_mean(neighbor_h,axis=1)
+
+    reduced_h = dropout(reduced_h)
+    x = dropout(x)
+
+    from_neighs = reduced_h @ neighs_kernel
     from_x = x @ self_kernel
 
-    output = tf.concat([reduced_h, from_x], axis=1)
+    output = tf.concat([from_neighs, from_x], axis=1)
     if bias is not None:
         output += bias
 
