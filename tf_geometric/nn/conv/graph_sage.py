@@ -93,6 +93,7 @@ def mean_graph_sage(x, edge_index, edge_weight, neighs_kernel, self_kernel, drop
     x = x @ self_kernel
 
     h = tf.concat([neighbor_msg, x], axis=1)
+    # h = x @ self_kernel + neighbor_msg
 
     if bias is not None:
         h += bias

@@ -1,10 +1,13 @@
 # coding=utf-8
 import os
 
+
 import tensorflow as tf
 from tensorflow import keras
 import numpy as np
+
 from tf_geometric.layers.conv.graph_sage import  MaxPoolingGraphSage
+
 from tf_geometric.datasets.ppi import PPIDataset
 
 from sklearn.metrics import f1_score
@@ -38,8 +41,10 @@ fc = tf.keras.Sequential([
 num_sampled_neighbors_list = [25, 10]
 
 
+
 def forward(graph, training=False):
     neighbor_sampler = graph.cache["sampler"]
+
 
     h = graph.x
 
@@ -91,8 +96,8 @@ def evaluate(graphs):
 optimizer = tf.keras.optimizers.Adam(learning_rate=1e-2)
 
 
-
 for epoch in tqdm(range(10)):
+
     for graph in train_graphs:
         with tf.GradientTape() as tape:
             logits = forward(graph, training=True)
@@ -109,3 +114,4 @@ for epoch in tqdm(range(10)):
         print("epoch = {}\ttest_f1_micro = {}".format(epoch, test_f1_mic))
 # test_f1_mic = evaluate(test_graphs)
 # print("test_f1_micro = {}".format(test_f1_mic))
+
