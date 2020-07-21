@@ -1,7 +1,6 @@
 # coding=utf-8
 
-import tensorflow as tf
-from tf_geometric.nn.conv.sgc import sgc, gcn_norm_edge
+from tf_geometric.nn.conv.sgc import sgc
 from tf_geometric.layers.kernel.map_reduce import MapReduceGNN
 
 class SGC(MapReduceGNN):
@@ -50,14 +49,6 @@ class SGC(MapReduceGNN):
             x, edge_index = inputs
             edge_weight = None
 
-        updated_edge_index, normed_edge_weight = gcn_norm_edge(edge_index, x.shape[0], edge_weight,
-                                                               self.renorm, self.improved, cache)
+        return sgc(x, edge_index, edge_weight, self.K, self.kernel, self.bias, self.renorm, self.improved, cache)
 
-        for k in range(self.K):
-            x = sgc(x, updated_edge_index, normed_edge_weight)
 
-        h = x @ self.kernel
-
-        if self.use_bias:
-            h += self.bias
-        return h
