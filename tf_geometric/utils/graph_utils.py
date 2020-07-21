@@ -7,8 +7,8 @@ import warnings
 
 from tf_geometric.utils.union_utils import convert_union_to_numpy
 
+from scipy.sparse.linalg import eigs, eigsh
 import scipy.sparse
-
 
 def remove_self_loop_edge(edge_index, edge_weight=None):
     edge_index_is_tensor = tf.is_tensor(edge_index)
@@ -446,3 +446,40 @@ class RandomNeighborSampler(object):
         sampled_edge_index = np.array(sampled_edge_index).T
         sampled_edge_weight = np.array(sampled_edge_weight)
         return sampled_edge_index, sampled_edge_weight
+
+class LaplacianMaxEigenvalue(object):
+    def __init__(self, x, edge_index, edge_weight, is_undirected=True):
+        self.num_nodes = x.shape[0]
+        self.edge_index = convert_union_to_numpy(edge_index, np.int32)
+        if edge_weight is not None:
+            self.edge_weight = convert_union_to_numpy(edge_weight)
+        else:
+            self.edge_weight = np.ones([self.edge_index.shape[1]], dtype=np.float32)
+        self.is_undirected = is_undirected
+
+
+    def __call__(self, normalization_type='sym'):
+        assert normalization_type in ['sym', 'rw']
+
+        edge_index, edge_weight = remove_self_loop_edge(self.edge_index, self.edge_weight)
+
+        edge_index, edge_weight = get_laplacian(self.edge_index, edge_weight,
+                                                normalization_type,
+                                                num_nodes=self.num_nodes)
+
+        L = to_scipy_sparse_matrix(edge_index, edge_weight, self.num_nodes)
+
+        eig_fn = eigs
+        if self.is_undirected and normalization_type:
+            eig_fn = eigsh
+
+        lambda_max = eig_fn(L, k=1, which='LM', return_eigenvectors=False)
+
+        return float(lambda_max)
+
+
+
+
+
+
+

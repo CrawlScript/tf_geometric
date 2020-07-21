@@ -3,28 +3,30 @@ import os
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 import tensorflow as tf
+import numpy as np
 from tensorflow import keras
 from tf_geometric.layers.conv.chebnet import chebNet
 from tf_geometric.datasets.cora import CoraDataset
-from tf_geometric.utils.laplacian_lambda_max import LaplacianLambdaMax
+from tf_geometric.utils.graph_utils import LaplacianMaxEigenvalue
 from tqdm import tqdm
 
+np.random.seed(2020)
+tf.random.set_seed(2020)
 graph, (train_index, valid_index, test_index) = CoraDataset().load_data()
-
-laplacian_lambda_max = LaplacianLambdaMax(normalization_type='sym', is_undirected=True)
-graph_lambda_max = laplacian_lambda_max(graph).lambda_max
 
 num_classes = graph.y.max() + 1
 
-model = chebNet(64, K=3, lambda_max=graph_lambda_max, normalization_type='sym')
-dropout = keras.layers.Dropout(0.5)
-linear = keras.layers.Dense(num_classes, input_dim=2, use_bias=True)
+graph_lambda_max = LaplacianMaxEigenvalue(graph.x, graph.edge_index, graph.edge_weight)
+
+model = chebNet(64, K=3, lambda_max=graph_lambda_max(normalization_type='rw'))
+fc = tf.keras.Sequential([
+    keras.layers.Dropout(0.5),
+    keras.layers.Dense(num_classes)])
 
 
 def forward(graph, training=False):
     h = model([graph.x, graph.edge_index, graph.edge_weight])
-    h = dropout(h, training=training)
-    h = linear(h)
+    h = fc(h, training=training)
     return h
 
 
@@ -55,7 +57,7 @@ def evaluate(mask):
     return accuracy_m.result().numpy()
 
 
-optimizer = tf.keras.optimizers.Adam(learning_rate=0.005)
+optimizer = tf.keras.optimizers.Adam(learning_rate=1e-2)
 
 best_test_acc = tmp_valid_acc = 0
 for step in tqdm(range(1, 101)):
