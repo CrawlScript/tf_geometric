@@ -322,7 +322,7 @@ def compute_edge_mask_by_node_index(edge_index, node_index):
 def get_laplacian(edge_index, edge_weight, normalization_type, num_nodes, fill_weight=1.0):
 
     if normalization_type is not None:
-        assert normalization_type in ['sym', 'rw']
+        assert normalization_type in [None,'sym', 'rw']
 
     row, col = edge_index
     deg = tf.math.unsorted_segment_sum(edge_weight, row, num_segments=num_nodes)
@@ -459,7 +459,7 @@ class LaplacianMaxEigenvalue(object):
 
 
     def __call__(self, normalization_type='sym'):
-        assert normalization_type in ['sym', 'rw']
+        assert normalization_type in [None, 'sym', 'rw']
 
         edge_index, edge_weight = remove_self_loop_edge(self.edge_index, self.edge_weight)
 
@@ -475,7 +475,7 @@ class LaplacianMaxEigenvalue(object):
 
         lambda_max = eig_fn(L, k=1, which='LM', return_eigenvectors=False)
 
-        return float(lambda_max)
+        return float(lambda_max.real)
 
 
 
