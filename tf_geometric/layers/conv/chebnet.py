@@ -13,8 +13,7 @@ class chebNet(MapReduceGNN):
 
     """
 
-
-    def __init__(self,  units, K, lambda_max, activation=tf.nn.relu, use_bias=True, normalization_type='sys',
+    def __init__(self, units, K, lambda_max, activation=tf.nn.relu, use_bias=True, normalization_type='sym',
                  *args, **kwargs):
         """
 
@@ -53,7 +52,6 @@ class chebNet(MapReduceGNN):
         if self.use_bias:
             self.bias = self.add_weight("bias", shape=[self.units], initializer="zeros")
 
-
     def call(self, inputs, cache=None, training=None, mask=None):
         """
 
@@ -68,30 +66,5 @@ class chebNet(MapReduceGNN):
             x, edge_index = inputs
             edge_weight = None
 
-        num_nodes = x.shape[0]
-        norm_edge_index, norm_edge_weight = normalization(edge_index, num_nodes, edge_weight, self.lambda_max,
-                                                          normalization_type=self.normalization_type)
-
-
-        T0_x = x
-        T1_x = x
-        out = tf.matmul(T0_x, self.kernel[0])
-
-        if self.K > 1:
-            T1_x = chebnet(x, norm_edge_index, norm_edge_weight)
-            out += tf.matmul(T1_x, self.kernel[1])
-
-        for i in range(2,self.K):
-            T2_x = chebnet(T1_x, norm_edge_index, norm_edge_weight) ##L^T_{k-1}(L^)
-            T2_x = 2.0 * T2_x - T0_x
-            out += tf.matmul(T2_x, self.kernel[i])
-
-            T0_x, T1_x = T1_x, T2_x
-
-        if self.use_bias:
-            out += self.bias
-
-        if self.activation is not None:
-            out += self.activation(out)
-
-        return out
+        return chebnet(x, edge_index, edge_weight, self.K, self.lambda_max, self.kernel, self.bias, self.activation,
+                       self.normalization_type)

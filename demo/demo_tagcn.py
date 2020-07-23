@@ -1,24 +1,30 @@
 # coding=utf-8
 import os
+
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 import tensorflow as tf
+import numpy as np
 from tensorflow import keras
 from tf_geometric.layers.conv.tagcn import TAGCN
 from tf_geometric.datasets.cora import CoraDataset
 
+np.random.seed(2020)
+tf.random.set_seed(2020)
 
 graph, (train_index, valid_index, test_index) = CoraDataset().load_data()
 
 num_classes = graph.y.max() + 1
 
-tagcn0 = TAGCN(16, K=2, activation=tf.nn.relu)
-tagcn1 = TAGCN(num_classes, K=2)
-dropout = keras.layers.Dropout(0.5)
+tagcn0 = TAGCN(16)
+tagcn1 = TAGCN(num_classes)
+dropout = keras.layers.Dropout(0.3)
+
 
 def forward(graph, training=False):
     h = tagcn0([graph.x, graph.edge_index, graph.edge_weight], cache=graph.cache)
     h = dropout(h, training=training)
     h = tagcn1([h, graph.edge_index, graph.edge_weight], cache=graph.cache)
+
     return h
 
 
@@ -52,7 +58,7 @@ def evaluate(mask):
 optimizer = tf.keras.optimizers.Adam(learning_rate=0.01)
 
 best_test_acc = tmp_valid_acc = 0
-for step in range(1,101):
+for step in range(1, 101):
     with tf.GradientTape() as tape:
         logits = forward(graph, training=True)
         loss = compute_loss(logits, train_index, tape.watched_variables())
