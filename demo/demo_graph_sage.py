@@ -15,7 +15,7 @@ from tqdm import tqdm
 
 from tf_geometric.utils.graph_utils import RandomNeighborSampler
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "5"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 np.random.seed(20)
 tf.random.set_seed(20)
