@@ -1,21 +1,17 @@
 # coding=utf-8
 import os
 
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
+import tf_geometric as tfg
+from tf_geometric.datasets.ppi import PPIDataset
+from tf_geometric.utils.graph_utils import RandomNeighborSampler
 import tensorflow as tf
 from tensorflow import keras
 import numpy as np
-
-from tf_geometric.layers.conv.graph_sage import  MaxPoolingGraphSage
-
-from tf_geometric.datasets.ppi import PPIDataset
-
 from sklearn.metrics import f1_score
 from tqdm import tqdm
 
-from tf_geometric.utils.graph_utils import RandomNeighborSampler
-
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 np.random.seed(20)
 tf.random.set_seed(20)
@@ -29,8 +25,8 @@ for graph in train_graphs + valid_graphs + test_graphs:
 num_classes = train_graphs[0].y.shape[1]
 
 graph_sages = [
-    MaxPoolingGraphSage(units=128, activation=tf.nn.relu),
-    MaxPoolingGraphSage(units=128, activation=tf.nn.relu)
+    tfg.layers.MaxPoolGraphSage(units=128, activation=tf.nn.relu),
+    tfg.layers.MaxPoolGraphSage(units=128, activation=tf.nn.relu)
 ]
 
 fc = tf.keras.Sequential([
@@ -41,10 +37,9 @@ fc = tf.keras.Sequential([
 num_sampled_neighbors_list = [25, 10]
 
 
-
 def forward(graph, training=False):
-    neighbor_sampler = graph.cache["sampler"]
 
+    neighbor_sampler = graph.cache["sampler"]
 
     h = graph.x
 
@@ -95,7 +90,6 @@ def evaluate(graphs):
 
 optimizer = tf.keras.optimizers.Adam(learning_rate=1e-2)
 
-
 for epoch in tqdm(range(10)):
 
     for graph in train_graphs:
@@ -114,4 +108,3 @@ for epoch in tqdm(range(10)):
         print("epoch = {}\ttest_f1_micro = {}".format(epoch, test_f1_mic))
 # test_f1_mic = evaluate(test_graphs)
 # print("test_f1_micro = {}".format(test_f1_mic))
-

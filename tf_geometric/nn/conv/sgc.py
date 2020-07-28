@@ -1,11 +1,7 @@
-#coding=utf-8
-import tensorflow as tf
+# coding=utf-8
+
 from tf_geometric.nn.conv.gcn import gcn_norm_edge, gcn_mapper
 from tf_geometric.nn.kernel.map_reduce import aggregate_neighbors, sum_reducer, identity_updater
-
-
-def mean_reducer(neighbor_msg, node_index, num_nodes=None):
-    return tf.math.unsorted_segment_mean(neighbor_msg, node_index, num_segments=num_nodes)
 
 
 def sgc(x, edge_index, edge_weight, K, kernel, bias=None, renorm=True, improved=False, cache=None):

@@ -5,7 +5,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 import tensorflow as tf
 import numpy as np
 from tensorflow import keras
-from tf_geometric.layers.conv.chebnet import chebNet
+from tf_geometric.layers.conv.chebnet import ChebNet
 from tf_geometric.datasets.cora import CoraDataset
 from tf_geometric.utils.graph_utils import LaplacianMaxEigenvalue
 from tqdm import tqdm
@@ -18,7 +18,7 @@ num_classes = graph.y.max() + 1
 
 graph_lambda_max = LaplacianMaxEigenvalue(graph.x, graph.edge_index, graph.edge_weight)
 
-model = chebNet(64, K=3, lambda_max=graph_lambda_max(normalization_type='rw'))
+model = ChebNet(64, K=3, lambda_max=graph_lambda_max(normalization_type='rw'))
 fc = tf.keras.Sequential([
     keras.layers.Dropout(0.5),
     keras.layers.Dense(num_classes)])

@@ -1,11 +1,11 @@
 # coding=utf-8
 
 import tensorflow as tf
-from tf_geometric.nn.conv.chebnet import normalization, chebnet
+from tf_geometric.nn.conv.chebnet import chebnet_norm_edge, chebnet
 from tf_geometric.layers.kernel.map_reduce import MapReduceGNN
 
 
-class chebNet(MapReduceGNN):
+class ChebNet(MapReduceGNN):
     """
     The chebyshev spectral graph convolutional operator from the
     `"Convolutional Neural Networks on Graphs with Fast Localized Spectral
