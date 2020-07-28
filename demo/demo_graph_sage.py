@@ -13,8 +13,6 @@ from sklearn.metrics import f1_score
 from tqdm import tqdm
 
 
-np.random.seed(20)
-tf.random.set_seed(20)
 train_graphs, valid_graphs, test_graphs = PPIDataset().load_data()
 
 # traverse all graphs
