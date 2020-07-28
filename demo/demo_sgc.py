@@ -1,9 +1,9 @@
 # coding=utf-8
 import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+import tf_geometric as tfg
 import tensorflow as tf
 from tensorflow import keras
-from tf_geometric.layers.conv.sgc import SGC
 from tf_geometric.datasets.cora import CoraDataset
 
 
@@ -12,7 +12,7 @@ graph, (train_index, valid_index, test_index) = CoraDataset().load_data()
 num_classes = graph.y.max() + 1
 
 
-model = SGC(num_classes, k=2)
+model = tfg.layers.SGC(num_classes, k=2)
 
 
 def forward(graph):

@@ -2,23 +2,22 @@
 import os
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+import tf_geometric as tfg
 import tensorflow as tf
 import numpy as np
 from tensorflow import keras
-from tf_geometric.layers.conv.chebnet import ChebNet
 from tf_geometric.datasets.cora import CoraDataset
 from tf_geometric.utils.graph_utils import LaplacianMaxEigenvalue
 from tqdm import tqdm
 
-np.random.seed(2020)
-tf.random.set_seed(2020)
+
 graph, (train_index, valid_index, test_index) = CoraDataset().load_data()
 
 num_classes = graph.y.max() + 1
 
 graph_lambda_max = LaplacianMaxEigenvalue(graph.x, graph.edge_index, graph.edge_weight)
 
-model = ChebNet(64, K=3, lambda_max=graph_lambda_max(normalization_type='rw'))
+model = tfg.layers.ChebNet(64, K=3, lambda_max=graph_lambda_max(normalization_type='rw'))
 fc = tf.keras.Sequential([
     keras.layers.Dropout(0.5),
     keras.layers.Dense(num_classes)])

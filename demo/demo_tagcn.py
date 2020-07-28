@@ -2,21 +2,19 @@
 import os
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+import tf_geometric as tfg
 import tensorflow as tf
 import numpy as np
 from tensorflow import keras
-from tf_geometric.layers.conv.tagcn import TAGCN
 from tf_geometric.datasets.cora import CoraDataset
 
-np.random.seed(2020)
-tf.random.set_seed(2020)
 
 graph, (train_index, valid_index, test_index) = CoraDataset().load_data()
 
 num_classes = graph.y.max() + 1
 
-tagcn0 = TAGCN(16)
-tagcn1 = TAGCN(num_classes)
+tagcn0 = tfg.layers.TAGCN(16)
+tagcn1 = tfg.layers.TAGCN(num_classes)
 dropout = keras.layers.Dropout(0.3)
 
 
