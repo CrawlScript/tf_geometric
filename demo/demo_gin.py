@@ -8,8 +8,6 @@ from tensorflow import keras
 import numpy as np
 from sklearn.model_selection import train_test_split
 
-np.random.seed(2020)
-tf.random.set_seed(2020)
 # TU Datasets: https://ls11-www.cs.tu-dortmund.de/staff/morris/graphkerneldatasets
 # COLLAB is a large dataset, which may costs 5 minutes for processing.
 # tfg will automatically cache the processing result after the first processing.
@@ -62,25 +60,26 @@ def create_graph_generator(graphs, batch_size, infinite=False, shuffle=False):
             break
 
 
-class GIN(keras.Model):
-    def __init__(self, hidden_dim, *args, **kwargs):
+class GINPoolNetwork(keras.Model):
+    def __init__(self, num_gins, units, num_classes, *args, **kwargs):
+        """
+        Demo GIN based Pooling Model
+        :param num_gins: number of GIN layers
+        :param units: Positive integer, dimensionality of the each GIN layer.
+        :param num_classes: number of classes (for graph classification)
+        """
         super().__init__(*args, **kwargs)
-        nn1 = keras.Sequential([keras.layers.Dense(hidden_dim, activation=tf.nn.relu), keras.layers.Dense(hidden_dim)])
-        self.gin0 = tfg.layers.GIN(nn1)
-        nn2 = keras.Sequential([keras.layers.Dense(hidden_dim, activation=tf.nn.relu), keras.layers.Dense(hidden_dim)])
-        self.gin1 = tfg.layers.GIN(nn2)
-        nn3 = keras.Sequential([keras.layers.Dense(hidden_dim, activation=tf.nn.relu), keras.layers.Dense(hidden_dim)])
-        self.gin2 = tfg.layers.GIN(nn3)
-        nn4 = keras.Sequential([keras.layers.Dense(hidden_dim, activation=tf.nn.relu), keras.layers.Dense(hidden_dim)])
-        self.gin3 = tfg.layers.GIN(nn4)
-        nn5 = keras.Sequential([keras.layers.Dense(hidden_dim, activation=tf.nn.relu), keras.layers.Dense(hidden_dim)])
-        self.gin4 = tfg.layers.GIN(nn5)
 
-        self.bn0 = keras.layers.BatchNormalization()
-        self.bn1 = keras.layers.BatchNormalization()
-        self.bn2 = keras.layers.BatchNormalization()
-        self.bn3 = keras.layers.BatchNormalization()
-        self.bn4 = keras.layers.BatchNormalization()
+        self.gins = [
+            tfg.layers.GIN(
+                keras.Sequential([
+                    keras.layers.Dense(units, activation=tf.nn.relu),
+                    keras.layers.Dense(units),
+                    keras.layers.BatchNormalization()
+                ])
+            )
+            for _ in range(num_gins)  # num_gins blocks
+        ]
 
         self.mlp = keras.Sequential([
             keras.layers.Dense(128, activation=tf.nn.relu),
@@ -89,36 +88,27 @@ class GIN(keras.Model):
         ])
 
     def call(self, inputs, training=False, mask=None):
+
         if len(inputs) == 4:
             x, edge_index, edge_weight, node_graph_index = inputs
         else:
-            x, edge_index, _, node_graph_index = inputs
+            x, edge_index, node_graph_index = inputs
             edge_weight = None
 
-        h1 = self.gin0([x, edge_index, edge_weight])
-        h2 = self.bn1(h1)
-        h2 = self.gin1([h2, edge_index, edge_weight])
-        h3 = self.bn1(h2)
-        h3 = self.gin2([h3, edge_index, edge_weight])
-        h4 = self.bn2(h3)
-        h4 = self.gin3([h4, edge_index, edge_weight])
-        h5 = self.bn3(h4)
-        h5 = self.gin4([h5, edge_index, edge_weight])
-        h5 = self.bn3(h5)
+        hidden_outputs = []
+        h = x
 
-        h1 = tfg.nn.sum_pool(h1, node_graph_index)
-        h2 = tfg.nn.sum_pool(h2, node_graph_index)
-        h3 = tfg.nn.sum_pool(h3, node_graph_index)
-        h4 = tfg.nn.sum_pool(h4, node_graph_index)
-        h5 = tfg.nn.sum_pool(h5, node_graph_index)
+        for gin in self.gins:
+            h = gin([h, edge_index, edge_weight], training=training)
+            hidden_outputs.append(h)
 
-        h = tf.concat((h1, h2, h3, h4, h5), axis=-1)
-        out = self.mlp(h, training=training)
-
-        return out
+        h = tf.concat(hidden_outputs, axis=-1)
+        h = tfg.nn.sum_pool(h, node_graph_index)
+        logits = self.mlp(h, training=training)
+        return logits
 
 
-model = GIN(32)
+model = GINPoolNetwork(5, 32, num_classes)
 batch_size = len(train_graphs)
 
 
@@ -137,6 +127,7 @@ def evaluate(graphs, batch_size):
 
 optimizer = tf.keras.optimizers.Adam(learning_rate=0.01)
 train_batch_generator = create_graph_generator(train_graphs, batch_size, shuffle=True, infinite=True)
+
 
 best_test_acc = 0
 for step in range(0, 1000):
