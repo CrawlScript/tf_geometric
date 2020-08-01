@@ -1,33 +1,38 @@
+import os
+
+os.environ["CUDA_VISIBLE_DEVICES"] = "3"
+
 import tf_geometric as tfg
 import tensorflow as tf
 from tensorflow import keras
 import numpy as np
 from sklearn.model_selection import train_test_split
 
-import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-
-
+np.random.seed(2020)
+tf.random.set_seed(2020)
 # TU Datasets: https://ls11-www.cs.tu-dortmund.de/staff/morris/graphkerneldatasets
 # COLLAB is a large dataset, which may costs 5 minutes for processing.
 # tfg will automatically cache the processing result after the first processing.
 # Thus, you can load it with only few seconds then.
-graph_dicts = tfg.datasets.TUDataset("COLLAB").load_data()
-
+graph_dicts = tfg.datasets.TUDataset("NCI1").load_data()
 
 # Since a TU dataset may contain node_labels, node_attributes etc., each of which can be used as node features
 # We process each graph as a dict and return a list of dict for graphs
 # You can easily construct you Graph object with the data dict
 
+num_node_labels = np.max([np.max(graph_dict["node_labels"]) for graph_dict in graph_dicts]) + 1
 
-def create_fake_node_features(num_nodes):
-    x = np.ones([num_nodes, 1], dtype=np.float32)
+
+def convert_node_labels_to_one_hot(node_labels):
+    num_nodes = len(node_labels)
+    x = np.zeros([num_nodes, num_node_labels], dtype=np.float32)
+    x[list(range(num_nodes)), node_labels] = 1.0
     return x
 
 
 def construct_graph(graph_dict):
     return tfg.Graph(
-        x=create_fake_node_features(graph_dict["num_nodes"]),
+        x=convert_node_labels_to_one_hot(graph_dict["node_labels"]),
         edge_index=graph_dict["edge_index"],
         y=graph_dict["graph_label"]  # graph_dict["graph_label"] is a list with one int element
     )
@@ -50,80 +55,111 @@ def create_graph_generator(graphs, batch_size, infinite=False, shuffle=False):
             batch_graph_list = [graphs[i] for i in batch_graph_index]
 
             batch_graph = tfg.BatchGraph.from_graphs(batch_graph_list)
-            # print("num_nodes: ", batch_graph.num_nodes)
+
             yield batch_graph
 
         if not infinite:
             break
 
 
-batch_size = 100
+class GIN(keras.Model):
+    def __init__(self, hidden_dim, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        nn1 = keras.Sequential([keras.layers.Dense(hidden_dim, activation=tf.nn.relu), keras.layers.Dense(hidden_dim)])
+        self.gin0 = tfg.layers.GIN(nn1)
+        nn2 = keras.Sequential([keras.layers.Dense(hidden_dim, activation=tf.nn.relu), keras.layers.Dense(hidden_dim)])
+        self.gin1 = tfg.layers.GIN(nn2)
+        nn3 = keras.Sequential([keras.layers.Dense(hidden_dim, activation=tf.nn.relu), keras.layers.Dense(hidden_dim)])
+        self.gin2 = tfg.layers.GIN(nn3)
+        nn4 = keras.Sequential([keras.layers.Dense(hidden_dim, activation=tf.nn.relu), keras.layers.Dense(hidden_dim)])
+        self.gin3 = tfg.layers.GIN(nn4)
+        nn5 = keras.Sequential([keras.layers.Dense(hidden_dim, activation=tf.nn.relu), keras.layers.Dense(hidden_dim)])
+        self.gin4 = tfg.layers.GIN(nn5)
 
-drop_rate = 0.2
-gin0 = tfg.layers.GIN(100, activation=tf.nn.relu)
-gin1 = tfg.layers.GIN(100, activation=tf.nn.relu)
-mlp = keras.Sequential([
-    keras.layers.Dense(50),
-    keras.layers.Dropout(drop_rate),
-    keras.layers.Dense(num_classes)
-])
-# dense = keras.layers.Dense(num_classes)
+        self.bn0 = keras.layers.BatchNormalization()
+        self.bn1 = keras.layers.BatchNormalization()
+        self.bn2 = keras.layers.BatchNormalization()
+        self.bn3 = keras.layers.BatchNormalization()
+        self.bn4 = keras.layers.BatchNormalization()
+
+        self.mlp = keras.Sequential([
+            keras.layers.Dense(128, activation=tf.nn.relu),
+            keras.layers.Dropout(0.3),
+            keras.layers.Dense(num_classes)
+        ])
+
+    def call(self, inputs, training=False, mask=None):
+        if len(inputs) == 4:
+            x, edge_index, edge_weight, node_graph_index = inputs
+        else:
+            x, edge_index, _, node_graph_index = inputs
+            edge_weight = None
+
+        h1 = self.gin0([x, edge_index, edge_weight])
+        h2 = self.bn1(h1)
+        h2 = self.gin1([h2, edge_index, edge_weight])
+        h3 = self.bn1(h2)
+        h3 = self.gin2([h3, edge_index, edge_weight])
+        h4 = self.bn2(h3)
+        h4 = self.gin3([h4, edge_index, edge_weight])
+        h5 = self.bn3(h4)
+        h5 = self.gin4([h5, edge_index, edge_weight])
+        h5 = self.bn3(h5)
+
+        h1 = tfg.nn.sum_pool(h1, node_graph_index)
+        h2 = tfg.nn.sum_pool(h2, node_graph_index)
+        h3 = tfg.nn.sum_pool(h3, node_graph_index)
+        h4 = tfg.nn.sum_pool(h4, node_graph_index)
+        h5 = tfg.nn.sum_pool(h5, node_graph_index)
+
+        h = tf.concat((h1, h2, h3, h4, h5), axis=-1)
+        out = self.mlp(h, training=training)
+
+        return out
 
 
-def forward(batch_graph, training=False, pooling="sum"):
-    # GCN Encoder
-    h = gin0([batch_graph.x, batch_graph.edge_index, batch_graph.edge_weight])
-    h = gin1([h, batch_graph.edge_index, batch_graph.edge_weight])
-
-    # Pooling
-    if pooling == "mean":
-        h = tfg.nn.mean_pool(h, batch_graph.node_graph_index)
-    elif pooling == "sum":
-        h = tfg.nn.mean_pool(h, batch_graph.node_graph_index)
-    elif pooling == "max":
-        h = tfg.nn.max_pool(h, batch_graph.node_graph_index)
-    elif pooling == "min":
-        h = tfg.nn.min_pool(h, batch_graph.node_graph_index)
-
-    # Predict Graph Labels
-    h = mlp(h, training=training)
-    return h
+model = GIN(32)
+batch_size = len(train_graphs)
 
 
-def evaluate():
+def evaluate(graphs, batch_size):
     accuracy_m = keras.metrics.Accuracy()
 
-    for test_batch_graph in create_graph_generator(test_graphs, batch_size, shuffle=False, infinite=False):
-        logits = forward(test_batch_graph)
+    for batch_graph in create_graph_generator(graphs, batch_size, shuffle=False, infinite=False):
+        inputs = [batch_graph.x, batch_graph.edge_index, batch_graph.edge_weight,
+                  batch_graph.node_graph_index]
+        logits = model(inputs)
         preds = tf.argmax(logits, axis=-1)
-        accuracy_m.update_state(test_batch_graph.y, preds)
+        accuracy_m.update_state(batch_graph.y, preds)
 
     return accuracy_m.result().numpy()
 
 
-optimizer = tf.keras.optimizers.Adam(learning_rate=1e-2)
-
+optimizer = tf.keras.optimizers.Adam(learning_rate=0.01)
 train_batch_generator = create_graph_generator(train_graphs, batch_size, shuffle=True, infinite=True)
 
-import time
-for step in range(20000):
-    train_batch_graph = next(train_batch_generator)
+best_test_acc = 0
+for step in range(0, 1000):
+    batch_graph = next(train_batch_generator)
     with tf.GradientTape() as tape:
-        logits = forward(train_batch_graph, training=True)
+        inputs = [batch_graph.x, batch_graph.edge_index, batch_graph.edge_weight,
+                  batch_graph.node_graph_index]
+        logits = model(inputs, training=True)
         losses = tf.nn.softmax_cross_entropy_with_logits(
             logits=logits,
-            labels=tf.one_hot(train_batch_graph.y, depth=num_classes)
+            labels=tf.one_hot(batch_graph.y, depth=num_classes)
         )
 
-        kernel_vals = [var for var in tape.watched_variables() if "kernel" in var.name]
-        l2_losses = [tf.nn.l2_loss(kernel_var) for kernel_var in kernel_vals]
-
-        loss = tf.reduce_mean(losses) + tf.add_n(l2_losses) * 5e-4
-
+        loss = tf.reduce_mean(losses)
     vars = tape.watched_variables()
     grads = tape.gradient(loss, vars)
     optimizer.apply_gradients(zip(grads, vars))
 
-    if step % 20 == 0:
-        accuracy = evaluate()
-        print("step = {}\tloss = {}\taccuracy = {}".format(step, loss, accuracy))
+    if step % 10 == 0:
+        train_acc = evaluate(train_graphs, batch_size)
+        test_acc = evaluate(test_graphs, batch_size)
+
+        if best_test_acc < test_acc:
+            best_test_acc = test_acc
+
+        print("step = {}\tloss = {}\ttrain_acc = {}\ttest_acc={}".format(step, loss, train_acc, best_test_acc))
