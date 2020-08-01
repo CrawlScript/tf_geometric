@@ -27,7 +27,7 @@ tf_geometric.layers
    :members: call
 
 
-.. autoclass:: tf_geometric.layers.ChebNet
+.. autoclass:: tf_geometric.layers.ChebyNet
    :special-members: __init__
    :members: call
 

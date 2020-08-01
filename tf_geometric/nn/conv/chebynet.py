@@ -4,7 +4,7 @@ from tf_geometric.utils.graph_utils import remove_self_loop_edge, add_self_loop_
 from tf_geometric.nn.kernel.map_reduce import aggregate_neighbors, sum_reducer, identity_updater
 
 
-def chebnet_norm_edge(edge_index, num_nodes, edge_weight, lambda_max, normalization_type):
+def chebynet_norm_edge(edge_index, num_nodes, edge_weight, lambda_max, normalization_type):
     edge_index, edge_weight = remove_self_loop_edge(edge_index, edge_weight)
 
     updated_edge_index, updated_edge_weight = get_laplacian(edge_index, edge_weight, normalization_type,
@@ -17,10 +17,10 @@ def chebnet_norm_edge(edge_index, num_nodes, edge_weight, lambda_max, normalizat
     return updated_edge_index, scaled_edge_weight
 
 
-def chebnet(x, edge_index, edge_weight, K, lambda_max, kernel, bias=None, activation=None, normalization_type=None):
+def chebynet(x, edge_index, edge_weight, K, lambda_max, kernel, bias=None, activation=None, normalization_type=None):
     num_nodes = x.shape[0]
-    norm_edge_index, norm_edge_weight = chebnet_norm_edge(edge_index, num_nodes, edge_weight, lambda_max,
-                                                          normalization_type=normalization_type)
+    norm_edge_index, norm_edge_weight = chebynet_norm_edge(edge_index, num_nodes, edge_weight, lambda_max,
+                                                           normalization_type=normalization_type)
 
     T0_x = x
     T1_x = x

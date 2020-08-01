@@ -1,11 +1,11 @@
 # coding=utf-8
 
 import tensorflow as tf
-from tf_geometric.nn.conv.chebnet import chebnet_norm_edge, chebnet
+from tf_geometric.nn.conv.chebynet import chebynet_norm_edge, chebynet
 from tf_geometric.layers.kernel.map_reduce import MapReduceGNN
 
 
-class ChebNet(MapReduceGNN):
+class ChebyNet(MapReduceGNN):
     """
     The chebyshev spectral graph convolutional operator from the
     `"Convolutional Neural Networks on Graphs with Fast Localized Spectral
@@ -66,5 +66,5 @@ class ChebNet(MapReduceGNN):
             x, edge_index = inputs
             edge_weight = None
 
-        return chebnet(x, edge_index, edge_weight, self.K, self.lambda_max, self.kernel, self.bias, self.activation,
+        return chebynet(x, edge_index, edge_weight, self.K, self.lambda_max, self.kernel, self.bias, self.activation,
                        self.normalization_type)

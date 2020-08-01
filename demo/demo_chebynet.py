@@ -17,7 +17,7 @@ num_classes = graph.y.max() + 1
 
 graph_lambda_max = LaplacianMaxEigenvalue(graph.x, graph.edge_index, graph.edge_weight)
 
-model = tfg.layers.ChebNet(64, K=3, lambda_max=graph_lambda_max(normalization_type='rw'))
+model = tfg.layers.ChebyNet(64, K=3, lambda_max=graph_lambda_max(normalization_type='rw'))
 fc = tf.keras.Sequential([
     keras.layers.Dropout(0.5),
     keras.layers.Dense(num_classes)])
