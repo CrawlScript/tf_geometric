@@ -7,6 +7,8 @@ import warnings
 
 from tf_geometric.utils.union_utils import convert_union_to_numpy
 
+from scipy.sparse.linalg import eigs, eigsh
+import scipy.sparse
 
 def remove_self_loop_edge(edge_index, edge_weight=None):
     edge_index_is_tensor = tf.is_tensor(edge_index)
@@ -315,5 +317,169 @@ def compute_edge_mask_by_node_index(edge_index, node_index):
         edge_mask = tf.convert_to_tensor(edge_mask, dtype=tf.bool)
 
     return edge_mask
+
+
+def get_laplacian(edge_index, edge_weight, normalization_type, num_nodes, fill_weight=1.0):
+
+    if normalization_type is not None:
+        assert normalization_type in [None,'sym', 'rw']
+
+    row, col = edge_index
+    deg = tf.math.unsorted_segment_sum(edge_weight, row, num_segments=num_nodes)
+    ##L = D - A
+    if normalization_type is None:
+        edge_index, edge_weight = add_self_loop_edge(edge_index, num_nodes, edge_weight, fill_weight=fill_weight)
+        row, col = edge_index
+        deg_inv = tf.where(
+            tf.math.logical_or(tf.math.is_inf(deg), tf.math.is_nan(deg)),
+            tf.zeros_like(deg),
+            deg
+        )
+        edge_weight = tf.gather(deg_inv, row) - edge_weight
+
+    ## L^ = D^{-1/2}LD^{-1/2}
+    elif normalization_type == 'sym':
+        deg_inv_sqrt = tf.pow(deg, -0.5)
+        deg_inv_sqrt = tf.where(
+            tf.math.logical_or(tf.math.is_inf(deg_inv_sqrt), tf.math.is_nan(deg_inv_sqrt)),
+            tf.zeros_like(deg_inv_sqrt),
+            deg_inv_sqrt
+        )
+
+        normed_edge_weight = tf.gather(deg_inv_sqrt, row) * edge_weight * tf.gather(deg_inv_sqrt, col)
+        edge_index, tmp = add_self_loop_edge(edge_index, num_nodes, edge_weight=normed_edge_weight,
+                                             fill_weight=fill_weight)
+
+        assert tmp is not None
+        edge_weight = tmp
+    ##L^ = D^{-1}L
+    else:
+        deg_inv = 1.0 / deg
+        deg_inv = tf.where(
+            tf.math.logical_or(tf.math.is_inf(deg_inv), tf.math.is_nan(deg_inv)),
+            tf.zeros_like(deg_inv),
+            deg_inv
+        )
+
+        normed_edge_weight = tf.gather(deg_inv, row) * edge_weight
+
+        edge_index, tmp = add_self_loop_edge(edge_index, num_nodes, edge_weight=normed_edge_weight,
+                                             fill_weight=fill_weight)
+
+        assert tmp is not None
+        edge_weight = tmp
+
+    return edge_index, edge_weight
+
+def to_scipy_sparse_matrix(edge_index, edge_weight=None, num_nodes=None):
+    r"""Converts a graph given by edge indices and edge attributes to a scipy
+    sparse matrix.
+
+    Args:
+        edge_index (LongTensor): The edge indices.
+        edge_attr (Tensor, optional): Edge weights or multi-dimensional
+            edge features. (default: :obj:`None`)
+        num_nodes (int, optional): The number of nodes, *i.e.*
+            :obj:`max_val + 1` of :attr:`index`. (default: :obj:`None`)
+    """
+    row, col = edge_index
+
+    if edge_weight is None:
+        edge_weight = tf.ones(row.shape[0])
+    else:
+        edge_weight = tf.reshape(edge_weight, [-1])
+        assert edge_weight.shape[0] == row.shape[0]
+
+    N = num_nodes
+    out = scipy.sparse.coo_matrix((edge_weight, (row, col)), (N, N))
+    return out
+
+
+class RandomNeighborSampler(object):
+    def __init__(self, edge_index, edge_weight=None):
+        self.edge_index = convert_union_to_numpy(edge_index, np.int32)
+        if edge_weight is not None:
+            self.edge_weight = convert_union_to_numpy(edge_weight)
+        else:
+            self.edge_weight = np.ones([self.edge_index.shape[1]], dtype=np.float32)
+        self.neighbor_dict = {}
+
+        for (a, b), weight in zip(self.edge_index.T, self.edge_weight):
+
+            if a not in self.neighbor_dict:
+                neighbors = []
+                self.neighbor_dict[a] = neighbors
+            else:
+                neighbors = self.neighbor_dict[a]
+            neighbors.append((b, weight))
+
+        self.num_sources = len(self.neighbor_dict)
+        self.source_index = sorted(self.neighbor_dict.keys())
+        self.neighbors_list = [self.neighbor_dict[a] for a in self.source_index]
+        self.num_neighbors_list = np.array([len(neighbors) for neighbors in self.neighbors_list])
+        self.neighbor_index_list = [np.arange(num_neighbors) for num_neighbors in self.num_neighbors_list]
+
+    def sample(self, k=None, ratio=None):
+        if k is None and ratio is None:
+            raise Exception("you should provide either k or ratio")
+        elif k is not None and ratio is not None:
+            raise Exception("you should provide either k or ratio, not both of them")
+
+        if ratio is not None:
+            num_sampled_neighbors = np.ceil(self.num_neighbors_list * ratio).astype(np.int32)
+        else:
+            num_sampled_neighbors = np.full([self.num_sources], fill_value=k)
+
+        sampled_edge_index = []
+        sampled_edge_weight = []
+
+        for i, (a, neighbors, num_sampled_neighbors, neighbor_index) in \
+                enumerate(zip(self.source_index, self.neighbors_list, num_sampled_neighbors, self.neighbor_index_list)):
+            # sampled_neighbors = np.random.choice(neighbors, num_sampled_neighbors, replace=True)
+            sampled_neighbor_index = np.random.choice(neighbor_index, num_sampled_neighbors, replace=True)
+            sampled_neighbors = [neighbors[i] for i in sampled_neighbor_index]
+
+            for (b, weight) in sampled_neighbors:
+                sampled_edge_index.append([a, b])
+                sampled_edge_weight.append(weight)
+
+        sampled_edge_index = np.array(sampled_edge_index).T
+        sampled_edge_weight = np.array(sampled_edge_weight)
+        return sampled_edge_index, sampled_edge_weight
+
+class LaplacianMaxEigenvalue(object):
+    def __init__(self, x, edge_index, edge_weight, is_undirected=True):
+        self.num_nodes = x.shape[0]
+        self.edge_index = convert_union_to_numpy(edge_index, np.int32)
+        if edge_weight is not None:
+            self.edge_weight = convert_union_to_numpy(edge_weight)
+        else:
+            self.edge_weight = np.ones([self.edge_index.shape[1]], dtype=np.float32)
+        self.is_undirected = is_undirected
+
+
+    def __call__(self, normalization_type='sym'):
+        assert normalization_type in [None, 'sym', 'rw']
+
+        edge_index, edge_weight = remove_self_loop_edge(self.edge_index, self.edge_weight)
+
+        edge_index, edge_weight = get_laplacian(self.edge_index, edge_weight,
+                                                normalization_type,
+                                                num_nodes=self.num_nodes)
+
+        L = to_scipy_sparse_matrix(edge_index, edge_weight, self.num_nodes)
+
+        eig_fn = eigs
+        if self.is_undirected and normalization_type:
+            eig_fn = eigsh
+
+        lambda_max = eig_fn(L, k=1, which='LM', return_eigenvectors=False)
+
+        return float(lambda_max.real)
+
+
+
+
+
 
 

@@ -42,11 +42,11 @@ def gat(x, edge_index,
 
     row, col = edge_index
 
-    Q = tf.gather(x, row) @ query_kernel + query_bias
-    Q = query_activation(Q)
+    Q = query_activation(x @ query_kernel + query_bias)
+    Q = tf.gather(Q, row)
 
-    K = tf.gather(x, col) @ key_kernel + key_bias
-    K = key_activation(K)
+    K = key_activation(x @ key_kernel + key_bias)
+    K = tf.gather(K, col)
 
     V = x @ kernel
 

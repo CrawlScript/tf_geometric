@@ -2,7 +2,7 @@
 *.zip
 /data/
 /demo/data/
-**/__pycache_/
+**/__pycache__/
 **/.idea/
 __pycache__/
 

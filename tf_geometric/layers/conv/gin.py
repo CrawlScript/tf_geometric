@@ -1,5 +1,5 @@
 # coding=utf-8
-
+import tensorflow as tf
 from tf_geometric.nn.conv.gin import gin
 from tf_geometric.layers.kernel.map_reduce import MapReduceGNN
 
@@ -9,37 +9,21 @@ class GIN(MapReduceGNN):
     Graph Isomorphism Network  Layer
     """
 
-    def build(self, input_shapes):
-        x_shape = input_shapes[0]
-        num_features = x_shape[-1]
-
-        self.kernel = self.add_weight("kernel", shape=[num_features, self.units], initializer="glorot_uniform")
-        if self.use_bias:
-            self.bias = self.add_weight("bias", shape=[self.units], initializer="zeros")
-
-    def __init__(self, units, eps=0, train_eps=False, activation=None, use_bias=True,
-                 improved=False, *args, **kwargs):
+    def __init__(self, mlp_model, eps=0, train_eps=False, activation=tf.nn.relu, *args, **kwargs):
         """
-
-        :param units: Positive integer, dimensionality of the output space.
+        :param mlp_model: A neural network (multi-layer perceptrons).
+        :param eps: float, optional, (default: :obj:`0.`).
+        :param train_eps: Boolean, Whether the eps is trained.
         :param activation: Activation function to use.
-        :param use_bias: Boolean, whether the layer uses a bias vector.
-        :param improved: Whether use improved GIN or not.
         """
         super().__init__(*args, **kwargs)
-        self.units = units
-
-        self.acvitation = activation
-        self.use_bias = use_bias
-
-        self.kernel = None
-        self.bias = None
+        self.mlp_model = mlp_model
 
         self.eps = eps
         if train_eps:
             self.eps = self.add_weight("eps", shape=[], initializer="zeros")
 
-        self.improved = improved
+        self.activation = activation
 
     def call(self, inputs, cache=None, training=None, mask=None):
         """
@@ -55,5 +39,4 @@ class GIN(MapReduceGNN):
             x, edge_index = inputs
             edge_weight = None
 
-        return gin(x, edge_index, edge_weight, self.kernel, self.eps, self.bias,
-                   activation=self.acvitation, improved=self.improved, cache=cache)
+        return gin(x, edge_index, edge_weight, self.mlp_model, self.eps, self.activation, cache=cache)
