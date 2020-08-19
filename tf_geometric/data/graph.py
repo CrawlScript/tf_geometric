@@ -35,7 +35,7 @@ class Graph(object):
         if edge_weight is not None:
             self.edge_weight = self.cast_edge_weight(edge_weight)
         else:
-            self.edge_weight = np.full([len(self.edge_index[0])], 1.0, dtype=np.float32)
+            self.edge_weight = np.full([self.num_edges], 1.0, dtype=np.float32)
             if tf.is_tensor(self.x):
                 self.edge_weight = tf.convert_to_tensor(self.edge_weight)
 
@@ -85,7 +85,12 @@ class Graph(object):
         Number of edges
         :return: Number of edges
         """
-        return union_len(self.edge_index[0])
+
+        if len(self.edge_index) == 0:
+            return 0
+        else:
+            return len(self.edge_index[0])
+
         # if tf.is_tensor(self.edge_index):
         #     return self.edge_index.shape.as_list()[1]
         # else:

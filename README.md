@@ -69,16 +69,23 @@ We recommend you to get started with some demo.
 
 + [Graph Convolutional Network (GCN)](demo/demo_gcn.py)
 + [Multi-head Graph Attention Network (GAT)](demo/demo_gat.py)
++ [GraphSAGE](demo/demo_graph_sage.py)
++ [GIN](demo/demo_gin.py)
++ [ChebyNet](demo/demo_chebynet.py)
++ [SGC](demo/demo_sgc.py)
++ [TAGCN](demo/demo_tagcn.py)
 
-### Link Prediction
+
+### Graph Classification
 
 + [MeanPooling](demo/demo_mean_pool.py)
 + [SAGPooling](demo/demo_sag_pool_h.py)
 
 
-### Graph Classification
+### Link Prediction
 
 + [Graph Auto-Encoder (GAE)](demo/demo_gae.py)
+
 
 
 ## Installation

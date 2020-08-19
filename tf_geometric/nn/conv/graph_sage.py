@@ -171,7 +171,7 @@ def mean_pool_graph_sage(x, edge_index, edge_weight, mlp_kernel, neighs_kernel, 
     if activation is not None:
         h = activation(h)
 
-    reduced_h = mean_reducer(h, row, num_nodes=len(x))
+    reduced_h = mean_reducer(h, row, num_nodes=x.shape[0])
 
     from_neighs = reduced_h @ neighs_kernel
     from_x = x @ self_kernel

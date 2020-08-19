@@ -1,5 +1,6 @@
 # Byte-compiled / optimized / DLL files
 *.zip
+/test/
 /data/
 /demo/data/
 **/__pycache__/
