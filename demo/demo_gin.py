@@ -75,7 +75,8 @@ class GINPoolNetwork(keras.Model):
                 keras.Sequential([
                     keras.layers.Dense(units, activation=tf.nn.relu),
                     keras.layers.Dense(units),
-                    keras.layers.BatchNormalization()
+                    keras.layers.BatchNormalization(),
+                    keras.layers.Activation(tf.nn.relu)
                 ])
             )
             for _ in range(num_gins)  # num_gins blocks

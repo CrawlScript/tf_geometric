@@ -9,7 +9,7 @@ class GIN(MapReduceGNN):
     Graph Isomorphism Network  Layer
     """
 
-    def __init__(self, mlp_model, eps=0, train_eps=False, activation=tf.nn.relu, *args, **kwargs):
+    def __init__(self, mlp_model, eps=0, train_eps=False, *args, **kwargs):
         """
         :param mlp_model: A neural network (multi-layer perceptrons).
         :param eps: float, optional, (default: :obj:`0.`).
@@ -23,7 +23,6 @@ class GIN(MapReduceGNN):
         if train_eps:
             self.eps = self.add_weight("eps", shape=[], initializer="zeros")
 
-        self.activation = activation
 
     def call(self, inputs, cache=None, training=None, mask=None):
         """
@@ -39,4 +38,4 @@ class GIN(MapReduceGNN):
             x, edge_index = inputs
             edge_weight = None
 
-        return gin(x, edge_index, edge_weight, self.mlp_model, self.eps, self.activation, cache=cache)
+        return gin(x, edge_index, edge_weight, self.mlp_model, self.eps)
