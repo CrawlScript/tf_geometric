@@ -126,7 +126,8 @@ def evaluate(graphs, batch_size):
     return accuracy_m.result().numpy()
 
 
-optimizer = tf.keras.optimizers.Adam(learning_rate=0.01)
+# optimizer = tf.keras.optimizers.Adam(learning_rate=0.01)
+optimizer = tf.keras.optimizers.Adam(learning_rate=3e-3)
 train_batch_generator = create_graph_generator(train_graphs, batch_size, shuffle=True, infinite=True)
 
 

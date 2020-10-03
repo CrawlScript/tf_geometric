@@ -38,4 +38,4 @@ class GIN(MapReduceGNN):
             x, edge_index = inputs
             edge_weight = None
 
-        return gin(x, edge_index, edge_weight, self.mlp_model, self.eps)
+        return gin(x, edge_index, edge_weight, self.mlp_model, self.eps, training=training)
