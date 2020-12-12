@@ -4,19 +4,24 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 import tensorflow as tf
 from tensorflow import keras
 import tf_geometric as tfg
-from tf_geometric.datasets.cora import CoraDataset
+from tf_geometric.datasets import PlanetoidDataset
 
 
-graph, (train_index, valid_index, test_index) = CoraDataset().load_data()
+# Planetoid Datasets: "cora" | "citeseer" | "pubmed"
+graph, (train_index, valid_index, test_index) = PlanetoidDataset("cora").load_data()
 
 num_classes = graph.y.max() + 1
 
 gcn0 = tfg.layers.GCN(16, activation=tf.nn.relu)
 gcn1 = tfg.layers.GCN(num_classes)
 
+drop_rate = 0.5
+dropout = tf.keras.layers.Dropout(drop_rate)
 
-def forward(graph):
-    h = gcn0([graph.x, graph.edge_index, graph.edge_weight], cache=graph.cache)
+def forward(graph, training=False):
+    h = dropout(graph.x, training=training)
+    h = gcn0([h, graph.edge_index, graph.edge_weight], cache=graph.cache)
+    h = dropout(h, training=training)
     h = gcn1([h, graph.edge_index, graph.edge_weight], cache=graph.cache)
     return h
 
@@ -49,9 +54,10 @@ def evaluate():
 
 optimizer = tf.keras.optimizers.Adam(learning_rate=1e-2)
 
+
 for step in range(1000):
     with tf.GradientTape() as tape:
-        logits = forward(graph)
+        logits = forward(graph, training=True)
         loss = compute_loss(logits, train_index, tape.watched_variables())
 
     vars = tape.watched_variables()
