@@ -89,3 +89,21 @@ class PlanetoidDataset(DownloadableDataset):
         graph = Graph(x=x, edge_index=edge_index, y=y)
 
         return graph, (train_index, valid_index, test_index)
+
+
+class CoraDataset(PlanetoidDataset):
+
+    def __init__(self, dataset_root_path=None):
+        super().__init__("cora", dataset_root_path)
+
+
+class CiteseerDataset(PlanetoidDataset):
+
+    def __init__(self, dataset_root_path=None):
+        super().__init__("citeseer", dataset_root_path)
+
+
+class PubmedDataset(PlanetoidDataset):
+
+    def __init__(self, dataset_root_path=None):
+        super().__init__("pubmed", dataset_root_path)

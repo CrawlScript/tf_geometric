@@ -4,11 +4,8 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 import tensorflow as tf
 from tensorflow import keras
 import tf_geometric as tfg
-from tf_geometric.datasets import PlanetoidDataset
 
-
-# Planetoid Datasets: "cora" | "citeseer" | "pubmed"
-graph, (train_index, valid_index, test_index) = PlanetoidDataset("cora").load_data()
+graph, (train_index, valid_index, test_index) = tfg.datasets.CoraDataset().load_data()
 
 num_classes = graph.y.max() + 1
 

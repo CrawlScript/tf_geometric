@@ -9,11 +9,11 @@ from tensorflow import keras
 graph, (train_index, valid_index, test_index) = tfg.datasets.CoraDataset().load_data()
 
 num_classes = graph.y.max() + 1
-drop_rate = 0.2
+drop_rate = 0.6
 
 gat0 = tfg.layers.GAT(64, activation=tf.nn.relu, num_heads=8, drop_rate=drop_rate, attention_units=8)
-gat1 = tfg.layers.GAT(num_classes, drop_rate=0.6, attention_units=1)
-dropout = keras.layers.Dropout(drop_rate)
+gat1 = tfg.layers.GAT(num_classes, drop_rate=drop_rate, attention_units=1)
+dropout = tf.keras.layers.Dropout(drop_rate)
 
 
 def forward(graph, training=False):
