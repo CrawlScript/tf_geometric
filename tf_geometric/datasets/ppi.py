@@ -17,7 +17,7 @@ class PPIDataset(DownloadableDataset):
     def __init__(self, dataset_root_path=None):
         super().__init__(dataset_name="PPI",
                          download_urls=[
-                             "https://s3.us-east-2.amazonaws.com/dgl.ai/dataset/ppi.zip",
+                             "https://data.dgl.ai/dataset/ppi.zip",
                              "https://github.com/CrawlScript/gnn_datasets/raw/master/PPI/ppi.zip"
                          ],
                          download_file_name="ppi.zip",

@@ -117,6 +117,9 @@ class Graph(object):
     def __str__(self):
         return self.get_shape_desc()
 
+    def __repr__(self):
+        return self.__str__()
+
     def _convert_data_to_tensor(self, keys):
         for key in keys:
             data = getattr(self, key)

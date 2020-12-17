@@ -1,5 +1,6 @@
 # coding=utf-8
 import os
+
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 import tensorflow as tf
 from tensorflow import keras
@@ -14,6 +15,7 @@ gcn1 = tfg.layers.GCN(num_classes)
 
 drop_rate = 0.5
 dropout = tf.keras.layers.Dropout(drop_rate)
+
 
 def forward(graph, training=False):
     h = dropout(graph.x, training=training)
@@ -50,7 +52,6 @@ def evaluate():
 
 
 optimizer = tf.keras.optimizers.Adam(learning_rate=1e-2)
-
 
 for step in range(1000):
     with tf.GradientTape() as tape:
