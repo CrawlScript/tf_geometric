@@ -47,15 +47,15 @@ def aggregate_neighbors(x, edge_index, edge_weight=None, mapper=identity_mapper,
     :return:
     """
 
-    if edge_index.shape[0] == 0:
+    if tf.shape(edge_index)[0] == 0:
         return x
 
-    row, col = edge_index
+    row, col = edge_index[0], edge_index[1]
     repeated_x = tf.gather(x, row)
     neighbor_x = tf.gather(x, col)
 
     neighbor_msg = mapper(repeated_x, neighbor_x, edge_weight=edge_weight)
-    reduced_msg = reducer(neighbor_msg, row, num_nodes=x.shape[0])
+    reduced_msg = reducer(neighbor_msg, row, num_nodes=tf.shape(x)[0])
 
     udpated = updater(x, reduced_msg)
     return udpated

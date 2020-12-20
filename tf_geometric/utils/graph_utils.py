@@ -110,9 +110,8 @@ def convert_edge_to_directed(edge_index, edge_properties=[]):
 
 
 def add_self_loop_edge(edge_index, num_nodes, edge_weight=None, fill_weight=1.0):
-    diagnal_edges = [[node_index, node_index] for node_index in range(num_nodes)]
-    diagnal_edge_index = np.array(diagnal_edges).T.astype(np.int32)
 
+    diagnal_edge_index = tf.stack([tf.range(num_nodes, dtype=tf.int32)] * 2, axis=0)
     updated_edge_index = tf.concat([edge_index, diagnal_edge_index], axis=1)
 
     if not tf.is_tensor(edge_index):

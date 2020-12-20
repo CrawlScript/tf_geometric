@@ -12,14 +12,14 @@ def gcn_norm_edge(edge_index, num_nodes, edge_weight=None, renorm=True, improved
         return cache[cache_key]
 
     if edge_weight is None:
-        edge_weight = tf.ones([edge_index.shape[1]], dtype=tf.float32)
+        edge_weight = tf.ones([tf.shape(edge_index)[1]], dtype=tf.float32)
 
     fill_weight = 2.0 if improved else 1.0
 
     if renorm:
         edge_index, edge_weight = add_self_loop_edge(edge_index, num_nodes, edge_weight=edge_weight, fill_weight=fill_weight)
 
-    row, col = edge_index
+    row, col = edge_index[0], edge_index[1]
     deg = tf.math.unsorted_segment_sum(edge_weight, row, num_segments=num_nodes)
     deg_inv_sqrt = tf.pow(deg, -0.5)
     deg_inv_sqrt = tf.where(
@@ -59,7 +59,8 @@ def gcn(x, edge_index, edge_weight, kernel, bias=None, activation=None,
     :param cache: A dict for caching A' for GCN. Different graph should not share the same cache dict.
     :return: Updated node features (x), shape: [num_nodes, num_output_features]
     """
-    updated_edge_index, normed_edge_weight = gcn_norm_edge(edge_index, x.shape[0], edge_weight,
+    num_nodes = tf.shape(x)[0]
+    updated_edge_index, normed_edge_weight = gcn_norm_edge(edge_index, num_nodes, edge_weight,
                                                            renorm, improved, cache)
     x = x @ kernel
 

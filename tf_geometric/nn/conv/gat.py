@@ -35,12 +35,12 @@ def gat(x, edge_index,
     :return: Updated node features (x), shape: [num_nodes, num_output_features]
     """
 
-    num_nodes = x.shape[0]
+    num_nodes = tf.shape(x)[0]
 
     # self-attention
     edge_index, edge_weight = add_self_loop_edge(edge_index, num_nodes)
 
-    row, col = edge_index
+    row, col = edge_index[0], edge_index[1]
 
     Q = query_activation(x @ query_kernel + query_bias)
     Q = tf.gather(Q, row)
