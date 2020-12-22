@@ -1,10 +1,11 @@
 # coding=utf-8
 import os
 
+from tf_geometric.utils import tf_utils
+
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 import tf_geometric as tfg
 import tensorflow as tf
-from tensorflow import keras
 
 graph, (train_index, valid_index, test_index) = tfg.datasets.CoraDataset().load_data()
 
@@ -16,6 +17,8 @@ gat1 = tfg.layers.GAT(num_classes, drop_rate=drop_rate, attention_units=1)
 dropout = tf.keras.layers.Dropout(drop_rate)
 
 
+# @tf_utils.function can speed up functions for TensorFlow 2.x
+@tf_utils.function
 def forward(graph, training=False):
     h = graph.x
     h = dropout(h, training=training)
@@ -25,6 +28,7 @@ def forward(graph, training=False):
     return h
 
 
+@tf_utils.function
 def compute_loss(logits, mask_index, vars):
     masked_logits = tf.gather(logits, mask_index)
     masked_labels = tf.gather(graph.y, mask_index)
@@ -39,17 +43,16 @@ def compute_loss(logits, mask_index, vars):
     return tf.reduce_mean(losses) + tf.add_n(l2_losses) * 5e-4
 
 
+@tf_utils.function
 def evaluate():
     logits = forward(graph)
     masked_logits = tf.gather(logits, test_index)
     masked_labels = tf.gather(graph.y, test_index)
-
     y_pred = tf.argmax(masked_logits, axis=-1, output_type=tf.int32)
 
-    accuracy_m = keras.metrics.Accuracy()
-    accuracy_m.update_state(masked_labels, y_pred)
-
-    return accuracy_m.result().numpy()
+    corrects = tf.equal(y_pred, masked_labels)
+    accuracy = tf.reduce_mean(tf.cast(corrects, tf.float32))
+    return accuracy
 
 
 optimizer = tf.keras.optimizers.Adam(learning_rate=5e-3)

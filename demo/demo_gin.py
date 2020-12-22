@@ -1,12 +1,15 @@
 import os
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+from tf_geometric.utils import tf_utils
+
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 import tf_geometric as tfg
 import tensorflow as tf
 from tensorflow import keras
 import numpy as np
 from sklearn.model_selection import train_test_split
+from tqdm import tqdm
 
 # TU Datasets: https://ls11-www.cs.tu-dortmund.de/staff/morris/graphkerneldatasets
 # COLLAB is a large dataset, which may costs 5 minutes for processing.
@@ -132,7 +135,7 @@ train_batch_generator = create_graph_generator(train_graphs, batch_size, shuffle
 
 
 best_test_acc = 0
-for step in range(0, 1000):
+for step in tqdm(range(0, 1000)):
     batch_graph = next(train_batch_generator)
     with tf.GradientTape() as tape:
         inputs = [batch_graph.x, batch_graph.edge_index, batch_graph.edge_weight,

@@ -212,7 +212,7 @@ def max_pool_graph_sage(x, edge_index, edge_weight, mlp_kernel, neighs_kernel, s
     if edge_weight is not None:
         edge_weight = tf.ones([edge_index.shape[1]], dtype=tf.float32)
 
-    row, col = edge_index
+    row, col = edge_index[0], edge_index[1]
     repeated_x = tf.gather(x, row)
     neighbor_x = tf.gather(x, col)
 
@@ -225,7 +225,7 @@ def max_pool_graph_sage(x, edge_index, edge_weight, mlp_kernel, neighs_kernel, s
     if activation is not None:
         h = activation(h)
 
-    reduced_h = max_reducer(h, row, num_nodes=x.shape[0])
+    reduced_h = max_reducer(h, row, num_nodes=tf.shape(x)[0])
     from_neighs = reduced_h @ neighs_kernel
     from_x = x @ self_kernel
 

@@ -59,9 +59,10 @@ def gcn(x, edge_index, edge_weight, kernel, bias=None, activation=None,
     :param cache: A dict for caching A' for GCN. Different graph should not share the same cache dict.
     :return: Updated node features (x), shape: [num_nodes, num_output_features]
     """
+
     num_nodes = tf.shape(x)[0]
-    updated_edge_index, normed_edge_weight = gcn_norm_edge(edge_index, num_nodes, edge_weight,
-                                                           renorm, improved, cache)
+    updated_edge_index, normed_edge_weight = gcn_norm_edge(edge_index, num_nodes, edge_weight, renorm, improved, cache)
+
     x = x @ kernel
 
     h = aggregate_neighbors(
@@ -78,13 +79,6 @@ def gcn(x, edge_index, edge_weight, kernel, bias=None, activation=None,
         h = activation(h)
 
     return h
-
-
-# def norm_and_gcn(x, edge_index, num_nodes, dense_w, edge_weight=None, dense_b=None, activation=None):
-#     updated_edge_index, normed_edge_weight = gcn_norm_edge(edge_index, num_nodes, edge_weight)
-#     outputs = gcn(x, updated_edge_index, normed_edge_weight, dense_w, dense_b, activation)
-#     return outputs
-
 
 
 

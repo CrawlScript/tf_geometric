@@ -37,7 +37,8 @@ def max_reducer(neighbor_msg, node_index, num_nodes=None):
     return max_neighbor_msg
 
 
-def aggregate_neighbors(x, edge_index, edge_weight=None, mapper=identity_mapper, reducer=sum_reducer, updater=sum_updater):
+def aggregate_neighbors(x, edge_index, edge_weight=None, mapper=identity_mapper,
+                        reducer=sum_reducer, updater=sum_updater):
     """
     :param x:
     :param edge_index:
@@ -51,13 +52,14 @@ def aggregate_neighbors(x, edge_index, edge_weight=None, mapper=identity_mapper,
         return x
 
     row, col = edge_index[0], edge_index[1]
+
     repeated_x = tf.gather(x, row)
     neighbor_x = tf.gather(x, col)
 
     neighbor_msg = mapper(repeated_x, neighbor_x, edge_weight=edge_weight)
     reduced_msg = reducer(neighbor_msg, row, num_nodes=tf.shape(x)[0])
-
     udpated = updater(x, reduced_msg)
+
     return udpated
 
 

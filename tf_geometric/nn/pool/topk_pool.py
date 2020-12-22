@@ -1,7 +1,5 @@
 # coding=utf-8
 import tensorflow as tf
-from tensorflow import keras
-
 from tf_geometric.utils.union_utils import union_len
 
 
@@ -43,7 +41,7 @@ def topk_pool(source_index, score, k=None, ratio=None):
     num_cols = tf.reduce_max(num_targets_for_sources)
 
     # max index of source + 1
-    num_seen_sources = num_targets_for_sources.shape[0]
+    num_seen_sources = tf.shape(num_targets_for_sources)[0]
 
     min_score = tf.reduce_min(sorted_score)
 
@@ -71,11 +69,25 @@ def topk_pool(source_index, score, k=None, ratio=None):
             dtype=tf.int32
         )
 
-    left_k_index = [[row_index, col_index]
-                    for row_index, num_cols in enumerate(node_k.numpy())
-                    for col_index in range(num_cols)]
+    left_k_index = tf.TensorArray(tf.int32, size=0, dynamic_size=True, element_shape=[2])
+    num_rows = tf.shape(node_k)[0]
 
-    left_k_index = tf.convert_to_tensor(left_k_index, dtype=tf.int32)
+    current_size = 0
+    for row_index in range(num_rows):
+        num_cols = node_k[row_index]
+        for col_index in range(num_cols):
+            left_k_index = left_k_index.write(current_size, [row_index, col_index])
+            current_size += 1
+
+    left_k_index = left_k_index.stack()
+
+
+
+    # left_k_index = [[row_index, col_index]
+    #                 for row_index, num_cols in enumerate(node_k)
+    #                 for col_index in range(num_cols)]
+
+    # left_k_index = tf.convert_to_tensor(left_k_index, dtype=tf.int32)
 
     sample_col_index = tf.gather_nd(sort_index, left_k_index)
     sample_row_index = left_k_index[:, 0]

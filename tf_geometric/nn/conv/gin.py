@@ -1,7 +1,5 @@
 # coding=utf-8
-from tf_geometric.nn.kernel.map_reduce import aggregate_neighbors, sum_reducer, identity_mapper, identity_updater, \
-    sum_updater
-
+from tf_geometric.nn.kernel.map_reduce import aggregate_neighbors, sum_reducer, identity_mapper, identity_updater
 
 
 def gin_updater(x, reduced_neighbor_msg, eps):

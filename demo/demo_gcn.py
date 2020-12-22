@@ -1,5 +1,8 @@
 # coding=utf-8
 import os
+
+from tf_geometric.utils import tf_utils
+
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 import tensorflow as tf
 from tensorflow import keras
@@ -16,11 +19,25 @@ drop_rate = 0.5
 dropout = tf.keras.layers.Dropout(drop_rate)
 
 
+# @tf_utils.function can speed up functions for TensorFlow 2.x.
+# @tf_utils.function is not compatible with TensorFlow 1.x and graph.cache.
 def forward(graph, training=False):
     h = dropout(graph.x, training=training)
     h = gcn0([h, graph.edge_index, graph.edge_weight], cache=graph.cache)
     h = dropout(h, training=training)
     h = gcn1([h, graph.edge_index, graph.edge_weight], cache=graph.cache)
+    return h
+
+
+# To enable @tf_utils.function, remove the two "cache=graph.cache" in the above "forward" function
+# and annotate the function with @tf_utils.function
+# You can rename the following function as forward to try the fast version
+@tf_utils.function
+def fast_forward(graph, training=False):
+    h = dropout(graph.x, training=training)
+    h = gcn0([h, graph.edge_index, graph.edge_weight])
+    h = dropout(h, training=training)
+    h = gcn1([h, graph.edge_index, graph.edge_weight])
     return h
 
 

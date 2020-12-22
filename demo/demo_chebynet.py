@@ -1,12 +1,14 @@
 # coding=utf-8
 import os
 
+from tf_geometric.utils import tf_utils
+
 os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 import tf_geometric as tfg
 import tensorflow as tf
 import numpy as np
 from tensorflow import keras
-from tf_geometric.datasets.cora import CoraDataset
+from tf_geometric.datasets import CoraDataset
 from tf_geometric.utils.graph_utils import LaplacianMaxEigenvalue
 from tqdm import tqdm
 
@@ -23,6 +25,8 @@ fc = tf.keras.Sequential([
     keras.layers.Dense(num_classes)])
 
 
+# @tf_utils.function can speed up functions for TensorFlow 2.x
+@tf_utils.function
 def forward(graph, training=False):
     h = model([graph.x, graph.edge_index, graph.edge_weight])
     h = fc(h, training=training)

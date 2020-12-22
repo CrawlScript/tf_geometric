@@ -1,6 +1,8 @@
 # coding=utf-8
 import os
 
+from tf_geometric.utils import tf_utils
+
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 import tf_geometric as tfg
@@ -60,26 +62,38 @@ def create_graph_generator(graphs, batch_size, infinite=False, shuffle=False):
 batch_size = 256
 
 drop_rate = 0.4
-gcn0 = tfg.layers.GCN(64, activation=tf.nn.relu)
-gcn1 = tfg.layers.GCN(32, activation=tf.nn.relu)
-dropout = keras.layers.Dropout(drop_rate)
-dense = keras.layers.Dense(num_classes)
 
+
+class MeanPoolNetwork(tf.keras.Model):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.gcn0 = tfg.layers.GCN(64, activation=tf.nn.relu)
+        self.gcn1 = tfg.layers.GCN(32, activation=tf.nn.relu)
+        self.dropout = keras.layers.Dropout(drop_rate)
+        self.dense = keras.layers.Dense(num_classes)
+
+    def call(self, inputs, training=None, mask=None):
+        x, edge_index, node_graph_index = inputs
+        # GCN Encoder
+        h = self.gcn0([x, edge_index])
+        h = self.dropout(h, training=training)
+        h = self.gcn1([h, edge_index])
+
+        # Mean Pooling
+        h = tfg.nn.mean_pool(h, node_graph_index)
+        h = self.dropout(h, training=training)
+
+        # Predict Graph Labels
+        h = self.dense(h)
+        return h
+
+
+model = MeanPoolNetwork()
 
 def forward(batch_graph, training=False):
-    # GCN Encoder
-    h = gcn0([batch_graph.x, batch_graph.edge_index, batch_graph.edge_weight])
-    h = dropout(h, training=training)
-    h = gcn1([h, batch_graph.edge_index, batch_graph.edge_weight])
-
-    # Mean Pooling
-    h = tfg.nn.mean_pool(h, batch_graph.node_graph_index)
-    h = dropout(h, training=training)
-
-    # Predict Graph Labels
-    h = dense(h)
-    return h
-
+    return model([batch_graph.x, batch_graph.edge_index, batch_graph.node_graph_index], training=training)
 
 def evaluate():
     accuracy_m = keras.metrics.Accuracy()

@@ -4,13 +4,11 @@ import tensorflow as tf
 from tf_geometric.nn.kernel.map_reduce import aggregate_neighbors, sum_updater, sum_reducer, identity_updater
 from tf_geometric.nn.kernel.segment import segment_softmax
 from tf_geometric.nn.conv.gcn import gcn_mapper
+from tf_geometric.utils.graph_utils import add_self_loop_edge
 
 
 # follow Transformer-Style Attention
 # Attention is all you need
-from tf_geometric.utils.graph_utils import add_self_loop_edge
-
-
 def gat(x, edge_index,
         query_kernel, query_bias, query_activation,
         key_kernel, key_bias, key_activation,
@@ -34,6 +32,7 @@ def gat(x, edge_index,
         training mode (adding dropout) or in inference mode (doing nothing).
     :return: Updated node features (x), shape: [num_nodes, num_output_features]
     """
+
 
     num_nodes = tf.shape(x)[0]
 
