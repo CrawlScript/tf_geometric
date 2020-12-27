@@ -14,7 +14,6 @@ import numpy as np
 from sklearn.metrics import f1_score
 from tqdm import tqdm
 
-
 train_graphs, valid_graphs, test_graphs = PPIDataset().load_data()
 
 # traverse all graphs
@@ -38,7 +37,6 @@ num_sampled_neighbors_list = [25, 10]
 
 
 def forward(graph, training=False):
-
     neighbor_sampler = graph.cache["sampler"]
 
     h = graph.x

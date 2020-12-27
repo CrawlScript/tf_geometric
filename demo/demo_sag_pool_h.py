@@ -3,7 +3,7 @@ import os
 
 from tf_geometric.utils import tf_utils
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 import tf_geometric as tfg
 import tensorflow as tf

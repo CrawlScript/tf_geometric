@@ -1,8 +1,8 @@
 # coding=utf-8
 
-from tf_geometric.nn.conv.gcn import gcn
+from tf_geometric.nn.conv.gcn import gcn, gcn_cache_normed_edge
 from tf_geometric.layers.kernel.map_reduce import MapReduceGNN
-
+import tensorflow as tf
 
 class GCN(MapReduceGNN):
     """
@@ -46,6 +46,9 @@ class GCN(MapReduceGNN):
 
         self.kernel_regularizer = kernel_regularizer
         self.bias_regularizer = bias_regularizer
+
+    def cache_normed_edge(self, graph, override=False):
+        gcn_cache_normed_edge(graph, self.renorm, self.improved, override=override)
 
     def call(self, inputs, cache=None, training=None, mask=None):
         """

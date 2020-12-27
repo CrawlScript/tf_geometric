@@ -2,7 +2,7 @@ import os
 
 from tf_geometric.utils import tf_utils
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 import tf_geometric as tfg
 import tensorflow as tf
@@ -91,6 +91,7 @@ class GINPoolNetwork(keras.Model):
             keras.layers.Dense(num_classes)
         ])
 
+    # @tf_utils.function(experimental_relax_shapes=True)
     def call(self, inputs, training=False, mask=None):
 
         if len(inputs) == 4:

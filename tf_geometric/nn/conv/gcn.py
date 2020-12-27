@@ -1,15 +1,22 @@
 # coding=utf-8
 import tensorflow as tf
+from tensorflow.python.eager import context
 
 from tf_geometric.nn.kernel.map_reduce import aggregate_neighbors, sum_updater, sum_reducer, identity_updater
 from tf_geometric.utils.graph_utils import add_self_loop_edge
 
+CACHE_KEY_GCN_NORMED_EDGE = "gcn_normed_edge"
 
-def gcn_norm_edge(edge_index, num_nodes, edge_weight=None, renorm=True, improved=False, cache=None):
-    cache_key = "gcn_normed_edge"
 
-    if cache is not None and cache_key in cache and cache[cache_key] is not None:
-        return cache[cache_key]
+def gcn_norm_edge(edge_index, num_nodes, edge_weight=None, renorm=True, improved=False, cache: dict=None):
+
+    if cache is not None:
+        cached_data = cache.get(CACHE_KEY_GCN_NORMED_EDGE, None)
+        if cached_data is not None:
+            return cached_data
+
+    # if cache is not None and CACHE_KEY_GCN_NORMED_EDGE in cache and cache[CACHE_KEY_GCN_NORMED_EDGE] is not None:
+    #     return cache[CACHE_KEY_GCN_NORMED_EDGE]
 
     if edge_weight is None:
         edge_weight = tf.ones([tf.shape(edge_index)[1]], dtype=tf.float32)
@@ -35,13 +42,21 @@ def gcn_norm_edge(edge_index, num_nodes, edge_weight=None, renorm=True, improved
                                                             fill_weight=fill_weight)
 
     if cache is not None:
-        cache[cache_key] = edge_index, normed_edge_weight
+        cache[CACHE_KEY_GCN_NORMED_EDGE] = edge_index, normed_edge_weight
 
     return edge_index, normed_edge_weight
 
 
+def gcn_cache_normed_edge(graph, renorm=True, improved=False, override=False):
+    if override:
+        graph.cache[CACHE_KEY_GCN_NORMED_EDGE] = None
+    gcn_norm_edge(graph.edge_index, graph.num_nodes, graph.edge_weight, renorm, improved, graph.cache)
+
+
 def gcn_mapper(repeated_x, neighbor_x, edge_weight=None):
     return neighbor_x * tf.expand_dims(edge_weight, 1)
+
+
 
 
 def gcn(x, edge_index, edge_weight, kernel, bias=None, activation=None,
@@ -57,6 +72,12 @@ def gcn(x, edge_index, edge_weight, kernel, bias=None, activation=None,
     :param renorm: Whether use renormalization trick (https://arxiv.org/pdf/1609.02907.pdf).
     :param improved: Whether use improved GCN or not.
     :param cache: A dict for caching A' for GCN. Different graph should not share the same cache dict.
+        To use @tf_utils.function with gcn, you should cache the noremd edge information before the first call of the gcn.
+        (1) If you're using OOP APIs tfg.layers.GCN:
+            gcn_layer.cache_normed_edge(graph)
+        (2) If you're using functional API tfg.nn.gcn:
+            from tf_geometric.nn.conv.gcn import gcn_cache_normed_edge
+            gcn_cache_normed_edge(graph)
     :return: Updated node features (x), shape: [num_nodes, num_output_features]
     """
 
@@ -69,7 +90,8 @@ def gcn(x, edge_index, edge_weight, kernel, bias=None, activation=None,
         x, updated_edge_index, normed_edge_weight,
         gcn_mapper,
         sum_reducer,
-        identity_updater
+        identity_updater,
+        num_nodes=num_nodes
     )
 
     if bias is not None:

@@ -1,7 +1,6 @@
 # coding=utf-8
 import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-
 import tf_geometric as tfg
 import tensorflow as tf
 from tensorflow import keras

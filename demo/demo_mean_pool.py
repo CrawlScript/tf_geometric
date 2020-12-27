@@ -74,8 +74,10 @@ class MeanPoolNetwork(tf.keras.Model):
         self.dropout = keras.layers.Dropout(drop_rate)
         self.dense = keras.layers.Dense(num_classes)
 
+    # @tf_utils.function(experimental_relax_shapes=True)
     def call(self, inputs, training=None, mask=None):
         x, edge_index, node_graph_index = inputs
+
         # GCN Encoder
         h = self.gcn0([x, edge_index])
         h = self.dropout(h, training=training)
@@ -92,8 +94,10 @@ class MeanPoolNetwork(tf.keras.Model):
 
 model = MeanPoolNetwork()
 
+
 def forward(batch_graph, training=False):
     return model([batch_graph.x, batch_graph.edge_index, batch_graph.node_graph_index], training=training)
+
 
 def evaluate():
     accuracy_m = keras.metrics.Accuracy()

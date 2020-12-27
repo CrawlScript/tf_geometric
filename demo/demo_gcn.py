@@ -1,9 +1,8 @@
 # coding=utf-8
 import os
 
-from tf_geometric.utils import tf_utils
-
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+from tf_geometric.utils import tf_utils
 import tensorflow as tf
 from tensorflow import keras
 import tf_geometric as tfg
@@ -20,7 +19,8 @@ dropout = tf.keras.layers.Dropout(drop_rate)
 
 
 # @tf_utils.function can speed up functions for TensorFlow 2.x.
-# @tf_utils.function is not compatible with TensorFlow 1.x and graph.cache.
+# @tf_utils.function is not compatible with TensorFlow 1.x and dynamic graph.cache.
+@tf_utils.function
 def forward(graph, training=False):
     h = dropout(graph.x, training=training)
     h = gcn0([h, graph.edge_index, graph.edge_weight], cache=graph.cache)
@@ -29,18 +29,12 @@ def forward(graph, training=False):
     return h
 
 
-# To enable @tf_utils.function, remove the two "cache=graph.cache" in the above "forward" function
-# and annotate the function with @tf_utils.function
-# You can rename the following function as forward to try the fast version
-@tf_utils.function
-def fast_forward(graph, training=False):
-    h = dropout(graph.x, training=training)
-    h = gcn0([h, graph.edge_index, graph.edge_weight])
-    h = dropout(h, training=training)
-    h = gcn1([h, graph.edge_index, graph.edge_weight])
-    return h
+# The following line is only necessary for using GCN with @tf_utils.function
+# For usage without @tf_utils.function, you can commont the following line and GCN layers can automatically manager the cache
+gcn0.cache_normed_edge(graph)
 
 
+@tf.function
 def compute_loss(logits, mask_index, vars):
     masked_logits = tf.gather(logits, mask_index)
     masked_labels = tf.gather(graph.y, mask_index)
@@ -55,6 +49,7 @@ def compute_loss(logits, mask_index, vars):
     return tf.reduce_mean(losses) + tf.add_n(l2_losses) * 5e-4
 
 
+@tf.function
 def evaluate():
     logits = forward(graph)
     masked_logits = tf.gather(logits, test_index)
@@ -62,14 +57,14 @@ def evaluate():
 
     y_pred = tf.argmax(masked_logits, axis=-1, output_type=tf.int32)
 
-    accuracy_m = keras.metrics.Accuracy()
-    accuracy_m.update_state(masked_labels, y_pred)
-    return accuracy_m.result().numpy()
+    corrects = tf.equal(y_pred, masked_labels)
+    accuracy = tf.reduce_mean(tf.cast(corrects, tf.float32))
+    return accuracy
 
 
 optimizer = tf.keras.optimizers.Adam(learning_rate=1e-2)
 
-for step in range(1000):
+for step in range(1, 201):
     with tf.GradientTape() as tape:
         logits = forward(graph, training=True)
         loss = compute_loss(logits, train_index, tape.watched_variables())
