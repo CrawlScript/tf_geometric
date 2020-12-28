@@ -1,31 +1,44 @@
 # coding=utf-8
 import os
 
-from tf_geometric.utils import tf_utils
-
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+from tf_geometric.utils import tf_utils
 import tf_geometric as tfg
 import tensorflow as tf
+import time
+from tqdm import tqdm
 
 graph, (train_index, valid_index, test_index) = tfg.datasets.CoraDataset().load_data()
 
 num_classes = graph.y.max() + 1
 drop_rate = 0.6
 
-gat0 = tfg.layers.GAT(64, activation=tf.nn.relu, num_heads=8, drop_rate=drop_rate, attention_units=8)
-gat1 = tfg.layers.GAT(num_classes, drop_rate=drop_rate, attention_units=1)
-dropout = tf.keras.layers.Dropout(drop_rate)
+
+# Multi-layer GCN Model
+class GATModel(tf.keras.Model):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.gat0 = tfg.layers.GAT(64, activation=tf.nn.relu, num_heads=8, drop_rate=drop_rate, attention_units=8)
+        self.gat1 = tfg.layers.GAT(num_classes, drop_rate=drop_rate, attention_units=1)
+        self.dropout = tf.keras.layers.Dropout(drop_rate)
+
+    def call(self, inputs, training=None, mask=None, cache=None):
+        x, edge_index = inputs
+        h = self.dropout(x, training=training)
+        h = self.gat0([h, edge_index], training=training)
+        h = self.dropout(h, training=training)
+        h = self.gat1([h, edge_index], training=training)
+        return h
+
+
+model = GATModel()
 
 
 # @tf_utils.function can speed up functions for TensorFlow 2.x
 @tf_utils.function
 def forward(graph, training=False):
-    h = graph.x
-    h = dropout(h, training=training)
-    h = gat0([h, graph.edge_index], training=training)
-    h = dropout(h, training=training)
-    h = gat1([h, graph.edge_index], training=training)
-    return h
+    return model([graph.x, graph.edge_index], training=training)
 
 
 @tf_utils.function
@@ -57,7 +70,7 @@ def evaluate():
 
 optimizer = tf.keras.optimizers.Adam(learning_rate=5e-3)
 
-for step in range(2000):
+for step in range(1, 401):
     with tf.GradientTape() as tape:
         logits = forward(graph, training=True)
         loss = compute_loss(logits, train_index, tape.watched_variables())
@@ -69,3 +82,15 @@ for step in range(2000):
     if step % 20 == 0:
         accuracy = evaluate()
         print("step = {}\tloss = {}\taccuracy = {}".format(step, loss, accuracy))
+
+print("\nstart speed test...")
+num_test_iterations = 1000
+start_time = time.time()
+for _ in tqdm(range(num_test_iterations)):
+    logits = forward(graph)
+end_time = time.time()
+print("mean forward time: {} seconds".format((end_time - start_time) / num_test_iterations))
+
+if tf.__version__[0] == "1":
+    print("** @tf_utils.function is disabled in TensorFlow 1.x. "
+          "Upgrade to TensorFlow 2.x for 10X faster speed. **")

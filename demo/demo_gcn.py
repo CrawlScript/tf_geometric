@@ -1,37 +1,50 @@
 # coding=utf-8
 import os
-
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 from tf_geometric.utils import tf_utils
 import tensorflow as tf
-from tensorflow import keras
 import tf_geometric as tfg
+from tqdm import tqdm
+import time
 
 graph, (train_index, valid_index, test_index) = tfg.datasets.CoraDataset().load_data()
 
 num_classes = graph.y.max() + 1
-
-gcn0 = tfg.layers.GCN(16, activation=tf.nn.relu)
-gcn1 = tfg.layers.GCN(num_classes)
-
 drop_rate = 0.5
-dropout = tf.keras.layers.Dropout(drop_rate)
+learning_rate = 1e-2
+
+
+# Multi-layer GCN Model
+class GCNModel(tf.keras.Model):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.gcn0 = tfg.layers.GCN(16, activation=tf.nn.relu)
+        self.gcn1 = tfg.layers.GCN(num_classes)
+        self.dropout = tf.keras.layers.Dropout(drop_rate)
+
+    def call(self, inputs, training=None, mask=None, cache=None):
+        x, edge_index, edge_weight = inputs
+        h = self.dropout(x, training=training)
+        h = self.gcn0([h, edge_index, edge_weight], cache=cache)
+        h = self.dropout(h, training=training)
+        h = self.gcn1([h, edge_index, edge_weight], cache=cache)
+        return h
+
+
+model = GCNModel()
 
 
 # @tf_utils.function can speed up functions for TensorFlow 2.x.
 # @tf_utils.function is not compatible with TensorFlow 1.x and dynamic graph.cache.
 @tf_utils.function
 def forward(graph, training=False):
-    h = dropout(graph.x, training=training)
-    h = gcn0([h, graph.edge_index, graph.edge_weight], cache=graph.cache)
-    h = dropout(h, training=training)
-    h = gcn1([h, graph.edge_index, graph.edge_weight], cache=graph.cache)
-    return h
+    return model([graph.x, graph.edge_index, graph.edge_weight], training=training, cache=graph.cache)
 
 
 # The following line is only necessary for using GCN with @tf_utils.function
 # For usage without @tf_utils.function, you can commont the following line and GCN layers can automatically manager the cache
-gcn0.cache_normed_edge(graph)
+model.gcn0.cache_normed_edge(graph)
 
 
 @tf.function
@@ -62,7 +75,7 @@ def evaluate():
     return accuracy
 
 
-optimizer = tf.keras.optimizers.Adam(learning_rate=1e-2)
+optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
 
 for step in range(1, 201):
     with tf.GradientTape() as tape:
@@ -76,3 +89,16 @@ for step in range(1, 201):
     if step % 20 == 0:
         accuracy = evaluate()
         print("step = {}\tloss = {}\taccuracy = {}".format(step, loss, accuracy))
+
+
+print("\nstart speed test...")
+num_test_iterations = 1000
+start_time = time.time()
+for _ in tqdm(range(num_test_iterations)):
+    logits = forward(graph)
+end_time = time.time()
+print("mean forward time: {} seconds".format((end_time - start_time) / num_test_iterations))
+
+if tf.__version__[0] == "1":
+    print("** @tf_utils.function is disabled in TensorFlow 1.x. "
+          "Upgrade to TensorFlow 2.x for 10X faster speed. **")
