@@ -2,10 +2,9 @@
 import tensorflow as tf
 
 from tf_geometric.nn.conv.gat import gat
-from tf_geometric.layers.kernel.map_reduce import MapReduceGNN
 
 
-class GAT(MapReduceGNN):
+class GAT(tf.keras.Model):
 
     def __init__(self, units,
                  attention_units=None,

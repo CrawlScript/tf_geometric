@@ -10,5 +10,6 @@ from tf_geometric.nn.conv.chebynet import *
 from tf_geometric.nn.conv.sgc import *
 from tf_geometric.nn.conv.tagcn import *
 from tf_geometric.nn.conv.graph_sage import *
+from tf_geometric.nn.conv.appnp import *
 
 

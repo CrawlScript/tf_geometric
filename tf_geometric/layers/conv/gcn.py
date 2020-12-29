@@ -1,10 +1,10 @@
 # coding=utf-8
 
 from tf_geometric.nn.conv.gcn import gcn, gcn_cache_normed_edge
-from tf_geometric.layers.kernel.map_reduce import MapReduceGNN
 import tensorflow as tf
 
-class GCN(MapReduceGNN):
+
+class GCN(tf.keras.Model):
     """
     Graph Convolutional Layer
     """
