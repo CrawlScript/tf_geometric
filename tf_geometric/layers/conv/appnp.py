@@ -24,6 +24,9 @@ class APPNP(tf.keras.Model):
             self.kernels.append(kernel)
             self.biases.append(bias)
 
+            # setattr(self, kernel_name, kernel)
+            # setattr(self, bias_name, bias)
+
     def __init__(self, units_list,
                  dense_activation=tf.nn.relu, activation=None,
                  num_iterations=2, alpha=0.15,

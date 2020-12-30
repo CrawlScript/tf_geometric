@@ -85,3 +85,4 @@ print("mean forward time: {} seconds".format((end_time - start_time) / num_test_
 if tf.__version__[0] == "1":
     print("** @tf_utils.function is disabled in TensorFlow 1.x. "
           "Upgrade to TensorFlow 2.x for 10X faster speed. **")
+

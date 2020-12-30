@@ -11,6 +11,8 @@ __pycache__/
 /docs/build/
 /logs/
 /models/
+/demo/logs/
+/demo/models/
 
 *.py[cod]
 *$py.class
