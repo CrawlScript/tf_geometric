@@ -1,5 +1,8 @@
 # coding=utf-8
 import os
+
+from tf_geometric.utils import tf_utils
+
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 import tf_geometric as tfg
@@ -7,6 +10,7 @@ import tensorflow as tf
 from tensorflow import keras
 import numpy as np
 from sklearn.model_selection import train_test_split
+from tqdm import tqdm
 
 
 # TU Datasets: https://ls11-www.cs.tu-dortmund.de/staff/morris/graphkerneldatasets
@@ -139,7 +143,7 @@ optimizer = tf.keras.optimizers.Adam(learning_rate=5e-4)
 
 train_batch_generator = create_graph_generator(train_graphs, batch_size, shuffle=True, infinite=True)
 
-for step in range(20000):
+for step in tqdm(range(20000)):
     train_batch_graph = next(train_batch_generator)
     with tf.GradientTape() as tape:
         logits = forward(train_batch_graph, training=True)

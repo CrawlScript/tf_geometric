@@ -37,24 +37,38 @@ def max_reducer(neighbor_msg, node_index, num_nodes=None):
     return max_neighbor_msg
 
 
+<<<<<<< HEAD
 def aggregate_neighbors(x, edge_index, edge_weight=None, mapper=identity_mapper, reducer=sum_reducer, updater=sum_updater):
+=======
+def aggregate_neighbors(x, edge_index, edge_weight=None, mapper=identity_mapper,
+                        reducer=sum_reducer, updater=sum_updater, num_nodes=None):
+>>>>>>> upstream/master
     """
     :param x:
     :param edge_index:
     :param mapper: (features_of_node, features_of_neighbor_node, edge_weight) => neighbor_msg
     :param reducer: (neighbor_msg, node_index) => reduced_neighbor_msg
     :param updater: (features_of_node, reduced_neighbor_msg, num_nodes) => aggregated_node_features
+    :param num_nodes: Number of nodes.
     :return:
     """
 
-    row, col = edge_index
+    if tf.shape(edge_index)[0] == 0:
+        return x
+
+    row, col = edge_index[0], edge_index[1]
+
     repeated_x = tf.gather(x, row)
     neighbor_x = tf.gather(x, col)
 
     neighbor_msg = mapper(repeated_x, neighbor_x, edge_weight=edge_weight)
-    reduced_msg = reducer(neighbor_msg, row, num_nodes=len(x))
 
+    if num_nodes is None:
+        num_nodes = tf.shape(x)[0]
+
+    reduced_msg = reducer(neighbor_msg, row, num_nodes=num_nodes)
     udpated = updater(x, reduced_msg)
+
     return udpated
 
 

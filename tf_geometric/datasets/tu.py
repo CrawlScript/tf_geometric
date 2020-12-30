@@ -27,6 +27,15 @@ class TUDataset(DownloadableDataset):
         self.txt_root_path = os.path.join(self.raw_root_path, self.dataset_name)
         self.prefix = "{}_".format(self.dataset_name)
 
+    def _build_label_id_index_dict(self, label_ids):
+        sorted_label_ids = sorted(list(set(label_ids)))
+        label_id_index_dict = {label_id: label_index for label_index, label_id in enumerate(sorted_label_ids)}
+        return label_id_index_dict
+
+    def _convert_label_ids_to_indices(self, label_ids):
+        label_id_index_dict = self._build_label_id_index_dict(label_ids)
+        return np.array([label_id_index_dict[label_id] for label_id in label_ids])
+
     def process(self):
 
         print("reading graph_indicator...")
@@ -39,16 +48,28 @@ class TUDataset(DownloadableDataset):
         num_graphs = node_graph_index.max() + 1
 
         # node_labels
-        node_labels = self.read_txt_as_array("node_labels", dtype=np.int32)
+        node_label_ids = self.read_txt_as_array("node_labels", dtype=np.int32)
+        if node_label_ids is not None:
+            node_labels = self._convert_label_ids_to_indices(node_label_ids)
+        else:
+            node_labels = None
 
         # node_labels
-        edge_labels = self.read_txt_as_array("edge_labels", dtype=np.int32)
+        edge_label_ids = self.read_txt_as_array("edge_labels", dtype=np.int32)
+        if edge_label_ids is not None:
+            edge_labels = self._convert_label_ids_to_indices(edge_label_ids)
+        else:
+            edge_labels = None
 
         # node_labels
         node_attributes_list = self.read_txt_as_array("node_attributes", dtype=np.float32)
 
         # graph_labels
-        graph_labels = self.read_txt_as_array("graph_labels", dtype=np.int32)
+        graph_label_ids = self.read_txt_as_array("graph_labels", dtype=np.int32)
+        if graph_label_ids is not None:
+            graph_labels = self._convert_label_ids_to_indices(graph_label_ids)
+        else:
+            graph_labels = None
 
         def create_empty_graph():
             graph = {"edge_index": []}
@@ -75,7 +96,7 @@ class TUDataset(DownloadableDataset):
                 start_node_index[graph_index] = node_index
 
         for graph_index, graph in enumerate(graphs):
-            end_index = start_node_index[graph_index+1] if graph_index < num_graphs - 1 else len(node_graph_index)
+            end_index = start_node_index[graph_index + 1] if graph_index < num_graphs - 1 else len(node_graph_index)
             num_nodes = end_index - start_node_index[graph_index]
             graph["num_nodes"] = num_nodes
 
@@ -85,13 +106,13 @@ class TUDataset(DownloadableDataset):
             graph["edge_index"].append(edge)
 
         if node_labels is not None:
-            node_labels -= node_labels.min()
+            # node_labels -= node_labels.min()
             for graph_index, node_label in zip(node_graph_index, node_labels):
                 graph = graphs[graph_index]
                 graph["node_labels"].append(node_label)
 
         if edge_labels is not None:
-            edge_labels -= edge_labels.min()
+            # edge_labels -= edge_labels.min()
             for graph_index, edge_label in zip(edge_graph_index, edge_labels):
                 graph = graphs[graph_index]
                 graph["edge_labels"].append(edge_label)
@@ -107,12 +128,13 @@ class TUDataset(DownloadableDataset):
         # graph_labels
 
         if graph_labels is not None:
-            graph_labels -= graph_labels.min()
+            # graph_labels -= graph_labels.min()
             for graph, graph_label in zip(graphs, graph_labels):
                 graph["graph_label"] = np.array([graph_label]).astype(np.int32)
 
         for i, graph in enumerate(graphs):
-            graph["edge_index"] = np.array(graph["edge_index"]).T - start_node_index[i]
+            edge_index = np.array(graph["edge_index"]).T - start_node_index[i]
+            graph["edge_index"] = edge_index
 
             if node_labels is not None:
                 graph["node_labels"] = np.array(graph["node_labels"]).astype(np.int32)
@@ -123,7 +145,12 @@ class TUDataset(DownloadableDataset):
             if edge_labels is not None:
                 graph["edge_labels"] = np.array(graph["edge_labels"]).astype(np.int32)
 
-
+            num_nodes = graph["num_nodes"]
+            nx_graph = nx.Graph()
+            nx_graph.add_nodes_from(np.arange(num_nodes))
+            nx_graph.add_edges_from(edge_index.T)
+            degrees = np.array([nx_graph.degree(node_index) for node_index in range(num_nodes)]).astype(np.int32)
+            graph["degrees"] = degrees
 
         return graphs
 

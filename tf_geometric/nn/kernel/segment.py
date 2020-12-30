@@ -4,7 +4,7 @@ import tensorflow as tf
 
 def segment_op_with_pad(segment_op, data, segment_ids, num_segments):
     reduced_data = segment_op(data, segment_ids)
-    num_paddings = num_segments - reduced_data.shape[0]
+    num_paddings = num_segments - tf.shape(reduced_data)[0]
 
     pads = tf.zeros([num_paddings] + data.shape.as_list()[1:], dtype=reduced_data.dtype)
     outputs = tf.concat(

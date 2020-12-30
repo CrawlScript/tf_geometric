@@ -6,7 +6,11 @@ import tf_geometric as tfg
 import tensorflow as tf
 import numpy as np
 from tensorflow import keras
+<<<<<<< HEAD
 from tf_geometric.datasets.cora import CoraDataset
+=======
+from tf_geometric.datasets import CoraDataset
+>>>>>>> upstream/master
 
 
 graph, (train_index, valid_index, test_index) = CoraDataset().load_data()

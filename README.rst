@@ -77,16 +77,21 @@ Node Classification
 
 * `Graph Convolutional Network (GCN) <demo/demo_gcn.py>`_
 * `Multi-head Graph Attention Network (GAT) <demo/demo_gat.py>`_
+* `GraphSAGE <demo/demo_graph_sage.py>`_
+* `GIN <demo/demo_gin.py>`_
+* `ChebyNet <demo/demo_chebynet.py>`_
+* `SGC <demo/demo_sgc.py>`_
+* `TAGCN <demo/demo_tagcn.py>`_
 
-Link Prediction
-^^^^^^^^^^^^^^^
+Graph Classification
+^^^^^^^^^^^^^^^^^^^^
 
 
 * `MeanPooling <demo/demo_mean_pool.py>`_
 * `SAGPooling <demo/demo_sag_pool_h.py>`_
 
-Graph Classification
-^^^^^^^^^^^^^^^^^^^^
+Link Prediction
+^^^^^^^^^^^^^^^
 
 
 * `Graph Auto-Encoder (GAE) <demo/demo_gae.py>`_

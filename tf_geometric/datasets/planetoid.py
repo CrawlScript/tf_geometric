@@ -12,23 +12,29 @@ import networkx as nx
 from tf_geometric.utils.graph_utils import convert_edge_to_directed, remove_self_loop_edge
 
 
-class CoraDataset(DownloadableDataset):
+class PlanetoidDataset(DownloadableDataset):
 
-    def __init__(self, dataset_root_path=None):
-        super().__init__(dataset_name="Cora",
+    def __init__(self, dataset_name, dataset_root_path=None):
+        """
+
+        :param dataset_name: "cora" | "citeseer" | "pubmed"
+        :param dataset_root_path:
+        """
+        super().__init__(dataset_name=dataset_name,
                          download_urls=[
-                             "http://cdn.zhuanzhi.ai/github/cora.zip",
-                             "https://github.com/CrawlScript/gnn_datasets/raw/master/CORA/cora.zip"
+                             "https://github.com/CrawlScript/gnn_datasets/raw/master/planetoid/{}.zip".format(
+                                 dataset_name),
+                             "http://cdn.zhuanzhi.ai/github/{}.zip".format(dataset_name)
                          ],
-                         download_file_name="cora.zip",
+                         download_file_name="{}.zip".format(dataset_name),
                          cache_name=None,
                          dataset_root_path=dataset_root_path,
                          )
 
-
+    # https://github.com/tkipf/gcn/blob/master/gcn/utils.py
     def process(self):
 
-        dataset_str = "cora"
+        dataset_str = self.dataset_name
         names = ['x', 'y', 'tx', 'ty', 'allx', 'ally', 'graph']
         objects = []
         for i in range(len(names)):
@@ -42,10 +48,21 @@ class CoraDataset(DownloadableDataset):
 
         x, y, tx, ty, allx, ally, graph = tuple(objects)
 
-        with open(os.path.join(self.raw_root_path, "ind.{}.test.index".format(dataset_str)), "r", encoding="utf-8") as f:
+        with open(os.path.join(self.raw_root_path, "ind.{}.test.index".format(dataset_str)), "r",
+                  encoding="utf-8") as f:
             test_idx_reorder = [int(line.strip()) for line in f]
             test_idx_range = np.sort(test_idx_reorder)
 
+        if self.dataset_name == 'citeseer':
+            # Fix citeseer dataset (there are some isolated nodes in the graph)
+            # Find isolated nodes, add them as zero-vecs into the right position
+            test_idx_range_full = list(range(min(test_idx_reorder), max(test_idx_reorder) + 1))
+            tx_extended = sp.lil_matrix((len(test_idx_range_full), x.shape[1]))
+            tx_extended[test_idx_range - min(test_idx_range), :] = tx
+            tx = tx_extended
+            ty_extended = np.zeros((len(test_idx_range_full), y.shape[1]))
+            ty_extended[test_idx_range - min(test_idx_range), :] = ty
+            ty = ty_extended
 
         features = sp.vstack((allx, tx)).tolil()
         features[test_idx_reorder, :] = features[test_idx_range, :]
@@ -56,7 +73,7 @@ class CoraDataset(DownloadableDataset):
 
         test_index = test_idx_range.tolist()
         train_index = list(range(len(y)))
-        valid_index = list(range(len(y), len(y)+500))
+        valid_index = list(range(len(y), len(y) + 500))
 
         x = np.array(features.todense()).astype(np.float32)
         inv_sum_x = 1.0 / np.sum(x, axis=-1, keepdims=True)
@@ -72,3 +89,21 @@ class CoraDataset(DownloadableDataset):
         graph = Graph(x=x, edge_index=edge_index, y=y)
 
         return graph, (train_index, valid_index, test_index)
+
+
+class CoraDataset(PlanetoidDataset):
+
+    def __init__(self, dataset_root_path=None):
+        super().__init__("cora", dataset_root_path)
+
+
+class CiteseerDataset(PlanetoidDataset):
+
+    def __init__(self, dataset_root_path=None):
+        super().__init__("citeseer", dataset_root_path)
+
+
+class PubmedDataset(PlanetoidDataset):
+
+    def __init__(self, dataset_root_path=None):
+        super().__init__("pubmed", dataset_root_path)

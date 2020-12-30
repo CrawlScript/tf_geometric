@@ -1,5 +1,6 @@
 # Byte-compiled / optimized / DLL files
 *.zip
+/test/
 /data/
 /demo/data/
 **/__pycache__/
@@ -8,6 +9,10 @@ __pycache__/
 
 /doc/build/
 /docs/build/
+/logs/
+/models/
+/demo/logs/
+/demo/models/
 
 *.py[cod]
 *$py.class

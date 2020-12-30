@@ -12,27 +12,23 @@ import scipy.sparse
 
 def remove_self_loop_edge(edge_index, edge_weight=None):
     edge_index_is_tensor = tf.is_tensor(edge_index)
-    edge_weight_is_tensor = edge_weight is not None and tf.is_tensor(edge_weight)
+    edge_weight_is_tensor = tf.is_tensor(edge_weight)
 
-    if edge_index_is_tensor:
+    row, col = edge_index[0], edge_index[1]
+    mask = tf.not_equal(row, col)
+
+    edge_index = tf.boolean_mask(edge_index, mask, axis=1)
+    if edge_weight is not None:
+        edge_weight = tf.boolean_mask(edge_weight, mask, axis=0)
+
+    if not edge_index_is_tensor:
         edge_index = edge_index.numpy()
 
-    if edge_weight_is_tensor:
+    if edge_weight is not None and not edge_weight_is_tensor:
         edge_weight = edge_weight.numpy()
 
-    row, col = edge_index
-    mask = row != col
-    edge_index = edge_index[:, mask]
-    if edge_weight is not None:
-        edge_weight = edge_weight[mask]
-
-    if edge_index_is_tensor:
-        edge_index = tf.convert_to_tensor(edge_index)
-
-    if edge_weight_is_tensor:
-        edge_weight = tf.convert_to_tensor(edge_weight)
-
     return edge_index, edge_weight
+
 
 
 def convert_edge_to_nx_graph(edge_index, edge_properties=[], convert_to_directed=False):
@@ -110,9 +106,8 @@ def convert_edge_to_directed(edge_index, edge_properties=[]):
 
 
 def add_self_loop_edge(edge_index, num_nodes, edge_weight=None, fill_weight=1.0):
-    diagnal_edges = [[node_index, node_index] for node_index in range(num_nodes)]
-    diagnal_edge_index = np.array(diagnal_edges).T.astype(np.int32)
 
+    diagnal_edge_index = tf.stack([tf.range(num_nodes, dtype=tf.int32)] * 2, axis=0)
     updated_edge_index = tf.concat([edge_index, diagnal_edge_index], axis=1)
 
     if not tf.is_tensor(edge_index):
@@ -324,7 +319,11 @@ def get_laplacian(edge_index, edge_weight, normalization_type, num_nodes, fill_w
     if normalization_type is not None:
         assert normalization_type in [None,'sym', 'rw']
 
+<<<<<<< HEAD
     row, col = edge_index
+=======
+    row, col = edge_index[0], edge_index[1]
+>>>>>>> upstream/master
     deg = tf.math.unsorted_segment_sum(edge_weight, row, num_segments=num_nodes)
     ##L = D - A
     if normalization_type is None:

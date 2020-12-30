@@ -35,7 +35,7 @@ class Graph(object):
         if edge_weight is not None:
             self.edge_weight = self.cast_edge_weight(edge_weight)
         else:
-            self.edge_weight = np.full([len(self.edge_index[0])], 1.0, dtype=np.float32)
+            self.edge_weight = np.full([self.num_edges], 1.0, dtype=np.float32)
             if tf.is_tensor(self.x):
                 self.edge_weight = tf.convert_to_tensor(self.edge_weight)
 
@@ -85,7 +85,12 @@ class Graph(object):
         Number of edges
         :return: Number of edges
         """
-        return union_len(self.edge_index[0])
+
+        if len(self.edge_index) == 0:
+            return 0
+        else:
+            return len(self.edge_index[0])
+
         # if tf.is_tensor(self.edge_index):
         #     return self.edge_index.shape.as_list()[1]
         # else:
@@ -111,6 +116,9 @@ class Graph(object):
 
     def __str__(self):
         return self.get_shape_desc()
+
+    def __repr__(self):
+        return self.__str__()
 
     def _convert_data_to_tensor(self, keys):
         for key in keys:
@@ -304,11 +312,15 @@ class BatchGraph(Graph):
     def build_node_graph_index(cls, graphs):
         node_graph_index_list = []
 
-        for i, graph in enumerate(graphs):
-            node_graph_index_list.append(tf.fill([graph.num_nodes], i))
-
-        node_graph_index = tf.concat(node_graph_index_list, axis=0)
-        node_graph_index = tf.cast(node_graph_index, tf.int32)
+        if tf.is_tensor(graphs[0].edge_index):
+            for i, graph in enumerate(graphs):
+                node_graph_index_list.append(tf.fill([graph.num_nodes], i))
+            node_graph_index = tf.concat(node_graph_index_list, axis=0)
+            node_graph_index = tf.cast(node_graph_index, tf.int32)
+        else:
+            for i, graph in enumerate(graphs):
+                node_graph_index_list.append(np.full([graph.num_nodes], i, dtype=np.int32))
+            node_graph_index = np.concatenate(node_graph_index_list, axis=0)
 
         return node_graph_index
 
@@ -316,21 +328,29 @@ class BatchGraph(Graph):
     @classmethod
     def build_edge_graph_index(cls, graphs):
         edge_graph_index_list = []
-
-        for i, graph in enumerate(graphs):
-            edge_graph_index_list.append(tf.fill([graph.num_edges], i))
-
-        edge_graph_index = tf.concat(edge_graph_index_list, axis=0)
-        edge_graph_index = tf.cast(edge_graph_index, tf.int32)
+        if tf.is_tensor(graphs[0].edge_index):
+            for i, graph in enumerate(graphs):
+                edge_graph_index_list.append(tf.fill([graph.num_edges], i))
+            edge_graph_index = tf.concat(edge_graph_index_list, axis=0)
+            edge_graph_index = tf.cast(edge_graph_index, tf.int32)
+        else:
+            for i, graph in enumerate(graphs):
+                edge_graph_index_list.append(np.full([graph.num_edges], i, dtype=np.int32))
+            edge_graph_index = np.concatenate(edge_graph_index_list, axis=0)
 
         return edge_graph_index
 
 
     @classmethod
     def build_x(cls, graphs):
-        return tf.concat([
-            graph.x for graph in graphs
-        ], axis=0)
+        if tf.is_tensor(graphs[0].x):
+            return tf.concat([
+                graph.x for graph in graphs
+            ], axis=0)
+        else:
+            return np.concatenate([
+                graph.x for graph in graphs
+            ], axis=0)
 
     @classmethod
     def build_edge_index(cls, graphs):
@@ -340,24 +360,34 @@ class BatchGraph(Graph):
             edge_index_list.append(graph.edge_index + num_history_nodes)
             num_history_nodes += graph.num_nodes
 
-        return tf.concat(edge_index_list, axis=1)
+        if tf.is_tensor(graphs[0].edge_index):
+            return tf.concat(edge_index_list, axis=1)
+        else:
+            return np.concatenate(edge_index_list, axis=1)
 
     @classmethod
     def build_edge_weight(cls, graphs):
         if graphs[0].edge_weight is None:
             return None
-        else:
+        elif tf.is_tensor(graphs[0].edge_weight):
             return tf.concat([
                 graph.edge_weight for graph in graphs
             ], axis=0)
-
+        else:
+            return np.concatenate([
+                graph.edge_weight for graph in graphs
+            ], axis=0)
 
     @classmethod
     def build_y(cls, graphs):
         if graphs[0].y is None:
             return None
-        else:
+        elif tf.is_tensor(graphs[0].y):
             return tf.concat([
+                graph.y for graph in graphs
+            ], axis=0)
+        else:
+            return np.concatenate([
                 graph.y for graph in graphs
             ], axis=0)
 

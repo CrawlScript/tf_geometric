@@ -6,4 +6,9 @@ from tf_geometric.layers.conv.gin import GIN
 from tf_geometric.layers.conv.graph_sage import MeanGraphSage, MeanPoolGraphSage, MaxPoolGraphSage, GCNGraphSage, LSTMGraphSage
 from tf_geometric.layers.conv.sgc import SGC
 from tf_geometric.layers.conv.tagcn import TAGCN
+<<<<<<< HEAD
 from tf_geometric.layers.conv.chebynet import ChebyNet
+=======
+from tf_geometric.layers.conv.chebynet import ChebyNet
+from tf_geometric.layers.conv.appnp import APPNP
+>>>>>>> upstream/master

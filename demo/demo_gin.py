@@ -1,12 +1,22 @@
 import os
 
+<<<<<<< HEAD
 os.environ["CUDA_VISIBLE_DEVICES"] = "3"
+=======
+from tf_geometric.utils import tf_utils
+
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+>>>>>>> upstream/master
 
 import tf_geometric as tfg
 import tensorflow as tf
 from tensorflow import keras
 import numpy as np
 from sklearn.model_selection import train_test_split
+<<<<<<< HEAD
+=======
+from tqdm import tqdm
+>>>>>>> upstream/master
 
 # TU Datasets: https://ls11-www.cs.tu-dortmund.de/staff/morris/graphkerneldatasets
 # COLLAB is a large dataset, which may costs 5 minutes for processing.
@@ -19,8 +29,13 @@ graph_dicts = tfg.datasets.TUDataset("NCI1").load_data()
 # You can easily construct you Graph object with the data dict
 
 num_node_labels = np.max([np.max(graph_dict["node_labels"]) for graph_dict in graph_dicts]) + 1
+<<<<<<< HEAD
 
 
+=======
+
+
+>>>>>>> upstream/master
 def convert_node_labels_to_one_hot(node_labels):
     num_nodes = len(node_labels)
     x = np.zeros([num_nodes, num_node_labels], dtype=np.float32)
@@ -75,7 +90,12 @@ class GINPoolNetwork(keras.Model):
                 keras.Sequential([
                     keras.layers.Dense(units, activation=tf.nn.relu),
                     keras.layers.Dense(units),
+<<<<<<< HEAD
                     keras.layers.BatchNormalization()
+=======
+                    keras.layers.BatchNormalization(),
+                    keras.layers.Activation(tf.nn.relu)
+>>>>>>> upstream/master
                 ])
             )
             for _ in range(num_gins)  # num_gins blocks
@@ -87,6 +107,10 @@ class GINPoolNetwork(keras.Model):
             keras.layers.Dense(num_classes)
         ])
 
+<<<<<<< HEAD
+=======
+    # @tf_utils.function(experimental_relax_shapes=True)
+>>>>>>> upstream/master
     def call(self, inputs, training=False, mask=None):
 
         if len(inputs) == 4:
@@ -125,12 +149,21 @@ def evaluate(graphs, batch_size):
     return accuracy_m.result().numpy()
 
 
+<<<<<<< HEAD
 optimizer = tf.keras.optimizers.Adam(learning_rate=0.01)
+=======
+# optimizer = tf.keras.optimizers.Adam(learning_rate=0.01)
+optimizer = tf.keras.optimizers.Adam(learning_rate=3e-3)
+>>>>>>> upstream/master
 train_batch_generator = create_graph_generator(train_graphs, batch_size, shuffle=True, infinite=True)
 
 
 best_test_acc = 0
+<<<<<<< HEAD
 for step in range(0, 1000):
+=======
+for step in tqdm(range(0, 1000)):
+>>>>>>> upstream/master
     batch_graph = next(train_batch_generator)
     with tf.GradientTape() as tape:
         inputs = [batch_graph.x, batch_graph.edge_index, batch_graph.edge_weight,
