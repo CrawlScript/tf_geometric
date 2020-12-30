@@ -1,6 +1,5 @@
 import os
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "3"
 from tf_geometric.utils import tf_utils
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
@@ -23,6 +22,7 @@ graph_dicts = tfg.datasets.TUDataset("NCI1").load_data()
 # You can easily construct you Graph object with the data dict
 
 num_node_labels = np.max([np.max(graph_dict["node_labels"]) for graph_dict in graph_dicts]) + 1
+
 
 def convert_node_labels_to_one_hot(node_labels):
     num_nodes = len(node_labels)
@@ -91,7 +91,6 @@ class GINPoolNetwork(keras.Model):
             keras.layers.Dense(num_classes)
         ])
 
-
     # @tf_utils.function(experimental_relax_shapes=True)
     def call(self, inputs, training=False, mask=None):
 
@@ -131,14 +130,12 @@ def evaluate(graphs, batch_size):
     return accuracy_m.result().numpy()
 
 
-
 # optimizer = tf.keras.optimizers.Adam(learning_rate=0.01)
 optimizer = tf.keras.optimizers.Adam(learning_rate=3e-3)
 train_batch_generator = create_graph_generator(train_graphs, batch_size, shuffle=True, infinite=True)
 
 
 best_test_acc = 0
-
 for step in tqdm(range(0, 1000)):
     batch_graph = next(train_batch_generator)
     with tf.GradientTape() as tape:

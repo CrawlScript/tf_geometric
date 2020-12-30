@@ -6,7 +6,6 @@ import tf_geometric as tfg
 import tensorflow as tf
 import numpy as np
 from tensorflow import keras
-
 from tf_geometric.datasets import CoraDataset
 
 

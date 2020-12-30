@@ -1,9 +1,7 @@
 # coding=utf-8
 import os
 
-
 from tf_geometric.utils import tf_utils
-
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
@@ -39,7 +37,6 @@ num_sampled_neighbors_list = [25, 10]
 
 
 def forward(graph, training=False):
-
     neighbor_sampler = graph.cache["sampler"]
 
     h = graph.x

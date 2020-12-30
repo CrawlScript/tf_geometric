@@ -1,7 +1,6 @@
 # coding=utf-8
 import os
 
-
 from tf_geometric.utils import tf_utils
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "1"
