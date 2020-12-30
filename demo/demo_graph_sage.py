@@ -1,11 +1,10 @@
 # coding=utf-8
 import os
 
-<<<<<<< HEAD
-=======
+
 from tf_geometric.utils import tf_utils
 
->>>>>>> upstream/master
+
 os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 import tf_geometric as tfg
@@ -17,10 +16,6 @@ import numpy as np
 from sklearn.metrics import f1_score
 from tqdm import tqdm
 
-<<<<<<< HEAD
-
-=======
->>>>>>> upstream/master
 train_graphs, valid_graphs, test_graphs = PPIDataset().load_data()
 
 # traverse all graphs
@@ -44,10 +39,7 @@ num_sampled_neighbors_list = [25, 10]
 
 
 def forward(graph, training=False):
-<<<<<<< HEAD
 
-=======
->>>>>>> upstream/master
     neighbor_sampler = graph.cache["sampler"]
 
     h = graph.x
