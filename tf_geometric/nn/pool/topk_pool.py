@@ -21,7 +21,6 @@ def topk_pool(source_index, score, k=None, ratio=None):
     # currently, we consider the source_index is not sorted
     # the option is preserved for future performance optimization
     source_index_sorted = False
-<<<<<<< HEAD
 
     if source_index_sorted:
         sorted_source_index = source_index
@@ -35,21 +34,6 @@ def topk_pool(source_index, score, k=None, ratio=None):
 
     sorted_score = tf.reshape(sorted_score, [-1])
 
-=======
-
-    if source_index_sorted:
-        sorted_source_index = source_index
-        # sort score by source_index
-        sorted_score = score
-    else:
-        source_index_perm = tf.argsort(source_index)
-        sorted_source_index = tf.gather(source_index, source_index_perm)
-        sorted_score = tf.gather(score, source_index_perm)
-
-
-    sorted_score = tf.reshape(sorted_score, [-1])
-
->>>>>>> upstream/master
     num_targets = union_len(sorted_source_index)
     target_ones = tf.ones([num_targets], dtype=tf.int32)
     num_targets_for_sources = tf.math.segment_sum(target_ones, sorted_source_index)

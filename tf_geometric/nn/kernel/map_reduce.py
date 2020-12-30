@@ -37,12 +37,8 @@ def max_reducer(neighbor_msg, node_index, num_nodes=None):
     return max_neighbor_msg
 
 
-<<<<<<< HEAD
-def aggregate_neighbors(x, edge_index, edge_weight=None, mapper=identity_mapper, reducer=sum_reducer, updater=sum_updater):
-=======
 def aggregate_neighbors(x, edge_index, edge_weight=None, mapper=identity_mapper,
                         reducer=sum_reducer, updater=sum_updater, num_nodes=None):
->>>>>>> upstream/master
     """
     :param x:
     :param edge_index:

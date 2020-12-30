@@ -5,48 +5,7 @@ import tensorflow as tf
 import numpy as np
 
 from tf_geometric.nn import mean_reducer, max_reducer, sum_reducer
-<<<<<<< HEAD
-from tf_geometric.nn.conv.gcn import gcn_mapper
-from tf_geometric.utils.graph_utils import add_self_loop_edge
-
-
-def gcn_norm_edge(edge_index, num_nodes, edge_weight=None, renorm=True, improved=False, cache=None):
-    cache_key = "gcn_normed_edge"
-
-    if cache is not None and cache_key in cache and cache[cache_key] is not None:
-        return cache[cache_key]
-
-    if edge_weight is None:
-        edge_weight = tf.ones([edge_index.shape[1]], dtype=tf.float32)
-
-    fill_weight = 2.0 if improved else 1.0
-
-    if renorm:
-        edge_index, edge_weight = add_self_loop_edge(edge_index, num_nodes, edge_weight=edge_weight,
-                                                     fill_weight=fill_weight)
-
-    row, col = edge_index
-    deg = tf.math.unsorted_segment_sum(edge_weight, row, num_segments=num_nodes)
-    deg_inv_sqrt = tf.pow(deg, -0.5)
-    deg_inv_sqrt = tf.where(
-        tf.math.logical_or(tf.math.is_inf(deg_inv_sqrt), tf.math.is_nan(deg_inv_sqrt)),
-        tf.zeros_like(deg_inv_sqrt),
-        deg_inv_sqrt
-    )
-
-    normed_edge_weight = tf.gather(deg_inv_sqrt, row) * edge_weight * tf.gather(deg_inv_sqrt, col)
-
-    if not renorm:
-        edge_index, normed_edge_weight = add_self_loop_edge(edge_index, num_nodes, edge_weight=normed_edge_weight,
-                                                            fill_weight=fill_weight)
-
-    if cache is not None:
-        cache[cache_key] = edge_index, normed_edge_weight
-
-    return edge_index, normed_edge_weight
-=======
 from tf_geometric.nn.conv.gcn import gcn_mapper, gcn_norm_edge
->>>>>>> upstream/master
 
 
 def mean_graph_sage(x, edge_index, edge_weight, neighs_kernel, self_kernel, bias=None, activation=None,
@@ -175,11 +134,7 @@ def mean_pool_graph_sage(x, edge_index, edge_weight, mlp_kernel, neighs_kernel, 
     if activation is not None:
         h = activation(h)
 
-<<<<<<< HEAD
-    reduced_h = mean_reducer(h, row, num_nodes=len(x))
-=======
     reduced_h = mean_reducer(h, row, num_nodes=x.shape[0])
->>>>>>> upstream/master
 
     from_neighs = reduced_h @ neighs_kernel
     from_x = x @ self_kernel
@@ -220,11 +175,7 @@ def max_pool_graph_sage(x, edge_index, edge_weight, mlp_kernel, neighs_kernel, s
     if edge_weight is not None:
         edge_weight = tf.ones([edge_index.shape[1]], dtype=tf.float32)
 
-<<<<<<< HEAD
-    row, col = edge_index
-=======
     row, col = edge_index[0], edge_index[1]
->>>>>>> upstream/master
     repeated_x = tf.gather(x, row)
     neighbor_x = tf.gather(x, col)
 
@@ -237,11 +188,7 @@ def max_pool_graph_sage(x, edge_index, edge_weight, mlp_kernel, neighs_kernel, s
     if activation is not None:
         h = activation(h)
 
-<<<<<<< HEAD
-    reduced_h = max_reducer(h, row, num_nodes=x.shape[0])
-=======
     reduced_h = max_reducer(h, row, num_nodes=tf.shape(x)[0])
->>>>>>> upstream/master
     from_neighs = reduced_h @ neighs_kernel
     from_x = x @ self_kernel
 

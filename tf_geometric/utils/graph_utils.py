@@ -319,11 +319,7 @@ def get_laplacian(edge_index, edge_weight, normalization_type, num_nodes, fill_w
     if normalization_type is not None:
         assert normalization_type in [None,'sym', 'rw']
 
-<<<<<<< HEAD
-    row, col = edge_index
-=======
     row, col = edge_index[0], edge_index[1]
->>>>>>> upstream/master
     deg = tf.math.unsorted_segment_sum(edge_weight, row, num_segments=num_nodes)
     ##L = D - A
     if normalization_type is None:
