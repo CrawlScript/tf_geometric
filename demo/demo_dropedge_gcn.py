@@ -22,7 +22,6 @@ l2_coe = 0.0
 units_list = [256] * (num_gcns - 1) + [num_classes]
 
 
-
 # Multi-layer DropEdge GCN Model
 class DropEdgeGCNModel(tf.keras.Model):
 
