@@ -8,3 +8,4 @@ from tf_geometric.layers.conv.sgc import SGC
 from tf_geometric.layers.conv.tagcn import TAGCN
 from tf_geometric.layers.conv.chebynet import ChebyNet
 from tf_geometric.layers.conv.appnp import APPNP
+from tf_geometric.layers.sampling.DropEdge import DropEdge
