@@ -34,14 +34,18 @@ class APPNP(tf.keras.Model):
                  kernel_regularizer=None, bias_regularizer=None, *args, **kwargs):
         """
 
-        :param units: Positive integer, dimensionality of the output space.
-        :param activation: Activation function to use.
-        :param use_bias: Boolean, whether the layer uses a bias vector.
-        :param renorm: Whether use renormalization trick (https://arxiv.org/pdf/1609.02907.pdf).
-        :param improved: Whether use improved GCN or not.
-        :param kernel_regularizer: Regularizer function applied to the `kernel` weights matrix.
-        :param bias_regularizer: Regularizer function applied to the bias vector.
+        :param units_list: List of Positive integers consisting of dimensionality of the output space of each dense layer.
+        :param dense_activation: Activation function to use for the dense layers,
+            except for the last dense layer, which will not be activated.
+        :param activation: Activation function to use for the output.
+        :param num_iterations: Number of propagation power iterations.
+        :param alpha: Teleport Probability.
+        :param dense_drop_rate: Dropout rate for the input of every dense layer.
+        :param edge_drop_rate: Dropout rate for the edges/adj used for propagation.
+        :param kernel_regularizer: Regularizer function applied to the `kernel` weights matrices.
+        :param bias_regularizer: Regularizer function applied to the bias vectors.
         """
+
         super().__init__(*args, **kwargs)
         self.units_list = units_list
         self.dense_activation = dense_activation

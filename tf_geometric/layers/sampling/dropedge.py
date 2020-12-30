@@ -13,7 +13,7 @@ class DropEdge(tf.keras.Model):
         :param force_undirected: If set to `True`, will either
             drop or keep both edges of an undirected edge.
         """
-        super(DropEdge, self).__init__()
+        super().__init__()
         self.rate = rate
         self.force_undirected = force_undirected
 
@@ -22,8 +22,5 @@ class DropEdge(tf.keras.Model):
                              'but got {}'.format(self.rate))
 
     def call(self, inputs, training=None, mask=None):
-
-        if not training:
-            return inputs
-
-        return dropedge(inputs=inputs, rate=self.rate, force_undirected=self.force_undirected)
+        return dropedge(inputs=inputs, rate=self.rate,
+                        force_undirected=self.force_undirected, training=training)

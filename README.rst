@@ -77,18 +77,21 @@ Node Classification
 
 * `Graph Convolutional Network (GCN) <demo/demo_gcn.py>`_
 * `Multi-head Graph Attention Network (GAT) <demo/demo_gat.py>`_
-* `GraphSAGE <demo/demo_graph_sage.py>`_
-* `GIN <demo/demo_gin.py>`_
-* `ChebyNet <demo/demo_chebynet.py>`_
-* `SGC <demo/demo_sgc.py>`_
-* `TAGCN <demo/demo_tagcn.py>`_
+* `Approximate Personalized Propagation of Neural Predictions (APPNP) <demo/demo_appnp.py>`_
+* `Inductive Representation Learning on Large Graphs (GraphSAGE) <demo/demo_graph_sage.py>`_
+* `Graph Isomorphism Network (GIN) <demo/demo_gin.py>`_
+* `Convolutional Neural Networks on Graphs with Fast Localized Spectral Filtering (ChebyNet) <demo/demo_chebynet.py>`_
+* `Simple Graph Convolution (SGC) <demo/demo_sgc.py>`_
+* `Topology Adaptive Graph Convolutional Network (TAGCN) <demo/demo_tagcn.py>`_
+* `Deep Graph Infomax (DGI) <demo/demo_dgi.py>`_
+* `Graph Convolutional Networks for Text Classification (TextGCN) <https://github.com/CrawlScript/TensorFlow-TextGCN>`_
 
 Graph Classification
 ^^^^^^^^^^^^^^^^^^^^
 
 
 * `MeanPooling <demo/demo_mean_pool.py>`_
-* `SAGPooling <demo/demo_sag_pool_h.py>`_
+* `Self-Attention Graph Pooling (SAGPooling) <demo/demo_sag_pool_h.py>`_
 
 Link Prediction
 ^^^^^^^^^^^^^^^

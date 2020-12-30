@@ -3,16 +3,22 @@ import tensorflow as tf
 import numpy as np
 
 
-def dropedge(inputs, rate=0.5, force_undirected=False):
+def dropedge(inputs, rate=0.5, force_undirected=False, training=None):
     """
 
     :param inputs: List of edge_index and other edge attributes [edge_index, edge_attr, ...]
     :param rate: dropout rate
     :param force_undirected: If set to `True`, will either
             drop or keep both edges of an undirected edge.
+    :param training: Python boolean indicating whether the layer should behave in
+        training mode (adding dropout) or in inference mode (doing nothing).
     :return: List of dropped edge_index and other dropped edge attributes
     """
-    if rate < 0. or rate >= 1.:
+
+    if not training:
+        return inputs
+
+    if rate < 0.0 or rate >= 1.0:
         raise ValueError('Dropout probability has to be between 0 and 1, '
                          'but got {}'.format(rate))
 

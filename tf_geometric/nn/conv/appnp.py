@@ -10,16 +10,21 @@ def appnp(x, edge_index, edge_weight, kernels, biases,
           dense_activation=tf.nn.relu, activation=None,
           num_iterations=2, alpha=0.15,
           dense_drop_rate=0.0, edge_drop_rate=0.0, cache=None, training=False):
+
     """
 
     :param x: Tensor, shape: [num_nodes, num_features], node features
     :param edge_index: Tensor, shape: [2, num_edges], edge information
     :param edge_weight: Tensor or None, shape: [num_edges]
-    :param kernel: Tensor, shape: [num_features, num_output_features], weight
-    :param bias: Tensor, shape: [num_output_features], bias
-    :param activation: Activation function to use.
-    :param renorm: Whether use renormalization trick (https://arxiv.org/pdf/1609.02907.pdf).
-    :param improved: Whether use improved GCN or not.
+    :param kernels: List[Tensor], shape of each Tensor: [num_features, num_output_features], weights
+    :param biases: List[Tensor], shape of each Tensor: [num_output_features], biases
+    :param dense_activation: Activation function to use for the dense layers,
+        except for the last dense layer, which will not be activated.
+    :param activation: Activation function to use for the output.
+    :param num_iterations: Number of propagation power iterations.
+    :param alpha: Teleport Probability.
+    :param dense_drop_rate: Dropout rate for the input of every dense layer.
+    :param edge_drop_rate: Dropout rate for the edges/adj used for propagation.
     :param cache: A dict for caching A' for GCN. Different graph should not share the same cache dict.
         To use @tf_utils.function with gcn, you should cache the noremd edge information before the first call of the gcn.
         (1) If you're using OOP APIs tfg.layers.GCN:
@@ -27,6 +32,8 @@ def appnp(x, edge_index, edge_weight, kernels, biases,
         (2) If you're using functional API tfg.nn.gcn:
             from tf_geometric.nn.conv.gcn import gcn_cache_normed_edge
             gcn_cache_normed_edge(graph)
+    :param training: Python boolean indicating whether the layer should behave in
+        training mode (adding dropout) or in inference mode (doing nothing).
     :return: Updated node features (x), shape: [num_nodes, num_output_features]
     """
 

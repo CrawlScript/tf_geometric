@@ -2,9 +2,10 @@
 import os
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+from tf_geometric.layers import GCN, DropEdge
+from tensorflow.keras.layers import Dropout
 from tf_geometric.utils import tf_utils
 import tensorflow as tf
-import numpy as np
 import tf_geometric as tfg
 from tqdm import tqdm
 import time
@@ -13,10 +14,13 @@ graph, (train_index, valid_index, test_index) = tfg.datasets.CoraDataset().load_
 
 num_classes = graph.y.max() + 1
 num_gcns = 8
-drop_feature_rate = 0.5
-drop_edge_rate = 0.8
+drop_rate = 0.5
+edge_drop_rate = 0.8
 learning_rate = 5e-3
-l2_coe = 0.
+l2_coe = 0.0
+
+units_list = [256] * (num_gcns - 1) + [num_classes]
+
 
 
 # Multi-layer DropEdge GCN Model
@@ -24,17 +28,21 @@ class DropEdgeGCNModel(tf.keras.Model):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.gcns = [tfg.layers.GCN(256, activation=tf.nn.relu) if i < num_gcns - 1 else tfg.layers.GCN(num_classes) for
-                     i in range(num_gcns)]
-        self.dropout_features = tf.keras.layers.Dropout(drop_feature_rate)
-        self.dropout_edges = tfg.layers.DropEdge(drop_edge_rate, force_undirected=False)
+
+        activations = [tf.nn.relu if i < len(units_list) - 1 else None for i in range(len(units_list))]
+
+        self.gcns = [GCN(units, activation=activation) for units, activation in zip(units_list, activations)]
+
+        self.dropout = Dropout(drop_rate)
+        self.dropedge = DropEdge(edge_drop_rate, force_undirected=False)
 
     def call(self, inputs, training=None, mask=None):
         h, edge_index, edge_weight = inputs
 
         # DropEdge: Towards Deep Graph Convolutional Networks on Node Classification
-        edge_index, edge_weight = self.dropout_edges([edge_index, edge_weight], training=training)
-        h = self.dropout_features(h, training=training)
+        edge_index, edge_weight = self.dropedge([edge_index, edge_weight], training=training)
+        h = self.dropout(h, training=training)
+
         cache = {}
         for i in range(num_gcns):
             h = self.gcns[i]([h, edge_index, edge_weight], cache=cache)

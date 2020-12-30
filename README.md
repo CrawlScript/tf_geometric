@@ -76,6 +76,7 @@ We recommend you to get started with some demo.
 + [Simple Graph Convolution (SGC)](demo/demo_sgc.py)
 + [Topology Adaptive Graph Convolutional Network (TAGCN)](demo/demo_tagcn.py)
 + [Deep Graph Infomax (DGI)](demo/demo_dgi.py)
++ [DropEdge: Towards Deep Graph Convolutional Networks on Node Classification (DropEdge)](demo/demo_dropedge_gcn.py)
 + [Graph Convolutional Networks for Text Classification (TextGCN)](https://github.com/CrawlScript/TensorFlow-TextGCN)
 
 
@@ -88,6 +89,7 @@ We recommend you to get started with some demo.
 ### Link Prediction
 
 + [Graph Auto-Encoder (GAE)](demo/demo_gae.py)
+
 
 
 
