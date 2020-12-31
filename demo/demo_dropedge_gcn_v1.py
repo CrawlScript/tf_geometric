@@ -16,31 +16,25 @@ num_classes = graph.y.max() + 1
 num_gcns = 8
 drop_rate = 0.5
 edge_drop_rate = 0.8
-learning_rate = 5e-3
+learning_rate = 5e-4
 l2_coe = 0.0
 
-units_list = [256] * (num_gcns - 1) + [num_classes]
+units_list = [128] * (num_gcns - 1) + [num_classes]
 
 
-
-# Multi-layer DropEdge GCN Model
-class DropEdgeGCNModel(tf.keras.Model):
+# Sample Multi-layer GCN Model
+class GCNModel(tf.keras.Model):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         activations = [tf.nn.relu if i < len(units_list) - 1 else None for i in range(len(units_list))]
-
         self.gcns = [GCN(units, activation=activation) for units, activation in zip(units_list, activations)]
-
         self.dropout = Dropout(drop_rate)
-        self.dropedge = DropEdge(edge_drop_rate, force_undirected=False)
 
     def call(self, inputs, training=None, mask=None):
         h, edge_index, edge_weight = inputs
 
-        # DropEdge: Towards Deep Graph Convolutional Networks on Node Classification
-        edge_index, edge_weight = self.dropedge([edge_index, edge_weight], training=training)
         h = self.dropout(h, training=training)
 
         cache = {}
@@ -50,14 +44,20 @@ class DropEdgeGCNModel(tf.keras.Model):
         return h
 
 
-model = DropEdgeGCNModel()
+dropedge = DropEdge(edge_drop_rate, force_undirected=False)
+model = GCNModel()
 
 
 # @tf_utils.function can speed up functions for TensorFlow 2.x.
 # @tf_utils.function is not compatible with TensorFlow 1.x and dynamic graph.cache.
 @tf_utils.function
 def forward(graph, training=False):
-    return model([graph.x, graph.edge_index, graph.edge_weight], training=training)
+    if dropedge:
+        # DropEdge: Towards Deep Graph Convolutional Networks on Node Classification
+        edge_index, edge_weight = dropedge([graph.edge_index, graph.edge_weight], training=training)
+    else:
+        edge_index, edge_weight = graph.edge_index, graph.edge_weight  # no DropEdge
+    return model([graph.x, edge_index, edge_weight], training=training)
 
 
 @tf.function
