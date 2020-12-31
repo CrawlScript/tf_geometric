@@ -14,12 +14,12 @@ graph, (train_index, valid_index, test_index) = tfg.datasets.CoraDataset().load_
 
 num_classes = graph.y.max() + 1
 num_hidden_layer = 1
-num_base_layer = 2
+num_base_layer = 8
 units = 128
 drop_rate = 0.8
-edge_drop_rate = 0.3
+edge_drop_rate = 0.5
 learning_rate = 1e-2
-l2_coe = 5e-3
+l2_coe = 0.0
 
 
 class GCN_BS(tf.keras.Model):
@@ -182,7 +182,7 @@ def evaluate():
 
 optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
 
-for step in range(1, 2001):
+for step in range(1, 1501):
     with tf.GradientTape() as tape:
         logits = forward(graph, training=True)
         loss = compute_loss(logits, train_index, tape.watched_variables())
