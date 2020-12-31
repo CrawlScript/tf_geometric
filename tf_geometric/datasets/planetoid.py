@@ -14,12 +14,18 @@ from tf_geometric.utils.graph_utils import convert_edge_to_directed, remove_self
 
 class PlanetoidDataset(DownloadableDataset):
 
-    def __init__(self, dataset_name, dataset_root_path=None):
+    def __init__(self, dataset_name, task="semi_supervised", dataset_root_path=None):
         """
 
         :param dataset_name: "cora" | "citeseer" | "pubmed"
+        :param task: "semi_supervised" | "supervised"
         :param dataset_root_path:
         """
+        valid_tasks = ["semi_supervised", "supervised"]
+        if task not in valid_tasks:
+            raise Exception("invalid task name for planetoid dataset: \"{}\"\tvalid task names: {}".format(task, valid_tasks))
+        self.task = task
+
         super().__init__(dataset_name=dataset_name,
                          download_urls=[
                              "https://github.com/CrawlScript/gnn_datasets/raw/master/planetoid/{}.zip".format(
@@ -72,8 +78,12 @@ class PlanetoidDataset(DownloadableDataset):
         labels[test_idx_reorder, :] = labels[test_idx_range, :]
 
         test_index = test_idx_range.tolist()
-        train_index = list(range(len(y)))
-        valid_index = list(range(len(y), len(y) + 500))
+        if self.task == "semi_supervised":
+            train_index = list(range(len(y)))
+            valid_index = list(range(len(y), len(y) + 500))
+        else:
+            train_index = range(len(ally) - 500)
+            valid_index = range(len(ally) - 500, len(ally))
 
         x = np.array(features.todense()).astype(np.float32)
         inv_sum_x = 1.0 / np.sum(x, axis=-1, keepdims=True)
@@ -94,16 +104,34 @@ class PlanetoidDataset(DownloadableDataset):
 class CoraDataset(PlanetoidDataset):
 
     def __init__(self, dataset_root_path=None):
-        super().__init__("cora", dataset_root_path)
+        super().__init__("cora", dataset_root_path=dataset_root_path)
 
 
 class CiteseerDataset(PlanetoidDataset):
 
     def __init__(self, dataset_root_path=None):
-        super().__init__("citeseer", dataset_root_path)
+        super().__init__("citeseer", dataset_root_path=dataset_root_path)
 
 
 class PubmedDataset(PlanetoidDataset):
 
     def __init__(self, dataset_root_path=None):
-        super().__init__("pubmed", dataset_root_path)
+        super().__init__("pubmed", dataset_root_path=dataset_root_path)
+
+
+class SupervisedCoraDataset(PlanetoidDataset):
+
+    def __init__(self, dataset_root_path=None):
+        super().__init__("cora", task="supervised", dataset_root_path=dataset_root_path)
+
+
+class SupervisedCiteseerDataset(PlanetoidDataset):
+
+    def __init__(self, dataset_root_path=None):
+        super().__init__("citeseer", task="supervised", dataset_root_path=dataset_root_path)
+
+
+class SupervisedPubmedDataset(PlanetoidDataset):
+
+    def __init__(self, dataset_root_path=None):
+        super().__init__("pubmed", task="supervised", dataset_root_path=dataset_root_path)
