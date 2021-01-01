@@ -10,19 +10,19 @@ import tf_geometric as tfg
 from tqdm import tqdm
 import time
 
-graph, (train_index, valid_index, test_index) = tfg.datasets.CoraDataset().load_data()
+graph, (train_index, valid_index, test_index) = tfg.datasets.SupervisedCoraDataset().load_data()
 
 num_classes = graph.y.max() + 1
-num_gcns = 32
+num_gcns = 8
 drop_rate = 0.5
-edge_drop_rate = 0.3
+edge_drop_rate = 0.5
 learning_rate = 5e-4
 l2_coe = 0.0
 
 units_list = [128] * (num_gcns - 1) + [num_classes]
 
 
-# Sample Multi-layer GCN Model
+# Simple Multi-layer GCN Model
 class GCNModel(tf.keras.Model):
 
     def __init__(self, *args, **kwargs):
@@ -33,9 +33,9 @@ class GCNModel(tf.keras.Model):
         self.dropout = Dropout(drop_rate)
 
     def call(self, inputs, training=None, mask=None):
-        h, edge_index, edge_weight = inputs
 
-        h = self.dropout(h, training=training)
+        x, edge_index, edge_weight = inputs
+        h = self.dropout(x, training=training)
 
         cache = {}
         for i in range(num_gcns):
@@ -44,7 +44,7 @@ class GCNModel(tf.keras.Model):
         return h
 
 
-dropedge = DropEdge(edge_drop_rate, force_undirected=False)
+dropedge = DropEdge(edge_drop_rate, force_undirected=True)
 model = GCNModel()
 
 
@@ -52,11 +52,10 @@ model = GCNModel()
 # @tf_utils.function is not compatible with TensorFlow 1.x and dynamic graph.cache.
 @tf_utils.function
 def forward(graph, training=False):
-    if dropedge:
-        # DropEdge: Towards Deep Graph Convolutional Networks on Node Classification
-        edge_index, edge_weight = dropedge([graph.edge_index, graph.edge_weight], training=training)
-    else:
-        edge_index, edge_weight = graph.edge_index, graph.edge_weight  # no DropEdge
+
+    # DropEdge: Towards Deep Graph Convolutional Networks on Node Classification
+    edge_index, edge_weight = dropedge([graph.edge_index, graph.edge_weight], training=training)
+
     return model([graph.x, edge_index, edge_weight], training=training)
 
 
@@ -90,7 +89,7 @@ def evaluate():
 
 optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
 
-for step in range(1, 1001):
+for step in range(1, 501):
     with tf.GradientTape() as tape:
         logits = forward(graph, training=True)
         loss = compute_loss(logits, train_index, tape.watched_variables())

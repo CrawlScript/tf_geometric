@@ -18,7 +18,7 @@ def dropedge(inputs, rate=0.5, force_undirected=False, training=None):
     if not training:
         return inputs
 
-    if rate < 0.0 or rate >= 1.0:
+    if rate < 0.0 or rate > 1.0:
         raise ValueError('Dropout probability has to be between 0 and 1, '
                          'but got {}'.format(rate))
 
