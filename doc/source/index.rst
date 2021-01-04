@@ -48,29 +48,6 @@ The following example constructs a graph and applies a Multi-head Graph Attentio
    output = gat_layer([graph.x, graph.edge_index])
    print("Output of GAT: \n", output)
 
-Output:
-
-.. code-block::
-
-   Graph Desc:
-    Graph Shape: x => (5, 20)  edge_index => (2, 4)    y => None
-
-   Processed Graph Desc:
-    Graph Shape: x => (5, 20)  edge_index => (2, 8)    y => None
-
-   Processed Edge Index:
-    [[0 0 1 1 1 2 2 3]
-    [1 2 0 2 3 0 1 1]]
-
-   Output of GAT:
-    tf.Tensor(
-   [[0.22443159 0.         0.58263206 0.32468423]
-    [0.29810357 0.         0.19403605 0.35630274]
-    [0.18071976 0.         0.58263206 0.32468423]
-    [0.36123228 0.         0.88897204 0.450244  ]
-    [0.         0.         0.8013462  0.        ]], shape=(5, 4), dtype=float32)
-
-
 
 Quickstart
 ----------
