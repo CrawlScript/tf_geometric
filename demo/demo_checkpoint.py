@@ -1,7 +1,7 @@
 # coding=utf-8
 import os
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["CUDA_VISIBLE_DEVICES"] = "4"
 from tf_geometric.utils import tf_utils
 import tf_geometric as tfg
 import tensorflow as tf
@@ -12,6 +12,8 @@ graph, (train_index, valid_index, test_index) = tfg.datasets.CoraDataset().load_
 
 num_classes = graph.y.max() + 1
 drop_rate = 0.6
+checkpoint_dir = "./models"
+checkpoint_prefix = os.path.join(checkpoint_dir, "gat")
 
 
 # Multi-layer GAT Model
@@ -32,6 +34,8 @@ class GATModel(tf.keras.Model):
         return h
 
 
+# Model/Layer objects in TensorFlow may delay the creation of variables to their first call, when input shapes are available.
+# Therefore, you must call the model at least once before writing checkpoints.
 model = GATModel()
 
 
@@ -70,6 +74,11 @@ def evaluate():
 
 optimizer = tf.keras.optimizers.Adam(learning_rate=5e-3)
 
+# tf.tain.Checkpoint can save and restore trackable objects.
+# You can pass trackable objects as keywords arguments as follows:
+# tf.train.Checkpoint(key1=value1, key2=value2, ...)
+checkpoint = tf.train.Checkpoint(model=model, optimizer=optimizer)
+
 for step in range(1, 401):
     with tf.GradientTape() as tape:
         logits = forward(graph, training=True)
@@ -83,14 +92,37 @@ for step in range(1, 401):
         accuracy = evaluate()
         print("step = {}\tloss = {}\taccuracy = {}".format(step, loss, accuracy))
 
-print("\nstart speed test...")
-num_test_iterations = 1000
-start_time = time.time()
-for _ in tqdm(range(num_test_iterations)):
-    logits = forward(graph)
-end_time = time.time()
-print("mean forward time: {} seconds".format((end_time - start_time) / num_test_iterations))
+        # writing checkpoints
+        checkpoint.save(file_prefix=checkpoint_prefix)
+        print("write checkpoint at step {}".format(step))
 
-if tf.__version__[0] == "1":
-    print("** @tf_utils.function is disabled in TensorFlow 1.x. "
-          "Upgrade to TensorFlow 2.x for 10X faster speed. **")
+
+# create new model and restore it from the checkpoint
+restored_model = GATModel()
+# if you want to restore the optimizer, just add it as a keyword argument as follows:
+# checkpoint = tf.train.Checkpoint(model=model, optimizer=optimizer)
+checkpoint = tf.train.Checkpoint(model=restored_model)
+
+# https://www.tensorflow.org/guide/checkpoint#delayed_restorations
+# Layer/Model objects in TensorFlow may delay the creation of variables to their first call, when input shapes are available.
+# For example the shape of a Dense layer's kernel depends on both the layer's input and output shapes,
+# and so the output shape required as a constructor argument is not enough information to create the variable on its own.
+# Since calling a Layer/Model also reads the variable's value, a restore must happen between the variable's creation and its first use.
+# To support this idiom, tf.train.Checkpoint queues restores which don't yet have a matching variable.
+# In this case, some variables, such as model.gat0.kernel and model.gat0.bias will not be immediately restored after calling checkpoint.restore.
+# The will be automatically restored during the first call of restored_model.
+checkpoint.restore(tf.train.latest_checkpoint(checkpoint_dir))
+
+
+# @tf_utils.function can speed up functions for TensorFlow 2.x
+@tf_utils.function
+def forward_by_restored_model(graph, training=False):
+    return restored_model([graph.x, graph.edge_index], training=training)
+
+
+print("infer with model:")
+print(forward(graph))
+
+print("infer with restored_model:")
+print(forward_by_restored_model(graph))
+
