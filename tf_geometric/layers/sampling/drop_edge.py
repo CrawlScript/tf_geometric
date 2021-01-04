@@ -1,7 +1,7 @@
 # coding=utf-8
 
 import tensorflow as tf
-from tf_geometric.nn.sampling.dropedge import dropedge
+from tf_geometric.nn.sampling.drop_edge import drop_edge
 
 
 class DropEdge(tf.keras.Model):
@@ -22,5 +22,5 @@ class DropEdge(tf.keras.Model):
                              'but got {}'.format(self.rate))
 
     def call(self, inputs, training=None, mask=None):
-        return dropedge(inputs=inputs, rate=self.rate,
-                        force_undirected=self.force_undirected, training=training)
+        return drop_edge(inputs=inputs, rate=self.rate,
+                         force_undirected=self.force_undirected, training=training)

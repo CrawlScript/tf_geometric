@@ -3,7 +3,7 @@ import tensorflow as tf
 import numpy as np
 
 
-def dropedge(inputs, rate=0.5, force_undirected=False, training=None):
+def drop_edge(inputs, rate=0.5, force_undirected=False, training=None):
     """
 
     :param inputs: List of edge_index and other edge attributes [edge_index, edge_attr, ...]
