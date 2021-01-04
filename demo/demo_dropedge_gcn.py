@@ -29,7 +29,7 @@ class GCNModel(tf.keras.Model):
         super().__init__(*args, **kwargs)
 
         activations = [tf.nn.relu if i < len(units_list) - 1 else None for i in range(len(units_list))]
-        self.gcns = [GCN(units, activation=activation) for units, activation in zip(units_list, activations)]
+        self.gcns = [GCN(units=units, activation=activation) for units, activation in zip(units_list, activations)]
         self.dropout = Dropout(drop_rate)
 
     def call(self, inputs, training=None, mask=None):
@@ -44,7 +44,7 @@ class GCNModel(tf.keras.Model):
         return h
 
 
-dropedge = DropEdge(edge_drop_rate, force_undirected=True)
+drop_edge = DropEdge(edge_drop_rate, force_undirected=True)
 model = GCNModel()
 
 
@@ -54,7 +54,7 @@ model = GCNModel()
 def forward(graph, training=False):
 
     # DropEdge: Towards Deep Graph Convolutional Networks on Node Classification
-    edge_index, edge_weight = dropedge([graph.edge_index, graph.edge_weight], training=training)
+    edge_index, edge_weight = drop_edge([graph.edge_index, graph.edge_weight], training=training)
 
     return model([graph.x, edge_index, edge_weight], training=training)
 
