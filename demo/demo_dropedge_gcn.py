@@ -10,7 +10,12 @@ import tf_geometric as tfg
 from tqdm import tqdm
 import time
 
-graph, (train_index, valid_index, test_index) = tfg.datasets.CoraDataset().load_data()
+
+# The Supervised Cora Dataset if from:
+# Rong, Y., Huang, W., Xu, T., & Huang, J. (2020). DropEdge: Towards Deep Graph Convolutional Networks on Node Classification. ICLR.
+# The Supervised Cora Dataset is controversal: https://openreview.net/forum?id=Hkx1qkrKPr.
+# We are not sure whether it is a standard benchmark.
+graph, (train_index, valid_index, test_index) = tfg.datasets.SupervisedCoraDataset().load_data()
 
 num_classes = graph.y.max() + 1
 num_hidden_layer = 1
@@ -22,9 +27,9 @@ learning_rate = 1e-2
 l2_coe = 5e-3
 
 
-class GCN_BS(tf.keras.Model):
+class CustomizedGCN(tf.keras.Model):
     """
-    GCN Layer with BN, Self-loop and Res connection.
+    GCN Layer with BN, Self-loop and Res connection configurations.
     """
 
     def __init__(self, units, activation=None, use_bn=True, use_loop=True, use_bias=True, res=False, *args, **kwargs):
@@ -53,8 +58,9 @@ class GCN_BS(tf.keras.Model):
             self.bias = self.add_weight("bias", shape=[self.units], initializer="zeros")
 
     def call(self, inputs, training=None, mask=None, cache=None):
-        x = inputs[0]
-        h = self.gcn(inputs, cache=cache)
+        x, edge_index, edge_weight = inputs
+
+        h = self.gcn([x, edge_index, edge_weight], cache=cache)
 
         if self.use_loop:
             h += self.self_weight(x)
@@ -77,14 +83,15 @@ class GCNBaseBlock(tf.keras.Model):
                  use_bn=True, use_loop=True, activation=tf.nn.relu, drop_rate=0.5, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.dropout = Dropout(drop_rate)
-        self.gcns = [GCN_BS(units, activation, use_bn, use_loop) for _ in range(nbaselayer)]
+        self.gcns = [CustomizedGCN(units, activation, use_bn, use_loop) for _ in range(nbaselayer)]
 
     def call(self, inputs, training=None, mask=None, cache=None):
-        h, *edge_attrs = inputs
+        x, edge_index, edge_weight = inputs
+        h = x
 
         outputs = []
         for i in range(len(self.gcns)):
-            h = self.gcns[i]([h, *edge_attrs], cache=cache, training=training)
+            h = self.gcns[i]([h, edge_index, edge_weight], cache=cache, training=training)
             h = self.dropout(h, training=training)
             outputs.append(h)
 
@@ -107,8 +114,8 @@ class DropEdgeGCNModel(tf.keras.Model):
         self.drop_rate = drop_rate
         self.edge_drop_rate = edge_drop_rate
 
-        self.in_gcn = GCN_BS(units=self.units, activation=self.activation, use_bn=self.use_bn, use_loop=self.use_loop)
-        self.out_gcn = GCN_BS(units=num_classes, use_bn=self.use_bn, use_loop=self.use_loop)
+        self.in_gcn = CustomizedGCN(units=self.units, activation=self.activation, use_bn=self.use_bn, use_loop=self.use_loop)
+        self.out_gcn = CustomizedGCN(units=num_classes, use_bn=self.use_bn, use_loop=self.use_loop)
         self.hidden_gcns = [
             GCNBaseBlock(units=units, nbaselayer=self.nbaselayer, activation=self.activation, drop_rate=self.drop_rate,
                          use_bn=self.use_bn, use_loop=self.use_loop) for _ in range(self.nhidlayer)]

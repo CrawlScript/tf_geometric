@@ -65,6 +65,7 @@ Output of GAT:
 
 We recommend you to get started with some demo.
 
+
 ### Node Classification
 
 + [Graph Convolutional Network (GCN)](demo/demo_gcn.py)
@@ -91,7 +92,10 @@ We recommend you to get started with some demo.
 + [Graph Auto-Encoder (GAE)](demo/demo_gae.py)
 
 
+### Save and Load Models
 
++ [Save and Load Models](demo/demo_save_and_load_model.py)
++ [Save and Load Models with tf.train.Checkpoint](demo/demo_checkpoint.py)
 
 ## Installation
 

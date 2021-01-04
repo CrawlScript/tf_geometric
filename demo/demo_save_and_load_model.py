@@ -90,16 +90,15 @@ for step in range(1, 401):
         accuracy = evaluate()
         print("step = {}\tloss = {}\taccuracy = {}".format(step, loss, accuracy))
 
-        # write checkpoints
-        checkpoint.save(file_prefix=checkpoint_prefix)
-        print("write checkpoint at step {}".format(step))
+        # save model
+        # Different from tf.train.Checkpoint.save, model.save_weights will only create one checkpoint.
+        # That is, calling model.save_weights will overwrite the last checkpoint file.
+        model.save_weights(checkpoint_prefix)
+        print("save model at step {}".format(step))
 
 
 # create new model and restore it from the checkpoint
 restored_model = GATModel()
-# if you want to restore the optimizer, just add it as a keyword argument as follows:
-# checkpoint = tf.train.Checkpoint(model=model, optimizer=optimizer)
-checkpoint = tf.train.Checkpoint(model=restored_model)
 
 # https://www.tensorflow.org/guide/checkpoint#delayed_restorations
 # Layer/Model objects in TensorFlow may delay the creation of variables to their first call, when input shapes are available.
@@ -109,7 +108,7 @@ checkpoint = tf.train.Checkpoint(model=restored_model)
 # To support this idiom, tf.train.Checkpoint queues restores which don't yet have a matching variable.
 # In this case, some variables, such as model.gat0.kernel and model.gat0.bias will not be immediately restored after calling checkpoint.restore.
 # The will be automatically restored during the first call of restored_model.
-checkpoint.restore(tf.train.latest_checkpoint(checkpoint_dir))
+restored_model.load_weights(tf.train.latest_checkpoint(checkpoint_dir))
 
 
 # @tf_utils.function can speed up functions for TensorFlow 2.x
