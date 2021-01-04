@@ -1,7 +1,7 @@
 # coding=utf-8
 import os
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["CUDA_VISIBLE_DEVICES"] = "4"
 from tf_geometric.utils import tf_utils
 import tf_geometric as tfg
 import tensorflow as tf
@@ -71,11 +71,6 @@ def evaluate():
 
 
 optimizer = tf.keras.optimizers.Adam(learning_rate=5e-3)
-
-# tf.tain.Checkpoint can save and restore trackable objects.
-# You can pass trackable objects as keywords arguments as follows:
-# tf.train.Checkpoint(key1=value1, key2=value2, ...)
-checkpoint = tf.train.Checkpoint(model=model, optimizer=optimizer)
 
 for step in range(1, 401):
     with tf.GradientTape() as tape:
