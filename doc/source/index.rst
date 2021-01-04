@@ -48,9 +48,10 @@ The following example constructs a graph and applies a Multi-head Graph Attentio
    output = gat_layer([graph.x, graph.edge_index])
    print("Output of GAT: \n", output)
 
+
 Output:
 
-.. code-block:: text
+.. code-block:: HTML
 
    Graph Desc:
     Graph Shape: x => (5, 20)  edge_index => (2, 4)    y => None
