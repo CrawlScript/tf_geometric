@@ -1,24 +1,28 @@
-.. tf_geometric documentation master file, created by
-   sphinx-quickstart on Tue Feb  4 15:59:33 2020.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+.. _index:
 
 tf_geometric Documentation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+----
+
+:ref:`(中文版)<index_cn>`
+
 
 Efficient and Friendly Graph Neural Network Library for TensorFlow 1.x and 2.x.
 
 
 Inspired by **rusty1s/pytorch_geometric**\ , we build a GNN library for TensorFlow.
-`tf_geometric <https://github.com/CrawlScript/tf_geometric>`_ provide both OOP and Functional API, with which you can make some cool things.
+`tf_geometric <https://github.com/CrawlScript/tf_geometric>`_ provides both OOP and Functional API, with which you can make some cool things.
 
 * **Github:**\  `https://github.com/CrawlScript/tf_geometric <https://github.com/CrawlScript/tf_geometric>`_
 * **Documentation:**\  `https://tf-geometric.readthedocs.io <https://tf-geometric.readthedocs.io>`_
 
 
 
-Efficient and Friendly Graph Data Structure and GNN Layers
+Efficient and Friendly API
 ----------------------------------------------------------
+
+----
 
 We use Message Passing mechanism to implement graph neural networks, which is way efficient than the dense matrix based implementations and more friendly than the sparse matrix based ones.
 In addition, we provide easy and elegant APIs for complex GNN operations.
@@ -72,25 +76,32 @@ Output:
     [0.         0.         0.8013462  0.        ]], shape=(5, 4), dtype=float32)
 
 
-Quickstart
+Tutorial
 ----------
+
+----
+
+
+Table of Contents
+>>>>>>>>>>>>>>>>>>>
+
 
 .. toctree::
    :maxdepth: 2
 
    wiki/installation
    wiki/quickstart
-   wiki/demo
 
 
 
 Getting Started with Demo
--------------------------
+>>>>>>>>>>>>>>>>>>>>>>>>>
+
 
 We recommend you to get started with some demo.
 
 Node Classification
->>>>>>>>>>>>>>>>>>>
+:::::::::::::::::::
 
 * `Graph Convolutional Network (GCN) <https://github.com/CrawlScript/tf_geometric/blob/master/demo/demo_gcn.py>`_
 * `Multi-head Graph Attention Network (GAT) <https://github.com/CrawlScript/tf_geometric/blob/master/demo/demo_gat.py>`_
@@ -105,7 +116,7 @@ Node Classification
 
 
 Graph Classification
->>>>>>>>>>>>>>>>>>>>
+:::::::::::::::::::
 
 * `MeanPooling <https://github.com/CrawlScript/tf_geometric/blob/master/demo/demo_mean_pool.py>`_
 * `Graph Isomorphism Network (GIN) <https://github.com/CrawlScript/tf_geometric/blob/master/demo/demo_gin.py>`_
@@ -114,14 +125,14 @@ Graph Classification
 
 
 Link Prediction
->>>>>>>>>>>>>>>
+:::::::::::::::::::
 
 * `Graph Auto-Encoder (GAE) <https://github.com/CrawlScript/tf_geometric/blob/master/demo/demo_gae.py>`_
 
 
 
 Save and Load Models
->>>>>>>>>>>>>>>>>>>>
+::::::::::::::::::::
 
 * `Save and Load Models <https://github.com/CrawlScript/tf_geometric/blob/master/demo/demo_save_and_load_model.py>`_
 * `Save and Load Models with tf.train.Checkpoint <https://github.com/CrawlScript/tf_geometric/blob/master/demo/demo_checkpoint.py>`_
@@ -130,6 +141,8 @@ Save and Load Models
 
 Package Reference
 -----------------
+
+----
 
 
 .. _Packages:

@@ -1,5 +1,9 @@
+.. _wiki-installation:
+
 Installation
 ============
+
+:ref:`(中文版)<wiki_cn-installation>`
 
 
 Requirements

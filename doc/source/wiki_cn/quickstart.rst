@@ -1,17 +1,17 @@
-.. _wiki-quickstart:
+.. _wiki_cn-quickstart:
 
-Quickstart
+快速入门
 ======================
 
-:ref:`(中文版)<wiki_cn-quickstart>`
+:ref:`(English Version)<wiki-quickstart>`
 
 
-Get started with a simple example
+使用简单示例快速入门
 ---------------------------------
 
-We use Message Passing mechanism to implement graph neural networks, which is way efficient than the dense matrix based implementations and more friendly than the sparse matrix based ones.
-In addition, we provide easy and elegant APIs for complex GNN operations.
-The following example constructs a graph and applies a Multi-head Graph Attention Network (GAT) on it:
+tf_geometric使用消息传递机制来实现图神经网络：相比于基于稠密矩阵的实现，它具有更高的效率；相比于基于稀疏矩阵的实现，它具有更友好的API。
+除此之外，tf_geometric还为复杂的图神经网络操作提供了简易优雅的API。
+下面的示例展现了使用tf_geometric构建一个图结构的数据，并使用多头图注意力网络（Multi-head GAT）对图数据进行处理的流程：
 
 .. code-block:: python
 
@@ -61,17 +61,18 @@ Output:
 
 
 
-OOP and Functional API
+
+面向对象接口（OOP API）和函数式接口（Functional API）
 --------------------------------------
 
-We provide both OOP and Functional API, with which you can make some cool things.
+`tf_geometric <https://github.com/CrawlScript/tf_geometric>`_ 同时提供面向对象接口（OOP API）和函数式接口（Functional API），你可以用它们来构建有趣的模型。
 
 .. code-block:: python
 
    # coding=utf-8
    import os
 
-   # Enable GPU 0
+   # 使用 GPU 0
    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
    import tf_geometric as tfg
@@ -79,33 +80,32 @@ We provide both OOP and Functional API, with which you can make some cool things
    import numpy as np
    from tf_geometric.utils.graph_utils import convert_edge_to_directed
 
-   # ==================================== Graph Data Structure ====================================
-   # In tf_geometric, the data of a graph can be represented by either a collections of 
-   # tensors (numpy.ndarray or tf.Tensor) or a tfg.Graph object.
-   # A graph usually consists of x(node features), edge_index and edge_weight(optional)
+   # ==================================== 图数据结构 ====================================
+   # 在tf_geometric中, 1个图的数据可以被存储为多个张量(numpy.ndarray或tf.Tensor)或一个tfg.Graph对象。
+   # 一个图通常包含节点特征x、边表edge_index和边权重edge_weight（可选）。
 
-   # Node Features => (num_nodes, num_features)
+   # 节点特征 => (num_nodes, num_features)
    x = np.random.randn(5, 20).astype(np.float32) # 5 nodes, 20 features
 
-   # Edge Index => (2, num_edges)
-   # Each column of edge_index (u, v) represents an directed edge from u to v.
-   # Note that it does not cover the edge from v to u. You should provide (v, u) to cover it.
-   # This is not convenient for users.
-   # Thus, we allow users to provide edge_index in undirected form and convert it later.
-   # That is, we can only provide (u, v) and convert it to (u, v) and (v, u) with `convert_edge_to_directed` method.
+   # 边表 => (2, num_edges)
+   # 边表edge_index中的每列(u, v)表示一个从节点u到v的有向边。
+   # 注意，它并不包含从v到u的边，你需要在边表中提供(v, u)来表示从v到u的边。
+   # 有时候这种表示方法并不方便，因为对于每条无向边，用户需要同时提供两列数据。
+   # 为此，我们允许用户仅提供单向的边（无向图表示形式），并在之后使用工具方法将其转换为同时包含双向边的edge_index（有向图表示法）
+   # 也就是说，用户仅在edge_index中提供(u, v)，然后使用`convert_edge_to_directed`方法将其转换为(u, v)和(v, u)。
    edge_index = np.array([
        [0, 0, 1, 3],
        [1, 2, 2, 1]
    ])
 
-   # Edge Weight => (num_edges)
+   # 边权重 => (num_edges)
    edge_weight = np.array([0.9, 0.8, 0.1, 0.2]).astype(np.float32)
 
-   # Make the edge_index directed such that we can use it as the input of GCN
+   # 将edge_index从无向图表示法转换为有向图表示法，这样才可以将其作为图卷积网络GCN的输入
    edge_index, [edge_weight] = convert_edge_to_directed(edge_index, [edge_weight])
 
 
-   # We can convert these numpy array as TensorFlow Tensors and pass them to gnn functions
+   # 可以将numpy张量转换为TensorFlow张量，并将其作为函数式API（Functional API）的输入
    outputs = tfg.nn.gcn(
        tf.Variable(x),
        tf.constant(edge_index),
@@ -114,39 +114,39 @@ We provide both OOP and Functional API, with which you can make some cool things
    )
    print(outputs)
 
-   # Usually, we use a graph object to manager these information
-   # edge_weight is optional, we can set it to None if you don't need it
+   # 通常，可以用一个tfg.Graph对象来维护一个图的信息
+   # 其中，边权重edge_weight是可选的，可以将其设置为None
    graph = tfg.Graph(x=x, edge_index=edge_index, edge_weight=edge_weight)
 
-   # You can easily convert these numpy arrays as Tensors with the Graph Object API
+   # 如果有必要，可以用tfg.Graph对象的`convert_data_to_tensor`方法直接将图中的numpy数据转换为TensorFlow张量
    graph.convert_data_to_tensor()
 
-   # Then, we can use them without too many manual conversion
+   # 转换之后，我们可以直接将图的属性作为函数式API（Functional API）的输入
    outputs = tfg.nn.gcn(
        graph.x,
        graph.edge_index,
        graph.edge_weight,
        tf.Variable(tf.random.truncated_normal([20, 2])),  # GCN Weight
-       cache=graph.cache  # GCN use caches to avoid re-computing of the normed edge information
+       cache=graph.cache  # 图卷积网络层GCN使用缓存cache来避免对归一化边信息的重复计算
    )
    print(outputs)
 
 
-   # For algorithms that deal with batches of graphs, we can pack a batch of graph into a BatchGraph object
-   # Batch graph wrap a batch of graphs into a single graph, where each nodes has an unique index and a graph index.
-   # The node_graph_index is the index of the corresponding graph for each node in the batch.
-   # The edge_graph_index is the index of the corresponding edge for each node in the batch.
+   # 对于需要批量处理图的算法，可以将批量的图（多图）打包进一个tfg.BatchGraph对象。
+   # tfg.BatchGraph将一批图打包为一个单独的大图，原始批量图中的每个节点在大图中都有独立的索引号以及图索引号（表示属于第几个原始图）
+   # tfg.BatchGraph对象的node_graph_index属性表示大图中每个节点所对应的原始图索引号。
+   # tfg.BatchGraph对象的edge_graph_index属性表示大图中每条边所对应的原始图索引号。
    batch_graph = tfg.BatchGraph.from_graphs([graph, graph, graph, graph])
 
-   # We can reversely split a BatchGraph object into Graphs objects
+   # 也可以逆向地将tfg.BatchGraph对象拆分为多个tfg.Graph对象
    graphs = batch_graph.to_graphs()
 
-   # Graph Pooling algorithms often rely on such batch data structure
-   # Most of them accept a BatchGraph's data as input and output a feature vector for each graph in the batch
+   # 图池化操作通常会依赖于tfg.BatchGraph
+   # 大多图池化操作以1个tfg.BatchGraph对象的属性作为输入，为批量图中的每个图输出1个特征向量作为每个图的表示
    outputs = tfg.nn.mean_pool(batch_graph.x, batch_graph.node_graph_index, num_graphs=batch_graph.num_graphs)
    print(outputs)
 
-   # We provide some advanced graph pooling operations such as topk_pool
+   # 框架也提供了一些高阶的图池化操作，例如topk_pool
    node_score = tfg.nn.gcn(
        batch_graph.x,
        batch_graph.edge_index,
@@ -161,35 +161,36 @@ We provide both OOP and Functional API, with which you can make some cool things
 
 
 
-   # ==================================== Built-in Datasets ====================================
-   # all graph data are in numpy format
+   # ==================================== 内置数据集 ====================================
+   # 内置数据集通常为numpy格式
    train_data, valid_data, test_data = tfg.datasets.PPIDataset().load_data()
 
-   # we can convert them into tensorflow format
+   # 如果需要，可以将其转换为TensorFlow张量
    test_data = [graph.convert_data_to_tensor() for graph in test_data]
 
 
 
 
 
-   # ==================================== Basic OOP API ====================================
-   # OOP Style GCN (Graph Convolutional Network)
+   # ======================== 基础的面向对象API（Basic OOP API）======================== 
+   # 面向对象风格的图卷积网络层GCN
    gcn_layer = tfg.layers.GCN(units=20, activation=tf.nn.relu)
 
    for graph in test_data:
-       # Cache can speed-up GCN by caching the normed edge information
+       # 使用缓存cache可以避免对归一化边信息的重复计算，大幅度加速GCN的计算
        outputs = gcn_layer([graph.x, graph.edge_index, graph.edge_weight], cache=graph.cache)
        print(outputs)
 
 
    # OOP Style GAT (Multi-head Graph Attention Network)
+   # 面向对象风格的多头图注意力网络GAT
    gat_layer = tfg.layers.GAT(units=20, activation=tf.nn.relu, num_heads=4)
    for graph in test_data:
        outputs = gat_layer([graph.x, graph.edge_index])
        print(outputs)
 
 
-   # OOP Style Multi-layer GCN Model
+   # 面向对象风格的多层图卷积网络模型（Multi-layer GCN Model）
    class GCNModel(tf.keras.Model):
 
        def __init__(self, *args, **kwargs):
@@ -213,10 +214,10 @@ We provide both OOP and Functional API, with which you can make some cool things
        print(outputs)
 
 
-   # ==================================== Basic Functional API ====================================
-   # Functional Style GCN
-   # Functional API is more flexible for advanced algorithms
-   # You can pass both data and parameters to functional APIs
+   # ==================================== 基础的函数式API（Functional API） ====================================
+   # 函数式风格的图卷积网络GCN
+   # 函数式API对于一些高阶算法会显得更加灵活
+   # 你可以同时将数据和网络参数作为函数式API的输入
 
    gcn_w = tf.Variable(tf.random.truncated_normal([test_data[0].num_features, 20]))
    for graph in test_data:
@@ -224,10 +225,11 @@ We provide both OOP and Functional API, with which you can make some cool things
        print(outputs)
 
 
-   # ==================================== Advanced Functional API ====================================
-   # Most APIs are implemented with Map-Reduce Style
-   # This is a gcn without without weight normalization and transformation
-   # Just pass the mapper/reducer/updater functions to the Functional API
+
+   # ==================================== 进阶的函数式API（Functional API） ====================================
+   # 大部分API都是按照Map-Reduce风格实现的
+   # 下面实现了一个不包含边归一化和特征变换的图卷积层
+   # 只需要将mapper/reducer/updater函数分别传给函数式API中的tfg.nn.aggregate_neighbors方法，即可轻松实现GNN层
 
    for graph in test_data:
        outputs = tfg.nn.aggregate_neighbors(

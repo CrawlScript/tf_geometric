@@ -11,6 +11,7 @@ from tf_geometric.nn.conv.sgc import *
 from tf_geometric.nn.conv.tagcn import *
 from tf_geometric.nn.conv.graph_sage import *
 from tf_geometric.nn.conv.appnp import *
+from tf_geometric.nn.conv.gin import *
 from tf_geometric.nn.sampling.drop_edge import *
 
 

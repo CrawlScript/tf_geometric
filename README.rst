@@ -46,7 +46,7 @@ The following example constructs a graph and applies a Multi-head Graph Attentio
 
 Output:
 
-.. code-block::
+.. code-block:: html
 
    Graph Desc:
     Graph Shape: x => (5, 20)  edge_index => (2, 4)    y => None
@@ -155,7 +155,8 @@ We provide both OOP and Functional API, with which you can make some cool things
    from tf_geometric.utils.graph_utils import convert_edge_to_directed
 
    # ==================================== Graph Data Structure ====================================
-   # In tf_geometric, graph data can be either individual Tensors or Graph objects
+   # In tf_geometric, the data of a graph can be represented by either a collections of
+   # tensors (numpy.ndarray or tf.Tensor) or a tfg.Graph object.
    # A graph usually consists of x(node features), edge_index and edge_weight(optional)
 
    # Node Features => (num_nodes, num_features)
@@ -262,6 +263,29 @@ We provide both OOP and Functional API, with which you can make some cool things
        outputs = gat_layer([graph.x, graph.edge_index])
        print(outputs)
 
+
+   # OOP Style Multi-layer GCN Model
+   class GCNModel(tf.keras.Model):
+
+       def __init__(self, *args, **kwargs):
+           super().__init__(*args, **kwargs)
+           self.gcn0 = tfg.layers.GCN(16, activation=tf.nn.relu)
+           self.gcn1 = tfg.layers.GCN(7)
+           self.dropout = tf.keras.layers.Dropout(0.5)
+
+       def call(self, inputs, training=None, mask=None, cache=None):
+           x, edge_index, edge_weight = inputs
+           h = self.dropout(x, training=training)
+           h = self.gcn0([h, edge_index, edge_weight], cache=cache)
+           h = self.dropout(h, training=training)
+           h = self.gcn1([h, edge_index, edge_weight], cache=cache)
+           return h
+
+
+   gcn_model = GCNModel()
+   for graph in test_data:
+       outputs = gcn_model([graph.x, graph.edge_index, graph.edge_weight], cache=graph.cache)
+       print(outputs)
 
 
    # ==================================== Basic Functional API ====================================
