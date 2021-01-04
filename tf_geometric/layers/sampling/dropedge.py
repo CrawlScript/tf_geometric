@@ -17,7 +17,7 @@ class DropEdge(tf.keras.Model):
         self.rate = rate
         self.force_undirected = force_undirected
 
-        if self.rate < 0. or self.rate >= 1.:
+        if self.rate < 0. or self.rate > 1.:
             raise ValueError('Dropout probability has to be between 0 and 1, '
                              'but got {}'.format(self.rate))
 
