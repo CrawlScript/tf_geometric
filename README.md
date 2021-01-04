@@ -7,7 +7,7 @@ Inspired by __rusty1s/pytorch_geometric__, we build a GNN library for TensorFlow
 ## Homepage and Documentation
 
 + Homepage: [https://github.com/CrawlScript/tf_geometric](https://github.com/CrawlScript/tf_geometric)
-+ Documentation: [https://tf-geometric.readthedocs.io](https://tf-geometric.readthedocs.io)
++ Documentation: [https://tf-geometric.readthedocs.io](https://tf-geometric.readthedocs.io) ([中文版](https://tf-geometric.readthedocs.io/en/latest/index_cn.html))
 
 
 ## Efficient and Friendly
