@@ -3,4 +3,3 @@ networkx >= 2.1
 scipy >= 1.1.0
 tensorflow == 1.14.0
 scikit-learn >= 0.22
-sphinx_rtd_theme>=0.3.1

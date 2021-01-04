@@ -35,7 +35,7 @@ The following example constructs a graph and applies a Multi-head Graph Attentio
 
 Output:
 
-.. code-block::
+.. code-block:: text
 
    Graph Desc:
     Graph Shape: x => (5, 20)  edge_index => (2, 4)    y => None
