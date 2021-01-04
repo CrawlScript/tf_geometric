@@ -8,10 +8,28 @@ CACHE_KEY_GCN_NORMED_EDGE_TEMPLATE = "gcn_normed_edge_{}_{}"
 
 
 def compute_cache_key(renorm, improved):
+    """
+    Compute the cached key based on GCN normalization configurations: renorm and improved
+
+    :param renorm: Whether use renormalization trick (https://arxiv.org/pdf/1609.02907.pdf).
+    :param improved: Whether use improved GCN or not.
+    :return: The corresponding cached key for the given GCN normalization configuration.
+    """
     return CACHE_KEY_GCN_NORMED_EDGE_TEMPLATE.format(renorm, improved)
 
 
 def gcn_norm_edge(edge_index, num_nodes, edge_weight=None, renorm=True, improved=False, cache: dict=None):
+    """
+    Compute normed edge (updated edge_index and normalized edge_weight) for GCN normalization.
+
+    :param edge_index: Tensor, shape: [2, num_edges], edge information.
+    :param num_nodes: Number of nodes.
+    :param edge_weight: Tensor or None, shape: [num_edges]
+    :param renorm: Whether use renormalization trick (https://arxiv.org/pdf/1609.02907.pdf).
+    :param improved: Whether use improved GCN or not.
+    :param cache: A dict for caching the updated edge_index and normalized edge_weight.
+    :return: Normed edge (updated edge_index and normalized edge_weight).
+    """
 
     if cache is not None:
         cache_key = compute_cache_key(renorm, improved)
@@ -49,6 +67,16 @@ def gcn_norm_edge(edge_index, num_nodes, edge_weight=None, renorm=True, improved
 
 
 def gcn_cache_normed_edge(graph, renorm=True, improved=False, override=False):
+    """
+    Manually compute the normed edge based on the given GCN normalization configuration (renorm and improved) and put it in graph.cache.
+    If the normed edge already exists in graph.cache and the override parameter is False, this method will do nothing.
+
+    :param graph: tfg.Graph, the input graph.
+    :param renorm: Whether use renormalization trick (https://arxiv.org/pdf/1609.02907.pdf).
+    :param improved: Whether use improved GCN or not.
+    :param override: Whether to override existing cached normed edge.
+    :return: None
+    """
     if override:
         cache_key = compute_cache_key(renorm, improved)
         graph.cache[cache_key] = None
@@ -62,6 +90,7 @@ def gcn_mapper(repeated_x, neighbor_x, edge_weight=None):
 def gcn(x, edge_index, edge_weight, kernel, bias=None, activation=None,
         renorm=True, improved=False, cache=None):
     """
+    Functional API for Graph Convolutional Networks.
 
     :param x: Tensor, shape: [num_nodes, num_features], node features
     :param edge_index: Tensor, shape: [2, num_edges], edge information
@@ -73,11 +102,16 @@ def gcn(x, edge_index, edge_weight, kernel, bias=None, activation=None,
     :param improved: Whether use improved GCN or not.
     :param cache: A dict for caching A' for GCN. Different graph should not share the same cache dict.
         To use @tf_utils.function with gcn, you should cache the noremd edge information before the first call of the gcn.
-        (1) If you're using OOP APIs tfg.layers.GCN:
-            gcn_layer.cache_normed_edge(graph)
-        (2) If you're using functional API tfg.nn.gcn:
-            from tf_geometric.nn.conv.gcn import gcn_cache_normed_edge
-            gcn_cache_normed_edge(graph)
+
+        - (1) If you're using OOP APIs tfg.layers.GCN:
+
+              gcn_layer.cache_normed_edge(graph)
+
+        - (2) If you're using functional API tfg.nn.gcn:
+
+              from tf_geometric.nn.conv.gcn import gcn_cache_normed_edge
+              gcn_cache_normed_edge(graph)
+
     :return: Updated node features (x), shape: [num_nodes, num_output_features]
     """
 

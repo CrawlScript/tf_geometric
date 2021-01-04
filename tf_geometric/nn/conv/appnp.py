@@ -12,6 +12,7 @@ def appnp(x, edge_index, edge_weight, kernels, biases,
           dense_drop_rate=0.0, edge_drop_rate=0.0, cache=None, training=False):
 
     """
+    Functional API for Approximate Personalized Propagation of Neural Predictions (APPNP).
 
     :param x: Tensor, shape: [num_nodes, num_features], node features
     :param edge_index: Tensor, shape: [2, num_edges], edge information
@@ -27,11 +28,16 @@ def appnp(x, edge_index, edge_weight, kernels, biases,
     :param edge_drop_rate: Dropout rate for the edges/adj used for propagation.
     :param cache: A dict for caching A' for GCN. Different graph should not share the same cache dict.
         To use @tf_utils.function with gcn, you should cache the noremd edge information before the first call of the gcn.
-        (1) If you're using OOP APIs tfg.layers.GCN:
-            gcn_layer.cache_normed_edge(graph)
-        (2) If you're using functional API tfg.nn.gcn:
-            from tf_geometric.nn.conv.gcn import gcn_cache_normed_edge
-            gcn_cache_normed_edge(graph)
+
+        - (1) If you're using OOP APIs tfg.layers.GCN:
+
+              gcn_layer.cache_normed_edge(graph)
+
+        - (2) If you're using functional API tfg.nn.gcn:
+
+              from tf_geometric.nn.conv.gcn import gcn_cache_normed_edge
+              gcn_cache_normed_edge(graph)
+
     :param training: Python boolean indicating whether the layer should behave in
         training mode (adding dropout) or in inference mode (doing nothing).
     :return: Updated node features (x), shape: [num_nodes, num_output_features]

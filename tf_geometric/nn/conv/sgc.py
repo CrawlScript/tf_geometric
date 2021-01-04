@@ -6,6 +6,8 @@ from tf_geometric.nn.kernel.map_reduce import aggregate_neighbors, sum_reducer, 
 
 def sgc(x, edge_index, edge_weight, K, kernel, bias=None, renorm=True, improved=False, cache=None):
     """
+    Functional API for Simple Graph Convolution (SGC).
+
     :param x: Tensor, shape: [num_nodes, num_features], node features
     :param edge_index: Tensor, shape: [2, num_edges], edge information
     :param edge_weight: Tensor or None, shape: [num_edges]

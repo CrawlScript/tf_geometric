@@ -9,6 +9,7 @@ class DropEdge(tf.keras.Model):
         """
         DropEdge: Towards Deep Graph Convolutional Networks on Node Classification
         https://openreview.net/forum?id=Hkx1qkrKPr
+
         :param rate: dropout rate
         :param force_undirected: If set to `True`, will either
             drop or keep both edges of an undirected edge.

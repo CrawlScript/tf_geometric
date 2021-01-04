@@ -48,6 +48,14 @@ class GCN(tf.keras.Model):
         self.bias_regularizer = bias_regularizer
 
     def cache_normed_edge(self, graph, override=False):
+        """
+        Manually compute the normed edge based on this layer's GCN normalization configuration (self.renorm and self.improved) and put it in graph.cache.
+        If the normed edge already exists in graph.cache and the override parameter is False, this method will do nothing.
+
+        :param graph: tfg.Graph, the input graph.
+        :param override: Whether to override existing cached normed edge.
+        :return: None
+        """
         gcn_cache_normed_edge(graph, self.renorm, self.improved, override=override)
 
     def call(self, inputs, cache=None, training=None, mask=None):

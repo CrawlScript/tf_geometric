@@ -7,6 +7,7 @@ from tf_geometric.nn.conv.gcn import gcn_norm_edge, gcn_mapper
 
 def tagcn(x, edge_index, edge_weight, K, kernel, bias=None, activation=None, renorm=False, improved=False, cache=None):
     """
+    Functional API for Topology Adaptive Graph Convolutional Network (TAGCN).
 
     :param x: Tensor, shape: [num_nodes, num_features], node features.
     :param edge_index: Tensor, shape: [2, num_edges], edge information.

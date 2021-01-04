@@ -79,11 +79,11 @@ Node Classification
 * `Multi-head Graph Attention Network (GAT) <demo/demo_gat.py>`_
 * `Approximate Personalized Propagation of Neural Predictions (APPNP) <demo/demo_appnp.py>`_
 * `Inductive Representation Learning on Large Graphs (GraphSAGE) <demo/demo_graph_sage.py>`_
-* `Graph Isomorphism Network (GIN) <demo/demo_gin.py>`_
 * `Convolutional Neural Networks on Graphs with Fast Localized Spectral Filtering (ChebyNet) <demo/demo_chebynet.py>`_
 * `Simple Graph Convolution (SGC) <demo/demo_sgc.py>`_
 * `Topology Adaptive Graph Convolutional Network (TAGCN) <demo/demo_tagcn.py>`_
 * `Deep Graph Infomax (DGI) <demo/demo_dgi.py>`_
+* `DropEdge: Towards Deep Graph Convolutional Networks on Node Classification (DropEdge) <demo/demo_drop_edge_gcn.py>`_
 * `Graph Convolutional Networks for Text Classification (TextGCN) <https://github.com/CrawlScript/TensorFlow-TextGCN>`_
 
 Graph Classification
@@ -91,6 +91,7 @@ Graph Classification
 
 
 * `MeanPooling <demo/demo_mean_pool.py>`_
+* `Graph Isomorphism Network (GIN) <demo/demo_gin.py>`_
 * `Self-Attention Graph Pooling (SAGPooling) <demo/demo_sag_pool_h.py>`_
 
 Link Prediction
@@ -98,6 +99,13 @@ Link Prediction
 
 
 * `Graph Auto-Encoder (GAE) <demo/demo_gae.py>`_
+
+Save and Load Models
+^^^^^^^^^^^^^^^^^^^^
+
+
+* `Save and Load Models <demo/demo_save_and_load_model.py>`_
+* `Save and Load Models with tf.train.Checkpoint <demo/demo_checkpoint.py>`_
 
 Installation
 ------------

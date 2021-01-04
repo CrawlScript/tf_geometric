@@ -75,6 +75,7 @@ class Graph(object):
     def num_nodes(self):
         """
         Number of nodes
+
         :return: Number of nodes
         """
         return union_len(self.x)
@@ -83,6 +84,7 @@ class Graph(object):
     def num_edges(self):
         """
         Number of edges
+
         :return: Number of edges
         """
 
@@ -100,6 +102,7 @@ class Graph(object):
     def num_features(self):
         """
         Number of node features
+
         :return: Number of node features
         """
         return self.x.shape[-1]
@@ -131,6 +134,7 @@ class Graph(object):
     def convert_data_to_tensor(self):
         """
         Convert all graph data into Tensors. All corresponding properties will be replaces by their Tensor versions.
+
         :return: The Graph object itself.
         """
         return self._convert_data_to_tensor(["x", "edge_index", "edge_weight", "y"])
@@ -143,6 +147,7 @@ class Graph(object):
         This is not convenient for users.
         Thus, we allow users to provide edge_index in undirected form and convert it later.
         That is, we can only provide (u, v) and convert it to (u, v) and (v, u) with `convert_edge_to_directed` method.
+
         :return:
         """
         self.edge_index, [self.edge_weight] = convert_edge_to_directed(self.edge_index, [self.edge_weight])
@@ -394,6 +399,7 @@ class BatchGraph(Graph):
     def convert_data_to_tensor(self):
         """
         Convert all graph data into Tensors. All corresponding properties will be replaces by their Tensor versions.
+
         :return: The Graph object itself.
         """
         return self._convert_data_to_tensor(["x", "edge_index", "edge_weight", "y",
@@ -407,6 +413,7 @@ class BatchGraph(Graph):
         This is not convenient for users.
         Thus, we allow users to provide edge_index in undirected form and convert it later.
         That is, we can only provide (u, v) and convert it to (u, v) and (v, u) with `convert_edge_to_directed` method.
+
         :return:
         """
         self.edge_index, [self.edge_weight, self.edge_graph_index] = \
