@@ -11,7 +11,7 @@ Homepage and Documentation
 
 
 * Homepage: `https://github.com/CrawlScript/tf_geometric <https://github.com/CrawlScript/tf_geometric>`_
-* Documentation: `https://tf-geometric.readthedocs.io <https://tf-geometric.readthedocs.io>`_
+* Documentation: `https://tf-geometric.readthedocs.io <https://tf-geometric.readthedocs.io>`_ (\ `中文版 <https://tf-geometric.readthedocs.io/en/latest/index_cn.html>`_\ )
 
 Efficient and Friendly
 ----------------------
@@ -299,30 +299,8 @@ We provide both OOP and Functional API, with which you can make some cool things
        print(outputs)
 
 
-   # ==================================== Advanced OOP API ====================================
-   # All APIs are implemented with Map-Reduce Style
-   # This is a gcn without weight normalization and transformation.
-   # Create your own GNN Layer by subclassing the MapReduceGNN class
-   class NaiveGCN(tfg.layers.MapReduceGNN):
-
-       def map(self, repeated_x, neighbor_x, edge_weight=None):
-           return tfg.nn.identity_mapper(repeated_x, neighbor_x, edge_weight)
-
-       def reduce(self, neighbor_msg, node_index, num_nodes=None):
-           return tfg.nn.sum_reducer(neighbor_msg, node_index, num_nodes)
-
-       def update(self, x, reduced_neighbor_msg):
-           return tfg.nn.sum_updater(x, reduced_neighbor_msg)
-
-
-   naive_gcn = NaiveGCN()
-
-   for graph in test_data:
-       print(naive_gcn([graph.x, graph.edge_index, graph.edge_weight]))
-
-
    # ==================================== Advanced Functional API ====================================
-   # All APIs are implemented with Map-Reduce Style
+   # Most APIs are implemented with Map-Reduce Style
    # This is a gcn without without weight normalization and transformation
    # Just pass the mapper/reducer/updater functions to the Functional API
 
