@@ -10,153 +10,53 @@ import tf_geometric as tfg
 from tqdm import tqdm
 import time
 
-
-# The Supervised Cora Dataset if from:
-# Rong, Y., Huang, W., Xu, T., & Huang, J. (2020). DropEdge: Towards Deep Graph Convolutional Networks on Node Classification. ICLR.
-# The Supervised Cora Dataset is controversal: https://openreview.net/forum?id=Hkx1qkrKPr.
-# We are not sure whether it is a standard benchmark.
 graph, (train_index, valid_index, test_index) = tfg.datasets.SupervisedCoraDataset().load_data()
 
 num_classes = graph.y.max() + 1
-num_hidden_layer = 1
-num_base_layer = 2
-units = 128
-drop_rate = 0.8
-edge_drop_rate = 0.3
-learning_rate = 1e-2
-l2_coe = 5e-3
+num_gcns = 8
+drop_rate = 0.5
+edge_drop_rate = 0.5
+learning_rate = 5e-4
+l2_coe = 0.0
+
+units_list = [128] * (num_gcns - 1) + [num_classes]
 
 
-class CustomizedGCN(tf.keras.Model):
-    """
-    GCN Layer with BN, Self-loop and Res connection configurations.
-    """
+# Simple Multi-layer GCN Model
+class GCNModel(tf.keras.Model):
 
-    def __init__(self, units, activation=None, use_bn=True, use_loop=True, use_bias=True, res=False, *args, **kwargs):
-        """
-         Initial function.
-        :param units: the output feature dimension.
-        :param activation: the activation function.
-        :param use_bn: using batch normalization.
-        :param use_loop: using self feature modeling.
-        :param use_bias: enable bias.
-        :param res: enable res connections.
-        """
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.units = units
-        self.gcn = GCN(self.units, renorm=False, use_bias=False)
-        self.activation = activation
-        self.use_bn = use_bn
-        self.use_loop = use_loop
-        self.use_bias = use_bias
-        self.res = res
-        if self.use_loop:
-            self.self_weight = tf.keras.layers.Dense(self.units, use_bias=False)
-        if self.use_bn:
-            self.bn = tf.keras.layers.BatchNormalization()
-        if self.use_bias:
-            self.bias = self.add_weight("bias", shape=[self.units], initializer="zeros")
 
-    def call(self, inputs, training=None, mask=None, cache=None):
-        x, edge_index, edge_weight = inputs
-
-        h = self.gcn([x, edge_index, edge_weight], cache=cache)
-
-        if self.use_loop:
-            h += self.self_weight(x)
-        if self.use_bias:
-            h += self.bias
-        if self.use_bn:
-            h = self.bn(h, training=training)
-        if self.activation:
-            h = self.activation(h)
-        if self.res:
-            h += x
-        return h
-
-
-class GCNBaseBlock(tf.keras.Model):
-    """
-    The base block for Multi-layer GCN
-    """
-    def __init__(self, units, nbaselayer,
-                 use_bn=True, use_loop=True, activation=tf.nn.relu, drop_rate=0.5, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        activations = [tf.nn.relu if i < len(units_list) - 1 else None for i in range(len(units_list))]
+        self.gcns = [GCN(units, activation=activation) for units, activation in zip(units_list, activations)]
         self.dropout = Dropout(drop_rate)
-        self.gcns = [CustomizedGCN(units, activation, use_bn, use_loop) for _ in range(nbaselayer)]
-
-    def call(self, inputs, training=None, mask=None, cache=None):
-        x, edge_index, edge_weight = inputs
-        h = x
-
-        outputs = []
-        for i in range(len(self.gcns)):
-            h = self.gcns[i]([h, edge_index, edge_weight], cache=cache, training=training)
-            h = self.dropout(h, training=training)
-            outputs.append(h)
-
-        h = tf.concat(outputs, axis=-1)
-        return h
-
-
-# Multi-layer DropEdge GCN Model
-class DropEdgeGCNModel(tf.keras.Model):
-
-    def __init__(self, units, activation, nhidlayer, nbaselayer, drop_rate=0.5, edge_drop_rate=0.5, use_bn=True, use_loop=True, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        self.units = units
-        self.activation = activation
-        self.use_bn = use_bn
-        self.use_loop = use_loop
-        self.nhidlayer = nhidlayer
-        self.nbaselayer = nbaselayer
-        self.drop_rate = drop_rate
-        self.edge_drop_rate = edge_drop_rate
-
-        self.in_gcn = CustomizedGCN(units=self.units, activation=self.activation, use_bn=self.use_bn, use_loop=self.use_loop)
-        self.out_gcn = CustomizedGCN(units=num_classes, use_bn=self.use_bn, use_loop=self.use_loop)
-        self.hidden_gcns = [
-            GCNBaseBlock(units=units, nbaselayer=self.nbaselayer, activation=self.activation, drop_rate=self.drop_rate,
-                         use_bn=self.use_bn, use_loop=self.use_loop) for _ in range(self.nhidlayer)]
-
-        self.dropout = Dropout(self.drop_rate)
-        self.dropedge = DropEdge(self.edge_drop_rate, force_undirected=False)
 
     def call(self, inputs, training=None, mask=None):
-        h, edge_index, edge_weight = inputs
 
-        # DropEdge: Towards Deep Graph Convolutional Networks on Node Classification
-        edge_index, edge_weight = self.dropedge([edge_index, edge_weight], training=training)
-        cache = {}
-        h = self.in_gcn([h, edge_index, edge_weight], cache=cache, training=training)
-        h = self.dropout(h, training=training)
+        x, edge_index, edge_weight = inputs
+        h = self.dropout(x, training=training)
 
         cache = {}
-        for i in range(num_hidden_layer):
-            h = self.hidden_gcns[i]([h, edge_index, edge_weight], cache=cache, training=training)
+        for i in range(num_gcns):
+            h = self.gcns[i]([h, edge_index, edge_weight], cache=cache)
 
-        h = self.out_gcn([h, edge_index, edge_weight], cache=cache, training=training)
         return h
 
 
-model = DropEdgeGCNModel(
-    units=units,
-    activation=tf.nn.relu,
-    nhidlayer=num_hidden_layer,
-    nbaselayer=num_base_layer,
-    drop_rate=drop_rate,
-    edge_drop_rate=edge_drop_rate,
-    use_bn=True,
-    use_loop=True
-)
+dropedge = DropEdge(edge_drop_rate, force_undirected=True)
+model = GCNModel()
 
 
 # @tf_utils.function can speed up functions for TensorFlow 2.x.
 # @tf_utils.function is not compatible with TensorFlow 1.x and dynamic graph.cache.
 @tf_utils.function
 def forward(graph, training=False):
-    return model([graph.x, graph.edge_index, graph.edge_weight], training=training)
+
+    # DropEdge: Towards Deep Graph Convolutional Networks on Node Classification
+    edge_index, edge_weight = dropedge([graph.edge_index, graph.edge_weight], training=training)
+
+    return model([graph.x, edge_index, edge_weight], training=training)
 
 
 @tf.function
@@ -189,7 +89,7 @@ def evaluate():
 
 optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
 
-for step in range(1, 2001):
+for step in range(1, 501):
     with tf.GradientTape() as tape:
         logits = forward(graph, training=True)
         loss = compute_loss(logits, train_index, tape.watched_variables())
