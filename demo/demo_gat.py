@@ -8,7 +8,8 @@ import tensorflow as tf
 import time
 from tqdm import tqdm
 
-graph, (train_index, valid_index, test_index) = tfg.datasets.CoraDataset().load_data()
+# graph, (train_index, valid_index, test_index) = tfg.datasets.CoraDataset().load_data()
+graph, (train_index, valid_index, test_index) = tfg.datasets.CiteseerDataset().load_data()
 
 num_classes = graph.y.max() + 1
 drop_rate = 0.6

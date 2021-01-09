@@ -12,7 +12,8 @@ from tf_geometric.utils.graph_utils import add_self_loop_edge
 def gat(x, edge_index,
         query_kernel, query_bias, query_activation,
         key_kernel, key_bias, key_activation,
-        kernel, bias=None, activation=None, num_heads=1, drop_rate=0.0, training=False):
+        kernel, bias=None, activation=None, num_heads=1,
+        split_value_heads=True, drop_rate=0.0, training=False):
     """
 
     :param x: Tensor, shape: [num_nodes, num_features], node features
@@ -27,6 +28,8 @@ def gat(x, edge_index,
     :param bias: Tensor, shape: [num_output_features], bias
     :param activation: Activation function to use.
     :param num_heads: Number of attention heads.
+    :param split_value_heads: Boolean. If true, split V as value attention heads, and then concatenate them as output.
+        Else, num_heads replicas of V are used as value attention heads, and the mean of them are used as output.
     :param drop_rate: Dropout rate.
     :param training: Python boolean indicating whether the layer should behave in
         training mode (adding dropout) or in inference mode (doing nothing).
@@ -41,10 +44,14 @@ def gat(x, edge_index,
 
     row, col = edge_index[0], edge_index[1]
 
-    Q = query_activation(x @ query_kernel + query_bias)
+    Q = x @ query_kernel + query_bias
+    if query_activation is not None:
+        Q = query_activation(Q)
     Q = tf.gather(Q, row)
 
-    K = key_activation(x @ key_kernel + key_bias)
+    K = x @ key_kernel + key_bias
+    if key_activation is not None:
+        K = key_activation(K)
     K = tf.gather(K, col)
 
     V = x @ kernel
@@ -52,14 +59,22 @@ def gat(x, edge_index,
     # xxxxx_ denotes the multi-head style stuff
     Q_ = tf.concat(tf.split(Q, num_heads, axis=-1), axis=0)
     K_ = tf.concat(tf.split(K, num_heads, axis=-1), axis=0)
-    V_ = tf.concat(tf.split(V, num_heads, axis=-1), axis=0)
-    edge_index_ = tf.concat([edge_index + i * num_nodes for i in range(num_heads)], axis=1)
+    # splited queries and keys are modeled as virtual vertices
+    qk_edge_index_ = tf.concat([edge_index + i * num_nodes for i in range(num_heads)], axis=1)
 
-    att_score_ = tf.reduce_sum(Q_ * K_, axis=-1)
-    normed_att_score_ = segment_softmax(att_score_, edge_index_[0], num_nodes * num_heads)
+    scale = tf.math.sqrt(tf.cast(tf.shape(Q_)[-1], tf.float32))
+    att_score_ = tf.reduce_sum(Q_ * K_ / scale, axis=-1)
+    normed_att_score_ = segment_softmax(att_score_, qk_edge_index_[0], num_nodes * num_heads)
 
     if training and drop_rate > 0.0:
         normed_att_score_ = tf.compat.v2.nn.dropout(normed_att_score_, drop_rate)
+
+    if split_value_heads:
+        V_ = tf.concat(tf.split(V, num_heads, axis=-1), axis=0)
+        edge_index_ = qk_edge_index_
+    else:
+        V_ = V
+        edge_index_ = tf.tile(edge_index, [1, num_heads])
 
     h_ = aggregate_neighbors(
         V_, edge_index_, normed_att_score_,
@@ -68,7 +83,10 @@ def gat(x, edge_index,
         identity_updater
     )
 
-    h = tf.concat(tf.split(h_, num_heads, axis=0), axis=-1)
+    if split_value_heads:
+        h = tf.concat(tf.split(h_, num_heads, axis=0), axis=-1)
+    else:
+        h = h_ / num_heads
 
     if bias is not None:
         h += bias

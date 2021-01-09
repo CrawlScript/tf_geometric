@@ -11,6 +11,7 @@ class GAT(tf.keras.Model):
                  activation=None,
                  use_bias=True,
                  num_heads=1,
+                 split_value_heads=True,
                  query_activation=tf.nn.relu,
                  key_activation=tf.nn.relu,
                  drop_rate=0.0,
@@ -24,6 +25,8 @@ class GAT(tf.keras.Model):
         :param activation: Activation function to use.
         :param use_bias: Boolean, whether the layer uses a bias vector.
         :param num_heads: Number of attention heads.
+        :param split_value_heads: Boolean. If true, split V as value attention heads, and then concatenate them as output.
+            Else, num_heads replicas of V are used as value attention heads, and the mean of them are used as output.
         :param query_activation: Activation function for Q in attention.
         :param key_activation: Activation function for K in attention.
         :param drop_rate: Dropout rate.
@@ -49,6 +52,7 @@ class GAT(tf.keras.Model):
         self.acvitation = activation
         self.use_bias = use_bias
         self.num_heads = num_heads
+        self.split_value_heads = split_value_heads
 
         self.kernel_regularizer = kernel_regularizer
         self.bias_regularizer = bias_regularizer
@@ -86,5 +90,6 @@ class GAT(tf.keras.Model):
                    self.key_kernel, self.key_bias, self.key_activation,
                    self.kernel, self.bias, self.acvitation,
                    num_heads=self.num_heads,
+                   split_value_heads=self.split_value_heads,
                    drop_rate=self.drop_rate,
                    training=training)

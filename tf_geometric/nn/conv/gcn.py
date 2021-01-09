@@ -118,10 +118,10 @@ def gcn(x, edge_index, edge_weight, kernel, bias=None, activation=None,
     num_nodes = tf.shape(x)[0]
     updated_edge_index, normed_edge_weight = gcn_norm_edge(edge_index, num_nodes, edge_weight, renorm, improved, cache)
 
-    x = x @ kernel
+    h = x @ kernel
 
     h = aggregate_neighbors(
-        x, updated_edge_index, normed_edge_weight,
+        h, updated_edge_index, normed_edge_weight,
         gcn_mapper,
         sum_reducer,
         identity_updater,
