@@ -1,9 +1,10 @@
 # coding=utf-8
-
 from tf_geometric.nn.conv.sgc import sgc
-from tf_geometric.layers.kernel.map_reduce import MapReduceGNN
+from tf_geometric.nn.conv.gcn import gcn_cache_normed_edge
+import tensorflow as tf
 
-class SGC(MapReduceGNN):
+
+class SGC(tf.keras.Model):
     """
     The simple graph convolutional operator from the `"Simplifying Graph
     Convolutional Networks" <https://arxiv.org/abs/1902.07153>`_ paper
@@ -35,6 +36,17 @@ class SGC(MapReduceGNN):
         self.kernel = self.add_weight("kernel", shape=[num_features, self.units], initializer="glorot_uniform")
         if self.use_bias:
             self.bias = self.add_weight("bias", shape=[self.units], initializer="zeros")
+
+    def cache_normed_edge(self, graph, override=False):
+        """
+        Manually compute the normed edge based on this layer's GCN normalization configuration (self.renorm and self.improved) and put it in graph.cache.
+        If the normed edge already exists in graph.cache and the override parameter is False, this method will do nothing.
+
+        :param graph: tfg.Graph, the input graph.
+        :param override: Whether to override existing cached normed edge.
+        :return: None
+        """
+        gcn_cache_normed_edge(graph, self.renorm, self.improved, override=override)
 
     def call(self, inputs, cache=None, training=None, mask=None):
         """
