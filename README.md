@@ -85,6 +85,9 @@ We recommend you to get started with some demo.
 + [MeanPooling](demo/demo_mean_pool.py)
 + [Graph Isomorphism Network (GIN)](demo/demo_gin.py)
 + [Self-Attention Graph Pooling (SAGPooling)](demo/demo_sag_pool_h.py)
++ [Hierarchical Graph Representation Learning with Differentiable Pooling (DiffPool)](demo/demo_diff_pool.py)
+
+
 
 
 ### Link Prediction
