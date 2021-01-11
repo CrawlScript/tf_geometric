@@ -120,7 +120,10 @@ Graph Classification
 
 * `MeanPooling <https://github.com/CrawlScript/tf_geometric/blob/master/demo/demo_mean_pool.py>`_
 * `Graph Isomorphism Network (GIN) <https://github.com/CrawlScript/tf_geometric/blob/master/demo/demo_gin.py>`_
-* `SAGPooling <https://github.com/CrawlScript/tf_geometric/blob/master/demo/demo_sag_pool_h.py>`_
+* `Self-Attention Graph Pooling (SAGPooling) <https://github.com/CrawlScript/tf_geometric/blob/master/demo/demo_sag_pool_h.py>`_
+* `Hierarchical Graph Representation Learning with Differentiable Pooling (DiffPool) <https://github.com/CrawlScript/tf_geometric/blob/master/demo/demo_diff_pool.py>`_
+
+
 
 
 

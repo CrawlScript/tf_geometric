@@ -8,8 +8,7 @@ import tensorflow as tf
 import time
 from tqdm import tqdm
 
-# graph, (train_index, valid_index, test_index) = tfg.datasets.CoraDataset().load_data()
-graph, (train_index, valid_index, test_index) = tfg.datasets.CiteseerDataset().load_data()
+graph, (train_index, valid_index, test_index) = tfg.datasets.CoraDataset().load_data()
 
 num_classes = graph.y.max() + 1
 drop_rate = 0.6
@@ -20,8 +19,15 @@ class GATModel(tf.keras.Model):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.gat0 = tfg.layers.GAT(64, activation=tf.nn.relu, num_heads=8, drop_rate=drop_rate, attention_units=8)
-        self.gat1 = tfg.layers.GAT(num_classes, drop_rate=drop_rate, attention_units=1)
+        self.gat0 = tfg.layers.GAT(64, activation=tf.nn.relu, num_heads=8, attention_units=8, drop_rate=drop_rate)
+        self.gat1 = tfg.layers.GAT(num_classes, num_heads=1, attention_units=1, drop_rate=drop_rate)
+
+        # The GAT paper mentioned that: "Specially, if we perform multi-head attention on the final (prediction) layer of
+        # the network, concatenation is no longer sensible - instead, we employ averaging".
+        # In tf_geometric, if you want to set num_heads > 1 for the last output GAT layer, you can set split_value_heads=False
+        # as follows to employ averaging instead of concatenation.
+        # self.gat1 = tfg.layers.GAT(num_classes, num_heads=8, attention_units=8, split_value_heads=False, drop_rate=drop_rate)
+
         self.dropout = tf.keras.layers.Dropout(drop_rate)
 
     def call(self, inputs, training=None, mask=None, cache=None):

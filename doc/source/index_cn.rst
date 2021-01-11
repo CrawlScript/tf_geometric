@@ -38,7 +38,7 @@ tf_geometric使用消息传递机制来实现图神经网络：相比于基于�
    import tensorflow as tf
 
    graph = tfg.Graph(
-       x=np.random.randn(5, 20),  # 5个节点, 20维特征,
+       x=np.random.randn(5, 20),  # 5个节点, 20维特征
        edge_index=[[0, 0, 1, 3],
                    [1, 2, 2, 1]]  # 4个无向边
    )
@@ -122,7 +122,10 @@ tf_geometric使用消息传递机制来实现图神经网络：相比于基于�
 
 * `平均池化 MeanPooling <https://github.com/CrawlScript/tf_geometric/blob/master/demo/demo_mean_pool.py>`_
 * `Graph Isomorphism Network (GIN) <https://github.com/CrawlScript/tf_geometric/blob/master/demo/demo_gin.py>`_
-* `自注意力图池化 SAGPooling <https://github.com/CrawlScript/tf_geometric/blob/master/demo/demo_sag_pool_h.py>`_
+* `自注意力图池化 Self-Attention Graph Pooling (SAGPooling) <https://github.com/CrawlScript/tf_geometric/blob/master/demo/demo_sag_pool_h.py>`_
+* `可微池化 Hierarchical Graph Representation Learning with Differentiable Pooling (DiffPool) <https://github.com/CrawlScript/tf_geometric/blob/master/demo/demo_diff_pool.py>`_
+
+
 
 
 

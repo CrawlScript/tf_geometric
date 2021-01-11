@@ -1,5 +1,6 @@
+# coding=utf-8
+
 import tensorflow as tf
-from tensorflow import keras
 from tf_geometric.nn.conv.graph_sage import mean_graph_sage, gcn_graph_sage, mean_pool_graph_sage, \
     max_pool_graph_sage, lstm_graph_sage
 from tf_geometric.layers.kernel.map_reduce import MapReduceGNN

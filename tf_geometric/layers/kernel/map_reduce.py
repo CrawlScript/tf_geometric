@@ -1,11 +1,9 @@
 # coding=utf-8
-from tensorflow import keras
-
-
+import tensorflow as tf
 from tf_geometric.nn import aggregate_neighbors
 
 
-class MapReduceGNN(keras.Model):
+class MapReduceGNN(tf.keras.Model):
 
     def map(self, repeated_x, neighbor_x, edge_weight=None):
         pass

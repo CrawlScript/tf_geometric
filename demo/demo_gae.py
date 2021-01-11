@@ -1,10 +1,13 @@
 # coding=utf-8
 import os
+
+from tf_geometric.utils import tf_utils
+
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 import tf_geometric as tfg
 import tensorflow as tf
-from tensorflow import keras
 from tf_geometric.utils.graph_utils import edge_train_test_split, negative_sampling
+from tqdm import tqdm
 
 
 graph, (train_index, valid_index, test_index) = tfg.datasets.CoraDataset().load_data()
@@ -33,9 +36,10 @@ drop_rate = 0.2
 
 gcn0 = tfg.layers.GCN(32, activation=tf.nn.relu)
 gcn1 = tfg.layers.GCN(embedding_size)
-dropout = keras.layers.Dropout(drop_rate)
+dropout = tf.keras.layers.Dropout(drop_rate)
 
 
+@tf_utils.function
 def encode(graph, training=False):
     h = gcn0([graph.x, graph.edge_index, graph.edge_weight], cache=graph.cache)
     h = dropout(h, training=training)
@@ -43,8 +47,13 @@ def encode(graph, training=False):
     return h
 
 
+gcn0.cache_normed_edge(graph)
+gcn0.cache_normed_edge(train_graph)
+
+
+@tf_utils.function
 def predict_edge(embedded, edge_index):
-    row, col = edge_index
+    row, col = edge_index[0], edge_index[1]
     embedded_row = tf.gather(embedded, row)
     embedded_col = tf.gather(embedded, col)
 
@@ -53,6 +62,7 @@ def predict_edge(embedded, edge_index):
     return logits
 
 
+@tf_utils.function
 def compute_loss(pos_edge_logits, neg_edge_logits):
     pos_losses = tf.nn.sigmoid_cross_entropy_with_logits(
         logits=pos_edge_logits,
@@ -79,7 +89,7 @@ def evaluate():
     y_true = tf.concat([tf.ones_like(pos_edge_scores), tf.zeros_like(neg_edge_scores)], axis=0)
     y_pred = tf.concat([pos_edge_scores, neg_edge_scores], axis=0)
 
-    auc_m = keras.metrics.AUC()
+    auc_m = tf.keras.metrics.AUC()
     auc_m.update_state(y_true, y_pred)
 
     return auc_m.result().numpy()
@@ -87,7 +97,7 @@ def evaluate():
 
 optimizer = tf.keras.optimizers.Adam(learning_rate=1e-2)
 
-for step in range(1000):
+for step in tqdm(range(1000)):
     with tf.GradientTape() as tape:
         embedded = encode(train_graph, training=True)
 
@@ -95,7 +105,7 @@ for step in range(1000):
         train_neg_edge_index = negative_sampling(
             train_graph.num_edges,
             graph.num_nodes,
-            edge_index=train_graph.edge_index
+            edge_index=None#train_graph.edge_index
         )
 
         pos_edge_logits = predict_edge(embedded, train_graph.edge_index)

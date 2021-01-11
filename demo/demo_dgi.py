@@ -6,7 +6,6 @@ from tf_geometric.utils import tf_utils
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 import tf_geometric as tfg
 import tensorflow as tf
-from tensorflow import keras
 import numpy as np
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import f1_score
@@ -16,10 +15,10 @@ num_classes = graph.y.max() + 1
 
 embedding_size = 512
 drop_rate = 0.0
-dropout = keras.layers.Dropout(drop_rate)
+dropout = tf.keras.layers.Dropout(drop_rate)
 
 
-class GCNNetwork(keras.Model):
+class GCNNetwork(tf.keras.Model):
     """
     1-layer GCN model
     """
@@ -37,7 +36,7 @@ class GCNNetwork(keras.Model):
         return h
 
 
-class Bilinear(keras.Model):
+class Bilinear(tf.keras.Model):
     """
     Bilinear Model for DGL loss
     """

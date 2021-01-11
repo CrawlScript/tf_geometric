@@ -36,7 +36,6 @@ def gat(x, edge_index,
     :return: Updated node features (x), shape: [num_nodes, num_output_features]
     """
 
-
     num_nodes = tf.shape(x)[0]
 
     # self-attention

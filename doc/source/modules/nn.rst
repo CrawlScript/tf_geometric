@@ -99,3 +99,8 @@ topk_pool
 .. autofunction:: tf_geometric.nn.topk_pool
 
 
+diff_pool
+--------------------------------------------------------------
+
+.. autofunction:: tf_geometric.nn.diff_pool
+

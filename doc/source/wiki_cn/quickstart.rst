@@ -21,23 +21,24 @@ tf_geometric使用消息传递机制来实现图神经网络：相比于基于�
    import tensorflow as tf
 
    graph = tfg.Graph(
-       x=np.random.randn(5, 20),  # 5 nodes, 20 features,
+       x=np.random.randn(5, 20),  # 5个节点, 20维特征
        edge_index=[[0, 0, 1, 3],
-                   [1, 2, 2, 1]]  # 4 undirected edges
+                   [1, 2, 2, 1]]  # 4条无向边
    )
 
    print("Graph Desc: \n", graph)
 
-   graph.convert_edge_to_directed()  # pre-process edges
+   graph.convert_edge_to_directed()  # 预处理边数据，将无向边表示转换为有向边表示
    print("Processed Graph Desc: \n", graph)
    print("Processed Edge Index:\n", graph.edge_index)
 
-   # Multi-head Graph Attention Network (GAT)
+   # 多头图注意力网络（Multi-head GAT）
    gat_layer = tfg.layers.GAT(units=4, num_heads=4, activation=tf.nn.relu)
    output = gat_layer([graph.x, graph.edge_index])
    print("Output of GAT: \n", output)
 
-Output:
+
+输出:
 
 .. code-block:: HTML
 
@@ -85,7 +86,7 @@ Output:
    # 一个图通常包含节点特征x、边表edge_index和边权重edge_weight（可选）。
 
    # 节点特征 => (num_nodes, num_features)
-   x = np.random.randn(5, 20).astype(np.float32) # 5 nodes, 20 features
+   x = np.random.randn(5, 20).astype(np.float32)  # 5个节点，20维特征
 
    # 边表 => (2, num_edges)
    # 边表edge_index中的每列(u, v)表示一个从节点u到v的有向边。

@@ -14,7 +14,7 @@ drop_rate = 0.5
 learning_rate = 1e-2
 
 
-model = tfg.layers.APPNP([16, num_classes], alpha=0.1, num_iterations=10,
+model = tfg.layers.APPNP([64, num_classes], alpha=0.1, num_iterations=10,
                          dense_drop_rate=drop_rate, edge_drop_rate=drop_rate)
 
 

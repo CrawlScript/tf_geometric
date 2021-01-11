@@ -94,3 +94,34 @@ DropEdge
    :special-members: __init__
    :members: call
 
+
+CommonPool
+--------------------
+.. autoclass:: tf_geometric.layers.MeanPool
+   :special-members: __init__
+   :members: call
+
+
+.. autoclass:: tf_geometric.layers.MinPool
+   :special-members: __init__
+   :members: call
+
+
+.. autoclass:: tf_geometric.layers.MaxPool
+   :special-members: __init__
+   :members: call
+
+
+.. autoclass:: tf_geometric.layers.SumPool
+   :special-members: __init__
+   :members: call
+
+
+
+
+DiffPool
+--------------------
+.. autoclass:: tf_geometric.layers.DiffPool
+   :special-members: __init__
+   :members: call
+

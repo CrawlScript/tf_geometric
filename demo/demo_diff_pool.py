@@ -1,14 +1,17 @@
 # coding=utf-8
 import os
 
+from tf_geometric.layers import DiffPool, GCN
 from tf_geometric.utils import tf_utils
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 import tf_geometric as tfg
 import tensorflow as tf
+from tensorflow import keras
 import numpy as np
 from sklearn.model_selection import train_test_split
+from tqdm import tqdm
 
 # TU Datasets: https://ls11-www.cs.tu-dortmund.de/staff/morris/graphkerneldatasets
 graph_dicts = tfg.datasets.TUDataset("NCI1").load_data()
@@ -58,48 +61,54 @@ def create_graph_generator(graphs, batch_size, infinite=False, shuffle=False):
             break
 
 
-batch_size = 256
-
-drop_rate = 0.4
+batch_size = 50
 
 
-class MeanPoolNetwork(tf.keras.Model):
+class DiffPoolModel(tf.keras.Model):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, num_clusters_list, num_features_list, num_classes, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.gcn0 = tfg.layers.GCN(64, activation=tf.nn.relu)
-        self.gcn1 = tfg.layers.GCN(32, activation=tf.nn.relu)
-        self.dropout = tf.keras.layers.Dropout(drop_rate)
-        self.dense = tf.keras.layers.Dense(num_classes)
+        self.diff_pools = []
 
-    # @tf_utils.function(experimental_relax_shapes=True)
+        for num_features, num_clusters in zip(num_features_list, num_clusters_list):
+            diff_pool = DiffPool(
+                feature_gnn=GCN(num_features),
+                assign_gnn=GCN(num_clusters),
+                units=num_features, num_clusters=num_clusters, activation=tf.nn.relu
+            )
+            self.diff_pools.append(diff_pool)
+
+        self.mlp = tf.keras.Sequential([
+            tf.keras.layers.Dropout(0.5),
+            tf.keras.layers.Dense(num_classes)
+        ])
+
     def call(self, inputs, training=None, mask=None):
-        x, edge_index, node_graph_index = inputs
+        x, edge_index, edge_weight, node_graph_index = inputs
+        h = x
+        for diff_pool in self.diff_pools:
+            h, edge_index, edge_weight, node_graph_index = diff_pool([h, edge_index, edge_weight, node_graph_index],
+                                                                     training=training)
+        h = tfg.nn.sum_pool(h, node_graph_index)
+        logits = self.mlp(h, training=training)
 
-        # GCN Encoder
-        h = self.gcn0([x, edge_index])
-        h = self.dropout(h, training=training)
-        h = self.gcn1([h, edge_index])
-
-        # Mean Pooling
-        h = tfg.nn.mean_pool(h, node_graph_index)
-        h = self.dropout(h, training=training)
-
-        # Predict Graph Labels
-        h = self.dense(h)
-        return h
+        return logits
 
 
-model = MeanPoolNetwork()
+num_clusters_list = [16, 4]
+num_features_list = [256, 256]
+
+model = DiffPoolModel(num_clusters_list, num_features_list, num_classes)
 
 
 def forward(batch_graph, training=False):
-    return model([batch_graph.x, batch_graph.edge_index, batch_graph.node_graph_index], training=training)
+    return model([batch_graph.x, batch_graph.edge_index, batch_graph.edge_weight, batch_graph.node_graph_index],
+                 training=training)
 
 
 def evaluate():
-    accuracy_m = tf.keras.metrics.Accuracy()
+    accuracy_m = keras.metrics.Accuracy()
 
     for test_batch_graph in create_graph_generator(test_graphs, batch_size, shuffle=False, infinite=False):
         logits = forward(test_batch_graph)
@@ -109,11 +118,11 @@ def evaluate():
     return accuracy_m.result().numpy()
 
 
-optimizer = tf.keras.optimizers.Adam(learning_rate=5e-3)
+optimizer = tf.keras.optimizers.Adam(learning_rate=5e-4)
 
 train_batch_generator = create_graph_generator(train_graphs, batch_size, shuffle=True, infinite=True)
 
-for step in range(2000):
+for step in tqdm(range(20000)):
     train_batch_graph = next(train_batch_generator)
     with tf.GradientTape() as tape:
         logits = forward(train_batch_graph, training=True)

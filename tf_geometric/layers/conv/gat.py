@@ -80,10 +80,11 @@ class GAT(tf.keras.Model):
     def call(self, inputs, training=None, mask=None):
         """
 
-        :param inputs: List of graph info: [x, edge_index]
+        :param inputs: List of graph info: [x, edge_index] or [x, edge_index, edge_weight].
+            Note that the edge_weight will not be used.
         :return: Updated node features (x), shape: [num_nodes, units]
         """
-        x, edge_index = inputs
+        x, edge_index = inputs[0], inputs[1]
 
         return gat(x, edge_index,
                    self.query_kernel, self.query_bias, self.query_activation,

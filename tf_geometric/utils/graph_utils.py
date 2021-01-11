@@ -30,6 +30,15 @@ def remove_self_loop_edge(edge_index, edge_weight=None):
     return edge_index, edge_weight
 
 
+def convert_dense_adj_to_edge(dense_adj):
+    num_nodes = tf.shape(dense_adj)[0]
+    row, col = tf.meshgrid(tf.range(num_nodes), tf.range(num_nodes), indexing="ij")
+    row = tf.reshape(row, [-1])
+    col = tf.reshape(col, [-1])
+    edge_index = tf.stack([row, col], axis=0)
+    edge_weight = tf.reshape(dense_adj, [-1])
+    return edge_index, edge_weight
+
 
 def convert_edge_to_nx_graph(edge_index, edge_properties=[], convert_to_directed=False):
     edge_index = convert_union_to_numpy(edge_index, dtype=np.int32)
