@@ -21,6 +21,8 @@ class SGC(tf.keras.Model):
         :param use_bias: Boolean, whether the layer uses a bias vector.
         :param renorm: Whether use renormalization trick (https://arxiv.org/pdf/1609.02907.pdf).
         :param improved: Whether use improved GCN or not.
+        :param kernel_regularizer: Regularizer function applied to the `kernel` weights matrix.
+        :param bias_regularizer: Regularizer function applied to the bias vector.
         """
 
         self.units = units

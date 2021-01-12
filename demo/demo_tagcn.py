@@ -64,7 +64,6 @@ def compute_loss(logits, mask_index, vars):
 @tf_utils.function
 def evaluate(mask):
     logits = forward(graph)
-    logits = tf.nn.log_softmax(logits, axis=-1)
     masked_logits = tf.gather(logits, mask)
     masked_labels = tf.gather(graph.y, mask)
 

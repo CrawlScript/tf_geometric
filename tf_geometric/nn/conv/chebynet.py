@@ -42,6 +42,6 @@ def chebynet(x, edge_index, edge_weight, K, lambda_max, kernel, bias=None, activ
         out += bias
 
     if activation is not None:
-        out += activation(out)
+        out = activation(out)
 
     return out

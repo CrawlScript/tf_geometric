@@ -18,8 +18,8 @@ model = tfg.layers.SGC(num_classes, k=2)
 # @tf_utils.function can speed up functions for TensorFlow 2.x.
 # @tf_utils.function is not compatible with TensorFlow 1.x and dynamic graph.cache.
 @tf_utils.function
-def forward(graph):
-    h = model([graph.x, graph.edge_index, graph.edge_weight], cache=graph.cache)
+def forward(graph, training=False):
+    h = model([graph.x, graph.edge_index, graph.edge_weight], training=training, cache=graph.cache)
     return h
 
 
@@ -47,7 +47,6 @@ def compute_loss(logits, mask_index, vars):
 @tf_utils.function
 def evaluate(mask):
     logits = forward(graph)
-    logits = tf.nn.log_softmax(logits, axis=1)
     masked_logits = tf.gather(logits, mask)
     masked_labels = tf.gather(graph.y, mask)
 
@@ -62,8 +61,7 @@ optimizer = tf.keras.optimizers.Adam(learning_rate=0.2)
 
 for step in range(1, 201):
     with tf.GradientTape() as tape:
-        logits = forward(graph)
-        logits = tf.nn.log_softmax(logits, axis=1)
+        logits = forward(graph, training=True)
         loss = compute_loss(logits, train_index, tape.watched_variables())
 
     vars = tape.watched_variables()

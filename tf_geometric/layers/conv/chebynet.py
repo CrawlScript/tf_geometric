@@ -13,7 +13,8 @@ class ChebyNet(MapReduceGNN):
 
     """
 
-    def __init__(self, units, K, lambda_max, activation=tf.nn.relu, use_bias=True, normalization_type='sym',
+    def __init__(self, units, K, lambda_max, activation=None, use_bias=True, normalization_type='sym',
+                 kernel_regularizer=None, bias_regularizer=None,
                  *args, **kwargs):
         """
 
@@ -24,7 +25,8 @@ class ChebyNet(MapReduceGNN):
         :param activation: Activation function to use.
         :param normalization_type: The normalization scheme for the graph
             Laplacian (default: :obj:`"sym"`)
-
+        :param kernel_regularizer: Regularizer function applied to the `kernel` weights matrix.
+        :param bias_regularizer: Regularizer function applied to the bias vector.
         """
         super().__init__(*args, **kwargs)
         self.units = units
@@ -44,13 +46,18 @@ class ChebyNet(MapReduceGNN):
         self.normalization_type = normalization_type
         self.lambda_max = lambda_max
 
+        self.kernel_regularizer = kernel_regularizer
+        self.bias_regularizer = bias_regularizer
+
     def build(self, input_shapes):
         x_shape = input_shapes[0]
         num_features = x_shape[-1]
 
-        self.kernel = self.add_weight("kernel", shape=[self.K, num_features, self.units], initializer="glorot_uniform")
+        self.kernel = self.add_weight("kernel", shape=[self.K, num_features, self.units],
+                                      initializer="glorot_uniform", regularizer=self.kernel_regularizer)
         if self.use_bias:
-            self.bias = self.add_weight("bias", shape=[self.units], initializer="zeros")
+            self.bias = self.add_weight("bias", shape=[self.units],
+                                        initializer="zeros", regularizer=self.bias_regularizer)
 
     def call(self, inputs, cache=None, training=None, mask=None):
         """
