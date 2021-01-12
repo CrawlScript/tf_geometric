@@ -1,9 +1,7 @@
 # coding=utf-8
 import os
-
-from tf_geometric.utils import tf_utils
-
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+from tf_geometric.utils import tf_utils
 import tf_geometric as tfg
 import tensorflow as tf
 from tf_geometric.utils.graph_utils import edge_train_test_split, negative_sampling

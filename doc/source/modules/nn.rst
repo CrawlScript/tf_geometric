@@ -104,3 +104,9 @@ diff_pool
 
 .. autofunction:: tf_geometric.nn.diff_pool
 
+
+set2set
+--------------------------------------------------------------
+
+.. autofunction:: tf_geometric.nn.set2set
+

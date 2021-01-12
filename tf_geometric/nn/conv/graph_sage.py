@@ -8,14 +8,14 @@ from tf_geometric.nn import mean_reducer, max_reducer, sum_reducer
 from tf_geometric.nn.conv.gcn import gcn_mapper, gcn_norm_edge
 
 
-def mean_graph_sage(x, edge_index, edge_weight, neighs_kernel, self_kernel, bias=None, activation=None,
+def mean_graph_sage(x, edge_index, edge_weight, neighbor_kernel, self_kernel, bias=None, activation=None,
                     normalize=False):
     """
 
     :param x: Tensor, shape: [num_nodes, num_features], node features
     :param edge_index: Tensor, shape: [2, num_edges], edge information
     :param edge_weight: Tensor or None, shape: [num_edges]
-    :param neighs_kernel: Tensor, shape: [num_features, num_hidden_units], weight.
+    :param neighbor_kernel: Tensor, shape: [num_features, num_hidden_units], weight.
     :param self_kernel: Tensor, shape: [num_features, num_hidden_units], weight
     :param bias: Tensor, shape: [num_output_features], bias
     :param activation: Activation function to use.
@@ -36,7 +36,7 @@ def mean_graph_sage(x, edge_index, edge_weight, neighs_kernel, self_kernel, bias
 
     neighbor_reduced_msg = mean_reducer(neighbor_x, row, num_nodes=x.shape[0])
 
-    neighbor_msg = neighbor_reduced_msg @ neighs_kernel
+    neighbor_msg = neighbor_reduced_msg @ neighbor_kernel
     x = x @ self_kernel
 
     h = tf.concat([neighbor_msg, x], axis=1)
@@ -97,7 +97,7 @@ def gcn_graph_sage(x, edge_index, edge_weight, kernel, bias=None, activation=Non
     return h
 
 
-def mean_pool_graph_sage(x, edge_index, edge_weight, mlp_kernel, neighs_kernel, self_kernel,
+def mean_pool_graph_sage(x, edge_index, edge_weight, mlp_kernel, neighbor_kernel, self_kernel,
                          mlp_bias=None, bias=None, activation=None, normalize=False):
     """
 
@@ -105,7 +105,7 @@ def mean_pool_graph_sage(x, edge_index, edge_weight, mlp_kernel, neighs_kernel, 
         :param edge_index: Tensor, shape: [2, num_edges], edge information
         :param edge_weight: Tensor or None, shape: [num_edges]
         :param mlp_kernel: Tensor, shape: [num_features, num_hidden_units]. weight.
-        :param neighs_kernel: Tensor, shape: [num_hidden_units, num_hidden_units], weight.
+        :param neighbor_kernel: Tensor, shape: [num_hidden_units, num_hidden_units], weight.
         :param self_kernel: Tensor, shape: [num_features, num_hidden_units], weight.
         :param mlp_bias: Tensor, shape: [num_hidden_units * 2], bias
         :param bias: Tensor, shape: [num_output_features], bias.
@@ -136,10 +136,10 @@ def mean_pool_graph_sage(x, edge_index, edge_weight, mlp_kernel, neighs_kernel, 
 
     reduced_h = mean_reducer(h, row, num_nodes=x.shape[0])
 
-    from_neighs = reduced_h @ neighs_kernel
+    from_neighbor = reduced_h @ neighbor_kernel
     from_x = x @ self_kernel
 
-    output = tf.concat([from_neighs, from_x], axis=1)
+    output = tf.concat([from_neighbor, from_x], axis=1)
     if bias is not None:
         output += bias
 
@@ -152,7 +152,7 @@ def mean_pool_graph_sage(x, edge_index, edge_weight, mlp_kernel, neighs_kernel, 
     return output
 
 
-def max_pool_graph_sage(x, edge_index, edge_weight, mlp_kernel, neighs_kernel, self_kernel,
+def max_pool_graph_sage(x, edge_index, edge_weight, mlp_kernel, neighbor_kernel, self_kernel,
                         mlp_bias=None, bias=None, activation=None, normalize=False):
     """
 
@@ -160,7 +160,7 @@ def max_pool_graph_sage(x, edge_index, edge_weight, mlp_kernel, neighs_kernel, s
             :param edge_index: Tensor, shape: [2, num_edges], edge information
             :param edge_weight: Tensor or None, shape: [num_edges]
             :param mlp_kernel: Tensor, shape: [num_features, num_hidden_units]. weight.
-            :param neighs_kernel: Tensor, shape: [num_hidden_units, num_hidden_units], weight.
+            :param neighbor_kernel: Tensor, shape: [num_hidden_units, num_hidden_units], weight.
             :param self_kernel: Tensor, shape: [num_features, num_hidden_units], weight.
             :param mlp_bias: Tensor, shape: [num_hidden_units * 2], bias
             :param bias: Tensor, shape: [num_output_features], bias.
@@ -189,7 +189,7 @@ def max_pool_graph_sage(x, edge_index, edge_weight, mlp_kernel, neighs_kernel, s
         h = activation(h)
 
     reduced_h = max_reducer(h, row, num_nodes=tf.shape(x)[0])
-    from_neighs = reduced_h @ neighs_kernel
+    from_neighs = reduced_h @ neighbor_kernel
     from_x = x @ self_kernel
 
     output = tf.concat([from_neighs, from_x], axis=1)
@@ -205,15 +205,14 @@ def max_pool_graph_sage(x, edge_index, edge_weight, mlp_kernel, neighs_kernel, s
     return output
 
 
-def lstm_graph_sage(x, edge_index, edge_weight, lstm, neighs_kernel, self_kernel,
+def lstm_graph_sage(x, edge_index, lstm, neighbor_kernel, self_kernel,
                     bias=None, activation=None, normalize=False):
     """
 
             :param x: Tensor, shape: [num_nodes, num_features], node features.
             :param edge_index: Tensor, shape: [2, num_edges], edge information.
-            :param edge_weight: Tensor or None, shape: [num_edges].
             :param lstm: Long Short-Term Merory.
-            :param neighs_kernel: Tensor, shape: [num_hidden_units, num_hidden_units], weight.
+            :param neighbor_kernel: Tensor, shape: [num_hidden_units, num_hidden_units], weight.
             :param self_kernel: Tensor, shape: [num_features, num_hidden_units], weight.
             :param mlp_bias: Tensor, shape: [num_hidden_units * 2], bias
             :param bias: Tensor, shape: [num_output_features], bias.
@@ -247,7 +246,7 @@ def lstm_graph_sage(x, edge_index, edge_weight, lstm, neighs_kernel, self_kernel
 
     reduced_h = tf.reduce_mean(neighbor_h, axis=1)
 
-    from_neighs = reduced_h @ neighs_kernel
+    from_neighs = reduced_h @ neighbor_kernel
     from_x = x @ self_kernel
 
     output = tf.concat([from_neighs, from_x], axis=1)

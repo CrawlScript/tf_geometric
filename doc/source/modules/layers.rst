@@ -125,3 +125,10 @@ DiffPool
    :special-members: __init__
    :members: call
 
+
+
+Set2Set
+--------------------
+.. autoclass:: tf_geometric.layers.Set2Set
+   :special-members: __init__
+   :members: call

@@ -64,6 +64,26 @@ def create_graph_generator(graphs, batch_size, infinite=False, shuffle=False):
 batch_size = 50
 
 
+# Multi-layer GCN Model
+class GCNModel(tf.keras.Model):
+
+    def __init__(self, units_list, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.gcns = [
+            tfg.layers.GCN(units, activation=tf.nn.relu if i < len(units_list) - 1 else None)
+            for i, units in enumerate(units_list)
+        ]
+
+    def call(self, inputs, training=None, mask=None):
+        x, edge_index, edge_weight = inputs
+        h = x
+        for gcn in self.gcns:
+            h = gcn([h, edge_index, edge_weight], training=training)
+        return h
+
+
+
 class DiffPoolModel(tf.keras.Model):
 
     def __init__(self, num_clusters_list, num_features_list, num_classes, *args, **kwargs):
@@ -73,8 +93,8 @@ class DiffPoolModel(tf.keras.Model):
 
         for num_features, num_clusters in zip(num_features_list, num_clusters_list):
             diff_pool = DiffPool(
-                feature_gnn=GCN(num_features),
-                assign_gnn=GCN(num_clusters),
+                feature_gnn=GCNModel([num_features, num_features]),
+                assign_gnn=GCNModel([num_features, num_clusters]),
                 units=num_features, num_clusters=num_clusters, activation=tf.nn.relu
             )
             self.diff_pools.append(diff_pool)
@@ -87,17 +107,21 @@ class DiffPoolModel(tf.keras.Model):
     def call(self, inputs, training=None, mask=None):
         x, edge_index, edge_weight, node_graph_index = inputs
         h = x
+        graph_h_list = []
         for diff_pool in self.diff_pools:
             h, edge_index, edge_weight, node_graph_index = diff_pool([h, edge_index, edge_weight, node_graph_index],
                                                                      training=training)
-        h = tfg.nn.sum_pool(h, node_graph_index)
-        logits = self.mlp(h, training=training)
+            graph_h = tfg.nn.max_pool(h, node_graph_index)
+            graph_h_list.append(graph_h)
+
+        graph_h = tf.concat(graph_h_list, axis=-1)
+        logits = self.mlp(graph_h, training=training)
 
         return logits
 
 
-num_clusters_list = [16, 4]
-num_features_list = [256, 256]
+num_clusters_list = [20, 5]
+num_features_list = [128, 128]
 
 model = DiffPoolModel(num_clusters_list, num_features_list, num_classes)
 
@@ -118,7 +142,7 @@ def evaluate():
     return accuracy_m.result().numpy()
 
 
-optimizer = tf.keras.optimizers.Adam(learning_rate=5e-4)
+optimizer = tf.keras.optimizers.Adam(learning_rate=1e-3)
 
 train_batch_generator = create_graph_generator(train_graphs, batch_size, shuffle=True, infinite=True)
 

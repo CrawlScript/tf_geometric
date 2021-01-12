@@ -1,10 +1,6 @@
 # coding=utf-8
 import os
-
-from tf_geometric.utils import tf_utils
-
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
-
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 import tf_geometric as tfg
 from tf_geometric.datasets.ppi import PPIDataset
 from tf_geometric.utils.graph_utils import RandomNeighborSampler

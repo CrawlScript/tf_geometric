@@ -3,14 +3,12 @@
 import tensorflow as tf
 from tf_geometric.nn.conv.graph_sage import mean_graph_sage, gcn_graph_sage, mean_pool_graph_sage, \
     max_pool_graph_sage, lstm_graph_sage
-from tf_geometric.layers.kernel.map_reduce import MapReduceGNN
 
 
-"""
-The GraphSAGE operator from the `"Inductive Representation Learning on
-Large Graphs" <https://arxiv.org/abs/1706.02216>`_ paper
-"""
-class MeanGraphSage(MapReduceGNN):
+class MeanGraphSage(tf.keras.Model):
+    """
+    GraphSAGE: `"Inductive Representation Learning on Large Graphs" <https://arxiv.org/abs/1706.02216>`_ paper
+    """
 
     def __init__(self, units, activation=tf.nn.relu, use_bias=True,
                  normalize=False, *args, **kwargs):
@@ -49,7 +47,7 @@ class MeanGraphSage(MapReduceGNN):
                                self.activation, self.normalize)
 
 
-class GCNGraphSage(MapReduceGNN):
+class GCNGraphSage(tf.keras.Model):
     def __init__(self, units, activation=tf.nn.relu, use_bias=True,
                  normalize=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -82,10 +80,11 @@ class GCNGraphSage(MapReduceGNN):
             x, edge_index = inputs
             edge_weight = None
 
-        return gcn_graph_sage(x, edge_index, edge_weight, self.kernel, self.bias, self.activation, self.normalize, cache=cache)
+        return gcn_graph_sage(x, edge_index, edge_weight, self.kernel, self.bias, self.activation, self.normalize,
+                              cache=cache)
 
 
-class MeanPoolGraphSage(MapReduceGNN):
+class MeanPoolGraphSage(tf.keras.Model):
     def __init__(self, units, activation=tf.nn.relu, use_bias=True,
                  normalize=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -98,20 +97,19 @@ class MeanPoolGraphSage(MapReduceGNN):
         x_shape = input_shape[0]
         num_features = x_shape[-1]
 
-        self.mlp_kernel = self.add_weight("mlp_kernel", shape=[num_features, self.units*4],
+        self.mlp_kernel = self.add_weight("mlp_kernel", shape=[num_features, self.units * 4],
                                           initializer="glorot_uniform")
         if self.use_bias:
-            self.mlp_bias = self.add_weight("mlp_bias", shape=[self.units*4], initializer="zeros")
+            self.mlp_bias = self.add_weight("mlp_bias", shape=[self.units * 4], initializer="zeros")
         # self.mlp_kernel = keras.layers.Dense(self.units, input_dim=2, use_bias=True, kernel_regularizer= tf.nn.l2_normalize, activation=tf.nn.relu)
 
-        self.neighs_kernel = self.add_weight("neighs_kernel", shape=[self.units*4, self.units],
+        self.neighs_kernel = self.add_weight("neighs_kernel", shape=[self.units * 4, self.units],
                                              initializer="glorot_uniform")
         self.self_kernel = self.add_weight("self_kernel", shape=[num_features, self.units],
                                            initializer="glorot_uniform")
 
         if self.use_bias:
             self.bias = self.add_weight("bias", shape=[self.units * 2], initializer="zeros")
-
 
     def call(self, inputs, cache=None, training=None, mask=None):
         """
@@ -132,7 +130,7 @@ class MeanPoolGraphSage(MapReduceGNN):
                                     self.normalize)
 
 
-class MaxPoolGraphSage(MapReduceGNN):
+class MaxPoolGraphSage(tf.keras.Model):
     def __init__(self, units, activation=tf.nn.relu, use_bias=True,
                  normalize=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -145,11 +143,11 @@ class MaxPoolGraphSage(MapReduceGNN):
         x_shape = input_shape[0]
         num_features = x_shape[-1]
 
-        self.mlp_kernel = self.add_weight("mlp_kernel", shape=[num_features, self.units*4],
+        self.mlp_kernel = self.add_weight("mlp_kernel", shape=[num_features, self.units * 4],
                                           initializer="glorot_uniform")
         if self.use_bias:
-            self.mlp_bias = self.add_weight("mlp_bias", shape=[self.units*4], initializer="zeros")
-        self.neighs_kernel = self.add_weight("neighs_kernel", shape=[self.units*4, self.units],
+            self.mlp_bias = self.add_weight("mlp_bias", shape=[self.units * 4], initializer="zeros")
+        self.neighs_kernel = self.add_weight("neighs_kernel", shape=[self.units * 4, self.units],
                                              initializer="glorot_uniform")
         self.self_kernel = self.add_weight("self_kernel", shape=[num_features, self.units],
                                            initializer="glorot_uniform")
@@ -176,7 +174,7 @@ class MaxPoolGraphSage(MapReduceGNN):
                                    self.mlp_bias, self.bias, self.activation, self.normalize)
 
 
-class LSTMGraphSage(MapReduceGNN):
+class LSTMGraphSage(tf.keras.Model):
 
     def __init__(self, units, activation=tf.nn.relu, use_bias=True,
                  normalize=False, *args, **kwargs):
@@ -199,22 +197,17 @@ class LSTMGraphSage(MapReduceGNN):
         if self.use_bias:
             self.bias = self.add_weight("bias", shape=[self.units * 2], initializer="zeros")
 
-
     def call(self, inputs, cache=None, training=None, mask=None):
         """
 
-        :param inputs: List of graph info: [x, edge_index, edge_weight]
+        :param inputs: List of graph info: [x, edge_index] or [x, edge_index, edge_weight].
+            Note that the edge_weight will not be used.
         :param cache: A dict for caching A' for GCN. Different graph should not share the same cache dict.
         :return: Updated node features (x), shape: [num_nodes, units]
         """
 
-        if len(inputs) == 3:
-            x, edge_index, edge_weight = inputs
-        else:
-            x, edge_index = inputs
-            edge_weight = None
+        x, edge_index = inputs[0], inputs[1]
 
-        return lstm_graph_sage(x, edge_index, edge_weight, self.lstm, self.neighs_kernel,
-                                       self.self_kernel, self.bias, self.activation,
-                                      self.normalize)
-
+        return lstm_graph_sage(x, edge_index, self.lstm, self.neighs_kernel,
+                               self.self_kernel, self.bias, self.activation,
+                               self.normalize)

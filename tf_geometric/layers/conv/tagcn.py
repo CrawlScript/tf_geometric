@@ -1,19 +1,22 @@
 # coding=utf-8
 
 import tensorflow as tf
+from tf_geometric.nn.conv.gcn import gcn_cache_normed_edge
+
 from tf_geometric.nn.conv.tagcn import tagcn
-from tf_geometric.layers.kernel.map_reduce import MapReduceGNN
 
 
-class TAGCN(MapReduceGNN):
+class TAGCN(tf.keras.Model):
     """
     The topology adaptive graph convolutional networks operator from the
      `"Topology Adaptive Graph Convolutional Networks"
      <https://arxiv.org/abs/1710.10370>`_ paper
     """
 
-    def __init__(self, units, K=3, activation=tf.nn.relu, use_bias=True,
-                 renorm=False, improved=False, *args, **kwargs):
+    def __init__(self, units, K=3, activation=None, use_bias=True,
+                 renorm=False, improved=False,
+                 kernel_regularizer=None, bias_regularizer=None,
+                 *args, **kwargs):
         """
 
         :param units: Positive integer, dimensionality of the output space.
@@ -36,6 +39,9 @@ class TAGCN(MapReduceGNN):
         self.kernel = None
         self.bias = None
 
+        self.kernel_regularizer = kernel_regularizer
+        self.bias_regularizer = bias_regularizer
+
         self.renorm = renorm
         self.improved = improved
 
@@ -44,9 +50,21 @@ class TAGCN(MapReduceGNN):
         num_features = x_shape[-1]
 
         self.kernel = self.add_weight("kernel", shape=[num_features * (self.K + 1), self.units],
-                                      initializer="glorot_uniform")
+                                      initializer="glorot_uniform", regularizer=self.kernel_regularizer)
         if self.use_bias:
-            self.bias = self.add_weight("bias", shape=[self.units], initializer="zeros")
+            self.bias = self.add_weight("bias", shape=[self.units],
+                                        initializer="zeros", regularizer=self.bias_regularizer)
+
+    def cache_normed_edge(self, graph, override=False):
+        """
+        Manually compute the normed edge based on this layer's GCN normalization configuration (self.renorm and self.improved) and put it in graph.cache.
+        If the normed edge already exists in graph.cache and the override parameter is False, this method will do nothing.
+
+        :param graph: tfg.Graph, the input graph.
+        :param override: Whether to override existing cached normed edge.
+        :return: None
+        """
+        gcn_cache_normed_edge(graph, self.renorm, self.improved, override=override)
 
     def call(self, inputs, cache=None, training=None, mask=None):
         """
@@ -62,5 +80,6 @@ class TAGCN(MapReduceGNN):
             x, edge_index = inputs
             edge_weight = None
 
-        return tagcn(x, edge_index, edge_weight, self.K, self.kernel, self.bias, self.activation, self.renorm,
-                     self.improved, cache)
+        return tagcn(x, edge_index, edge_weight, self.K, self.kernel,
+                     bias=self.bias, activation=self.activation, renorm=self.renorm,
+                     improved=self.improved, cache=cache)

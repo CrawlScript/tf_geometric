@@ -10,11 +10,14 @@ class SGC(tf.keras.Model):
     Convolutional Networks" <https://arxiv.org/abs/1902.07153>`_ paper
     """
 
-    def __init__(self, units, k=1, use_bias = True, renorm=True, improved=False, *args, **kwargs):
+    def __init__(self, units, k=1, activation=None, use_bias=True, renorm=True, improved=False,
+                 kernel_regularizer=None, bias_regularizer=None,
+                 *args, **kwargs):
         super().__init__(*args, **kwargs)
         """
         :param units: Size of each output sample..
         :param k: Number of hops.(default: :obj:`1`)
+        :param activation: Activation function to use.
         :param use_bias: Boolean, whether the layer uses a bias vector.
         :param renorm: Whether use renormalization trick (https://arxiv.org/pdf/1609.02907.pdf).
         :param improved: Whether use improved GCN or not.
@@ -25,17 +28,23 @@ class SGC(tf.keras.Model):
         self.renorm = renorm
         self.improved = improved
         self.K = k
-        self.kernel = []
-        self.bias = []
+        self.activation = activation
+        self.kernel = None
+        self.bias = None
+
+        self.kernel_regularizer = kernel_regularizer
+        self.bias_regularizer = bias_regularizer
 
     def build(self, input_shape):
 
         x_shape = input_shape[0]
         num_features = x_shape[-1]
 
-        self.kernel = self.add_weight("kernel", shape=[num_features, self.units], initializer="glorot_uniform")
+        self.kernel = self.add_weight("kernel", shape=[num_features, self.units],
+                                      initializer="glorot_uniform", regularizer=self.kernel_regularizer)
         if self.use_bias:
-            self.bias = self.add_weight("bias", shape=[self.units], initializer="zeros")
+            self.bias = self.add_weight("bias", shape=[self.units],
+                                        initializer="zeros", regularizer=self.bias_regularizer)
 
     def cache_normed_edge(self, graph, override=False):
         """
@@ -61,6 +70,6 @@ class SGC(tf.keras.Model):
             x, edge_index = inputs
             edge_weight = None
 
-        return sgc(x, edge_index, edge_weight, self.K, self.kernel, self.bias, self.renorm, self.improved, cache)
-
-
+        return sgc(x, edge_index, edge_weight, self.K, self.kernel,
+                   bias=self.bias, activation=self.activation,
+                   renorm=self.renorm, improved=self.improved, cache=cache)

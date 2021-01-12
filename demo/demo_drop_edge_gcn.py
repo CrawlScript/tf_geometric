@@ -1,6 +1,5 @@
 # coding=utf-8
 import os
-
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 from tf_geometric.layers import GCN, DropEdge
 from tensorflow.keras.layers import Dropout

@@ -1,6 +1,6 @@
 # coding=utf-8
 import tensorflow as tf
-from tf_geometric.nn.kernel.map_reduce import aggregate_neighbors, sum_updater, sum_reducer, identity_updater
+from tf_geometric.nn.kernel.map_reduce import aggregate_neighbors, sum_reducer, identity_updater
 from tf_geometric.utils.graph_utils import add_self_loop_edge
 
 

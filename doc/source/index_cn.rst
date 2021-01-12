@@ -124,6 +124,7 @@ tf_geometric使用消息传递机制来实现图神经网络：相比于基于�
 * `Graph Isomorphism Network (GIN) <https://github.com/CrawlScript/tf_geometric/blob/master/demo/demo_gin.py>`_
 * `自注意力图池化 Self-Attention Graph Pooling (SAGPooling) <https://github.com/CrawlScript/tf_geometric/blob/master/demo/demo_sag_pool_h.py>`_
 * `可微池化 Hierarchical Graph Representation Learning with Differentiable Pooling (DiffPool) <https://github.com/CrawlScript/tf_geometric/blob/master/demo/demo_diff_pool.py>`_
+* `Order Matters: Sequence to sequence for sets (Set2Set) <https://github.com/CrawlScript/tf_geometric/blob/master/demo/demo_set2set.py>`_
 
 
 
