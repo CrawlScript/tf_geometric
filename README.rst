@@ -93,6 +93,8 @@ Graph Classification
 * `MeanPooling <demo/demo_mean_pool.py>`_
 * `Graph Isomorphism Network (GIN) <demo/demo_gin.py>`_
 * `Self-Attention Graph Pooling (SAGPooling) <demo/demo_sag_pool_h.py>`_
+* `Hierarchical Graph Representation Learning with Differentiable Pooling (DiffPool) <demo/demo_diff_pool.py>`_
+* `Order Matters: Sequence to sequence for sets (Set2Set) <demo/demo_set2set.py>`_
 
 Link Prediction
 ^^^^^^^^^^^^^^^
