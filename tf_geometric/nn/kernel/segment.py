@@ -3,19 +3,25 @@ import tensorflow as tf
 
 
 def segment_op_with_pad(segment_op, data, segment_ids, num_segments):
-    reduced_data = segment_op(data, segment_ids)
+
+    sort_index = tf.argsort(segment_ids)
+    sorted_segment_ids = tf.gather(segment_ids, sort_index)
+    sorted_data = tf.gather(data, sort_index)
+
+    reduced_data = segment_op(sorted_data, sorted_segment_ids)
     num_paddings = num_segments - tf.shape(reduced_data)[0]
 
-    pads = tf.zeros([num_paddings] + data.shape.as_list()[1:], dtype=reduced_data.dtype)
+    pad_shape = tf.concat([
+        [num_paddings],
+        tf.shape(data)[1:]
+    ], axis=0)
+    pads = tf.zeros(pad_shape, dtype=reduced_data.dtype)
     outputs = tf.concat(
         [reduced_data, pads],
         axis=0
     )
     return outputs
-#
-#
-# def segment_sum_with_pad(data, segment_ids, total):
-#     return segment_op_with_pad(tf.math.segment_sum, data, segment_ids, total)
+
 
 def segment_softmax(data, segment_ids, num_segments):
     max_values = tf.math.unsorted_segment_max(data, segment_ids, num_segments=num_segments)

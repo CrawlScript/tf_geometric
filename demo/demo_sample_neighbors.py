@@ -5,7 +5,7 @@ from tf_geometric.utils.graph_utils import RandomNeighborSampler
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
-from tf_geometric.datasets.cora import CoraDataset
+from tf_geometric.datasets import CoraDataset
 import time
 
 graph, (train_index, valid_index, test_index) = CoraDataset().load_data()

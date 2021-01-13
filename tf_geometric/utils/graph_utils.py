@@ -343,20 +343,16 @@ def edge_train_test_split(edge_index, test_size, edge_weight=None, mode="undirec
 def compute_edge_mask_by_node_index(edge_index, node_index):
     edge_index_is_tensor = tf.is_tensor(edge_index)
 
-    node_index = convert_union_to_numpy(node_index)
-    edge_index = convert_union_to_numpy(edge_index)
+    max_node_index = tf.maximum(tf.reduce_max(edge_index), tf.reduce_max(node_index))
+    node_mask = tf.scatter_nd(tf.expand_dims(node_index, axis=-1), tf.ones_like(node_index), [max_node_index + 1])
+    node_mask = tf.cast(node_mask, tf.bool)
+    row, col = edge_index[0], edge_index[1]
+    row_mask = tf.gather(node_mask, row)
+    col_mask = tf.gather(node_mask, col)
+    edge_mask = tf.logical_and(row_mask, col_mask)
 
-    max_node_index = np.maximum(np.max(edge_index), np.max(node_index))
-    node_mask = np.zeros([max_node_index + 1]).astype(np.bool)
-    node_mask[node_index] = True
-    row, col = edge_index
-    row_mask = node_mask[row]
-    col_mask = node_mask[col]
-    edge_mask = np.logical_and(row_mask, col_mask)
-
-    if edge_index_is_tensor:
-        edge_mask = tf.convert_to_tensor(edge_mask, dtype=tf.bool)
-
+    if not edge_index_is_tensor:
+        edge_mask = edge_mask.numpy()
     return edge_mask
 
 

@@ -1,21 +1,19 @@
 # coding=utf-8
 import os
 
+from tf_geometric.layers import SAGPool, GCN
 from tf_geometric.utils import tf_utils
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 import tf_geometric as tfg
 import tensorflow as tf
-from tensorflow import keras
 import numpy as np
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 
-
 # TU Datasets: https://ls11-www.cs.tu-dortmund.de/staff/morris/graphkerneldatasets
 graph_dicts = tfg.datasets.TUDataset("NCI1").load_data()
-
 
 # Since a TU dataset may contain node_labels, node_attributes etc., each of which can be used as node features
 # We process each graph as a dict and return a list of dict for graphs
@@ -65,71 +63,62 @@ def create_graph_generator(graphs, batch_size, infinite=False, shuffle=False):
 batch_size = 512
 
 
-class SAGPool(keras.Model):
+# SAGPool_h
+class SAGPoolHModel(tf.keras.Model):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.score_gcn = tfg.layers.GCN(1)
+
+        self.sag_pools = []
+
+        for _ in range(3):
+            sag_pool = SAGPool(
+                feature_gnn=GCN(128, activation=tf.nn.relu),
+                score_gnn=GCN(1),
+                ratio=0.5,
+                score_activation=tf.nn.tanh
+            )
+            self.sag_pools.append(sag_pool)
+
+        self.mlp = tf.keras.Sequential([
+            tf.keras.layers.Dense(128, activation=tf.nn.relu),
+            tf.keras.layers.Dropout(0.5),
+            tf.keras.layers.Dense(64, activation=tf.nn.relu),
+            tf.keras.layers.Dense(num_classes)
+        ])
 
     def call(self, inputs, training=None, mask=None):
+
         x, edge_index, edge_weight, node_graph_index = inputs
-        node_score = self.score_gcn([x, edge_index, edge_weight])
+        h = x
 
-        topk_node_index = tfg.nn.topk_pool(node_graph_index, node_score, ratio=0.5)
+        outputs = []
+        for sag_pool in self.sag_pools:
+            h, edge_index, edge_weight, node_graph_index = sag_pool([h, edge_index, edge_weight, node_graph_index],
+                                                                    training=training)
+            output = tf.concat([
+                tfg.nn.mean_pool(h, node_graph_index),
+                tfg.nn.max_pool(h, node_graph_index)
+            ], axis=-1)
+            outputs.append(output)
 
-        sampled_batch_graph = tfg.BatchGraph(
-            x=x * tf.nn.tanh(node_score),
-            edge_index=edge_index,
-            node_graph_index=node_graph_index,
-            edge_graph_index=None,
-            edge_weight=edge_weight
-        ).sample_new_graph_by_node_index(topk_node_index)
+        h = tf.reduce_sum(tf.stack(outputs, axis=1), axis=1)
 
-        return sampled_batch_graph.x, \
-               sampled_batch_graph.edge_index, \
-               sampled_batch_graph.edge_weight, \
-               sampled_batch_graph.node_graph_index
-
-
-num_gcns = 3
-gcns = [tfg.layers.GCN(128, activation=tf.nn.relu) for _ in range(num_gcns)]
-sag_pools = [SAGPool() for _ in range(num_gcns)]
-
-mlp = keras.Sequential([
-    keras.layers.Dense(128, activation=tf.nn.relu),
-    keras.layers.Dropout(0.5),
-    keras.layers.Dense(64, activation=tf.nn.relu),
-    keras.layers.Dense(num_classes)
-])
+        # Predict Graph Labels
+        h = self.mlp(h, training=training)
+        return h
 
 
-# SAGPool_h
+model = SAGPoolHModel()
+
+
 def forward(batch_graph, training=False):
-    # GCN Encoder
-    h = batch_graph.x
-    edge_index = batch_graph.edge_index
-    edge_weight = batch_graph.edge_weight
-    node_graph_index = batch_graph.node_graph_index
-
-    outputs = []
-    for i in range(num_gcns):
-        h = gcns[i]([h, edge_index, edge_weight])
-        h, edge_index, edge_weight, node_graph_index = sag_pools[i]([h, edge_index, edge_weight, node_graph_index])
-        output = tf.concat([
-            tfg.nn.mean_pool(h, node_graph_index),
-            tfg.nn.max_pool(h, node_graph_index)
-        ], axis=-1)
-        outputs.append(output)
-
-    h = tf.reduce_sum(tf.stack(outputs, axis=1), axis=1)
-
-    # Predict Graph Labels
-    h = mlp(h, training=training)
-    return h
+    return model([batch_graph.x, batch_graph.edge_index, batch_graph.edge_weight, batch_graph.node_graph_index],
+                 training=training)
 
 
 def evaluate():
-    accuracy_m = keras.metrics.Accuracy()
+    accuracy_m = tf.keras.metrics.Accuracy()
 
     for test_batch_graph in create_graph_generator(test_graphs, batch_size, shuffle=False, infinite=False):
         logits = forward(test_batch_graph)
@@ -142,6 +131,10 @@ def evaluate():
 optimizer = tf.keras.optimizers.Adam(learning_rate=5e-4)
 
 train_batch_generator = create_graph_generator(train_graphs, batch_size, shuffle=True, infinite=True)
+
+import time
+
+start_time = time.time()
 
 for step in tqdm(range(20000)):
     train_batch_graph = next(train_batch_generator)
@@ -160,3 +153,5 @@ for step in tqdm(range(20000)):
         mean_loss = tf.reduce_mean(losses)
         accuracy = evaluate()
         print("step = {}\tloss = {}\taccuracy = {}".format(step, mean_loss, accuracy))
+
+        print("average time: ", (time.time() - start_time) / (step + 1))

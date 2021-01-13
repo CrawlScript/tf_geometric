@@ -11,8 +11,9 @@ def cluster_pool(x, edge_index, edge_weight, assign_edge_index, assign_edge_weig
     :param x: Tensor, shape: [num_nodes, num_features], node features
     :param edge_index: Tensor, shape: [2, num_edges], edge information
     :param edge_weight: Tensor or None, shape: [num_edges]
-    :param assign_edge_index: Tensor, shape: [2, num_nodes], edge between clusters and nodes
-    :param assign_edge_weight: Tensor or None, shape: [num_nodes], edge between clusters and nodes
+    :param assign_edge_index: Tensor, shape: [2, num_nodes], edge between clusters and nodes, where each edge
+        denotes a node belongs to a specific cluster.
+    :param assign_edge_weight: Tensor or None, shape: [num_nodes], the corresponding weight for assign_edge_index
     :param num_clusters: Number of clusters.
     :param num_nodes: Number of nodes, Optional, used for boosting performance.
     :return: Pooled Graph: [pooled_x, pooled_edge_index, pooled_edge_weight]

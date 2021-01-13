@@ -134,7 +134,7 @@ train_batch_generator = create_graph_generator(train_graphs, batch_size, shuffle
 
 
 best_test_acc = 0
-for step in tqdm(range(0, 1000)):
+for step in tqdm(range(0, 4000)):
     batch_graph = next(train_batch_generator)
     with tf.GradientTape() as tape:
         inputs = [batch_graph.x, batch_graph.edge_index, batch_graph.edge_weight,

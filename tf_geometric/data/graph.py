@@ -190,33 +190,39 @@ class Graph(object):
 
         if edge_index is not None:
 
-            sampled_node_index = convert_union_to_numpy(sampled_node_index)
+            # sampled_node_index = convert_union_to_numpy(sampled_node_index)
+            # edge_index = convert_union_to_numpy(edge_index)
 
             edge_index_is_tensor = tf.is_tensor(edge_index)
-            edge_index = convert_union_to_numpy(edge_index)
+            if not edge_index_is_tensor:
+                edge_index = tf.convert_to_tensor(edge_index, dtype=tf.int32)
+
             edge_mask = compute_edge_mask_by_node_index(edge_index, sampled_node_index)
+            edge_index = tf.boolean_mask(edge_index, edge_mask, axis=1)
 
-            edge_index = edge_index[:, edge_mask]
-            row, col = edge_index
+            row, col = edge_index[0], edge_index[1]
 
-            max_sampled_node_index = np.max(sampled_node_index) + 1
-            new_node_range = list(range(len(sampled_node_index)))
-            reverse_index = np.full([max_sampled_node_index + 1], -1, dtype=np.int32)
-            reverse_index[sampled_node_index] = new_node_range
+            max_sampled_node_index = tf.reduce_max(sampled_node_index) + 1
+            num_sampled_nodes = tf.shape(sampled_node_index)[0]
+            new_node_range = tf.range(num_sampled_nodes)
 
-            row = reverse_index[row]
-            col = reverse_index[col]
-            edge_index = np.stack([row, col], axis=0)
-            if edge_index_is_tensor:
-                edge_index = tf.convert_to_tensor(edge_index)
+            reverse_index = tf.cast(tf.fill([max_sampled_node_index + 1], -1), tf.int32)
+            reverse_index = tf.tensor_scatter_nd_update(reverse_index, tf.expand_dims(sampled_node_index, axis=-1),
+                                                        new_node_range)
+
+            row = tf.gather(reverse_index, row)
+            col = tf.gather(reverse_index, col)
+
+            edge_index = tf.stack([row, col], axis=0)
+            if not edge_index_is_tensor:
+                edge_index = edge_index.numpy()
 
             def sample_by_edge_mask(data):
                 if data is not None:
                     data_is_tensor = tf.is_tensor(data)
-                    data = convert_union_to_numpy(data)
-                    data = data[edge_mask]
-                    if data_is_tensor:
-                        data = tf.convert_to_tensor(data)
+                    data = tf.boolean_mask(data, edge_mask)
+                    if not data_is_tensor:
+                        data = data.numpy()
                 return data
 
             edge_weight = sample_by_edge_mask(edge_weight)
@@ -276,25 +282,24 @@ class BatchGraph(Graph):
 
         graphs = []
         for i in range(self.num_graphs):
-            x = self.x[num_nodes_before_graph[i]: num_edges_before_graph[i+1]]
+            x = self.x[num_nodes_before_graph[i]: num_edges_before_graph[i + 1]]
 
             if self.y is None:
                 y = None
             else:
-                y = self.y[num_nodes_before_graph[i]: num_edges_before_graph[i+1]]
+                y = self.y[num_nodes_before_graph[i]: num_edges_before_graph[i + 1]]
 
-            edge_index = self.edge_index[:, num_edges_before_graph[i]:num_edges_before_graph[i+1]] - num_nodes_before_graph[i]
+            edge_index = self.edge_index[:, num_edges_before_graph[i]:num_edges_before_graph[i + 1]] - \
+                         num_nodes_before_graph[i]
 
             if self.edge_weight is None:
                 edge_weight = None
             else:
-                edge_weight = self.edge_weight[num_edges_before_graph[i]:num_edges_before_graph[i+1]]
+                edge_weight = self.edge_weight[num_edges_before_graph[i]:num_edges_before_graph[i + 1]]
 
             graph = Graph(x=x, edge_index=edge_index, y=y, edge_weight=edge_weight)
             graphs.append(graph)
         return graphs
-
-
 
     @classmethod
     def from_graphs(cls, graphs):
@@ -310,8 +315,6 @@ class BatchGraph(Graph):
         return BatchGraph(x=x, edge_index=edge_index,
                           node_graph_index=node_graph_index, edge_graph_index=edge_graph_index,
                           graphs=graphs, y=y, edge_weight=edge_weight)
-
-
 
     @classmethod
     def build_node_graph_index(cls, graphs):
@@ -329,7 +332,6 @@ class BatchGraph(Graph):
 
         return node_graph_index
 
-
     @classmethod
     def build_edge_graph_index(cls, graphs):
         edge_graph_index_list = []
@@ -344,7 +346,6 @@ class BatchGraph(Graph):
             edge_graph_index = np.concatenate(edge_graph_index_list, axis=0)
 
         return edge_graph_index
-
 
     @classmethod
     def build_x(cls, graphs):
@@ -419,6 +420,3 @@ class BatchGraph(Graph):
         self.edge_index, [self.edge_weight, self.edge_graph_index] = \
             convert_edge_to_directed(self.edge_index, [self.edge_weight, self.edge_graph_index])
         return self
-
-
-

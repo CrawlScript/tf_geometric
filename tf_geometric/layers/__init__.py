@@ -15,3 +15,4 @@ from tf_geometric.layers.kernel.map_reduce import MapReduceGNN
 from tf_geometric.layers.pool.common_pool import MeanPool, MinPool, MaxPool, SumPool
 from tf_geometric.layers.pool.diff_pool import DiffPool
 from tf_geometric.layers.pool.set2set import Set2Set
+from tf_geometric.layers.pool.sag_pool import SAGPool

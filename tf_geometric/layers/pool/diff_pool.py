@@ -1,7 +1,6 @@
 # coding=utf-8
 
 
-from tf_geometric.nn.conv.gcn import gcn, gcn_cache_normed_edge
 import tensorflow as tf
 
 from tf_geometric.nn.pool.diff_pool import diff_pool
@@ -52,4 +51,4 @@ class DiffPool(tf.keras.Model):
 
         return diff_pool(x, edge_index, edge_weight, node_graph_index,
                          self.feature_gnn, self.assign_gnn, self.num_clusters,
-                         bias=self.bias, activation=self.acvitation, training=training)
+                         bias=self.bias, activation=self.acvitation, training=training, cache=cache)

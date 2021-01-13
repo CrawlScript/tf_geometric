@@ -28,13 +28,18 @@ def mean_reducer(neighbor_msg, node_index, num_nodes=None):
     return tf.math.unsorted_segment_mean(neighbor_msg, node_index, num_segments=num_nodes)
 
 
-def max_reducer(neighbor_msg, node_index, num_nodes=None):
-    if num_nodes is None:
-        num_nodes = tf.reduce_max(node_index) + 1
-    # return tf.math.unsorted_segment_max(neighbor_msg, node_index, num_segments=num_nodes)
-    # max_x = tf.math.unsorted_segment_max(x, node_graph_index, num_segments=num_graphs)
-    max_neighbor_msg = segment_op_with_pad(tf.math.segment_max, neighbor_msg, node_index, num_segments=num_nodes)
-    return max_neighbor_msg
+if tf.__version__[0] == "1":
+    def max_reducer(neighbor_msg, node_index, num_nodes=None):
+        if num_nodes is None:
+            num_nodes = tf.reduce_max(node_index) + 1
+        max_neighbor_msg = segment_op_with_pad(tf.math.segment_max, neighbor_msg, node_index, num_segments=num_nodes)
+        return max_neighbor_msg
+else:
+    def max_reducer(neighbor_msg, node_index, num_nodes=None):
+        if num_nodes is None:
+            num_nodes = tf.reduce_max(node_index) + 1
+        max_neighbor_msg = tf.math.unsorted_segment_max(neighbor_msg, node_index, num_segments=num_nodes)
+        return max_neighbor_msg
 
 
 def aggregate_neighbors(x, edge_index, edge_weight=None, mapper=identity_mapper,

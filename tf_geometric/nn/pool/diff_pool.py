@@ -54,7 +54,7 @@ def diff_pool_coarsen(x, edge_index, edge_weight, node_graph_index, dense_assign
 
 def diff_pool(x, edge_index, edge_weight, node_graph_index,
               feature_gnn, assign_gnn,
-              num_clusters, bias=None, activation=None, training=None):
+              num_clusters, bias=None, activation=None, cache=None, training=None):
     """
     Functional API for DiffPool: "Hierarchical graph representation learning with differentiable pooling"
 
@@ -69,6 +69,7 @@ def diff_pool(x, edge_index, edge_weight, node_graph_index,
     :param num_clusters: Number of clusters for pooling.
     :param bias: Tensor, shape: [num_output_features], bias
     :param activation: Activation function to use.
+    :param cache: A dict for caching A' for GCN. Different graph should not share the same cache dict.
     :param training: Python boolean indicating whether the layer should behave in
         training mode (adding dropout) or in inference mode (doing nothing).
     :return: [pooled_x, pooled_edge_index, pooled_edge_weight, pooled_node_graph_index]
@@ -82,10 +83,14 @@ def diff_pool(x, edge_index, edge_weight, node_graph_index,
     num_nodes = tf.shape(x)[0]
     num_graphs = tf.reduce_max(node_graph_index) + 1
 
-    assign_logits = assign_gnn([x, edge_index, edge_weight], training=training)
-    assign_probs = tf.nn.softmax(assign_logits, axis=-1)
+    if cache is None:
+        assign_logits = assign_gnn([x, edge_index, edge_weight], training=training)
+        h = feature_gnn([x, edge_index, edge_weight], training=training)
+    else:
+        assign_logits = assign_gnn([x, edge_index, edge_weight], training=training, cache=cache)
+        h = feature_gnn([x, edge_index, edge_weight], training=training, cache=cache)
 
-    h = feature_gnn([x, edge_index, edge_weight], training=training)
+    assign_probs = tf.nn.softmax(assign_logits, axis=-1)
 
     pooled_h, pooled_edge_index, pooled_edge_weight, pooled_node_graph_index = diff_pool_coarsen(
         h, edge_index, edge_weight, node_graph_index, assign_probs,

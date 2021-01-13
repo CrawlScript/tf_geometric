@@ -3,19 +3,19 @@ import tensorflow as tf
 from tf_geometric.utils.union_utils import union_len
 
 
-def topk_pool(source_index, score, k=None, ratio=None):
+def topk_pool(source_index, score, K=None, ratio=None):
     """
 
     :param sorted_source_index: index of source node (of edge) or source graph (of node)
     :param sorted_score: 1-D Array
-    :param k:
-    :param ratio:
+    :param K: Keep top K targets for each source
+    :param ratio: Keep num_targets * ratio targets for each source
     :return: sampled_edge_index, sampled_edge_score, sample_index
     """
 
-    if k is None and ratio is None:
+    if K is None and ratio is None:
         raise Exception("you should provide either k or ratio for topk_pool")
-    elif k is not None and ratio is not None:
+    elif K is not None and ratio is not None:
         raise Exception("you should provide either k or ratio for topk_pool, not both of them")
 
     # currently, we consider the source_index is not sorted
@@ -34,7 +34,7 @@ def topk_pool(source_index, score, k=None, ratio=None):
 
     sorted_score = tf.reshape(sorted_score, [-1])
 
-    num_targets = union_len(sorted_source_index)
+    num_targets = tf.shape(sorted_source_index)[0]
     target_ones = tf.ones([num_targets], dtype=tf.int32)
     num_targets_for_sources = tf.math.segment_sum(target_ones, sorted_source_index)
     # number of columns for score matrix
@@ -58,9 +58,9 @@ def topk_pool(source_index, score, k=None, ratio=None):
 
     sort_index = tf.argsort(score_matrix, axis=-1, direction="DESCENDING")
 
-    if k is not None:
+    if K is not None:
         node_k = tf.math.minimum(
-            tf.cast(tf.fill([num_seen_sources], k), dtype=tf.int32),
+            tf.cast(tf.fill([num_seen_sources], K), dtype=tf.int32),
             num_targets_for_sources
         )
     else:
@@ -69,17 +69,59 @@ def topk_pool(source_index, score, k=None, ratio=None):
             dtype=tf.int32
         )
 
-    left_k_index = tf.TensorArray(tf.int32, size=0, dynamic_size=True, element_shape=[2])
-    num_rows = tf.shape(node_k)[0]
+    # import time
+    # start = time.time()
 
-    current_size = 0
-    for row_index in range(num_rows):
-        num_cols = node_k[row_index]
-        for col_index in range(num_cols):
-            left_k_index = left_k_index.write(current_size, [row_index, col_index])
-            current_size += 1
+    row, col = tf.meshgrid(tf.range(num_seen_sources), tf.range(tf.reduce_max(node_k)), indexing="ij")
+    row = tf.reshape(row, [-1])
+    col = tf.reshape(col, [-1])
+    repeated_k = tf.gather(node_k, row)
+    k_mask = tf.less(col, repeated_k)
 
-    left_k_index = left_k_index.stack()
+    row = tf.boolean_mask(row, k_mask)
+    col = tf.boolean_mask(col, k_mask)
+
+    sample_col_index = tf.gather_nd(sort_index, tf.stack([row, col], axis=1))
+
+    topk_index = tf.gather(num_targets_before, row) + sample_col_index
+
+    if source_index_sorted:
+        return topk_index
+    else:
+        return tf.gather(source_index_perm, topk_index)
+
+
+    # left_k_index_list = []
+    # num_rows = tf.shape(node_k)[0]
+    # for row_index in range(num_rows):
+    #     num_cols = node_k[row_index]
+    #     left_k_index_list.append(
+    #         tf.stack([
+    #             tf.fill([num_cols], row_index),
+    #             tf.range(num_cols)
+    #         ], axis=1)
+    #     )
+    # left_k_index = tf.concat(left_k_index_list, axis=0)
+
+
+    # # ====
+
+
+    # left_k_index = tf.TensorArray(tf.int32, size=0, dynamic_size=True, element_shape=[2])
+    # num_rows = tf.shape(node_k)[0]
+    #
+    # current_size = 0
+    # for row_index in range(num_rows):
+    #     num_cols = node_k[row_index]
+    #     for col_index in range(num_cols):
+    #         left_k_index = left_k_index.write(current_size, [row_index, col_index])
+    #         current_size += 1
+    # left_k_index = left_k_index.stack()
+
+    # end = time.time()
+    # print("time: ", end - start)
+
+
 
 
 
@@ -89,15 +131,15 @@ def topk_pool(source_index, score, k=None, ratio=None):
 
     # left_k_index = tf.convert_to_tensor(left_k_index, dtype=tf.int32)
 
-    sample_col_index = tf.gather_nd(sort_index, left_k_index)
-    sample_row_index = left_k_index[:, 0]
-
-    topk_index = tf.gather(num_targets_before, sample_row_index) + sample_col_index
-
-    if source_index_sorted:
-        return topk_index
-    else:
-        return tf.gather(source_index_perm, topk_index)
+    # sample_col_index = tf.gather_nd(sort_index, left_k_index)
+    # sample_row_index = left_k_index[:, 0]
+    #
+    # topk_index = tf.gather(num_targets_before, sample_row_index) + sample_col_index
+    #
+    # if source_index_sorted:
+    #     return topk_index
+    # else:
+    #     return tf.gather(source_index_perm, topk_index)
 
     return topk_index
 

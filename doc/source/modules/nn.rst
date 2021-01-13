@@ -110,3 +110,15 @@ set2set
 
 .. autofunction:: tf_geometric.nn.set2set
 
+
+
+cluster_pool
+--------------------------------------------------------------
+
+.. autofunction:: tf_geometric.nn.cluster_pool
+
+
+sag_pool
+--------------------------------------------------------------
+
+.. autofunction:: tf_geometric.nn.sag_pool
