@@ -31,7 +31,6 @@ def topk_pool(source_index, score, K=None, ratio=None):
         sorted_source_index = tf.gather(source_index, source_index_perm)
         sorted_score = tf.gather(score, source_index_perm)
 
-
     sorted_score = tf.reshape(sorted_score, [-1])
 
     num_targets = tf.shape(sorted_source_index)[0]
@@ -69,9 +68,6 @@ def topk_pool(source_index, score, K=None, ratio=None):
             dtype=tf.int32
         )
 
-    # import time
-    # start = time.time()
-
     row, col = tf.meshgrid(tf.range(num_seen_sources), tf.range(tf.reduce_max(node_k)), indexing="ij")
     row = tf.reshape(row, [-1])
     col = tf.reshape(col, [-1])
@@ -89,58 +85,3 @@ def topk_pool(source_index, score, K=None, ratio=None):
         return topk_index
     else:
         return tf.gather(source_index_perm, topk_index)
-
-
-    # left_k_index_list = []
-    # num_rows = tf.shape(node_k)[0]
-    # for row_index in range(num_rows):
-    #     num_cols = node_k[row_index]
-    #     left_k_index_list.append(
-    #         tf.stack([
-    #             tf.fill([num_cols], row_index),
-    #             tf.range(num_cols)
-    #         ], axis=1)
-    #     )
-    # left_k_index = tf.concat(left_k_index_list, axis=0)
-
-
-    # # ====
-
-
-    # left_k_index = tf.TensorArray(tf.int32, size=0, dynamic_size=True, element_shape=[2])
-    # num_rows = tf.shape(node_k)[0]
-    #
-    # current_size = 0
-    # for row_index in range(num_rows):
-    #     num_cols = node_k[row_index]
-    #     for col_index in range(num_cols):
-    #         left_k_index = left_k_index.write(current_size, [row_index, col_index])
-    #         current_size += 1
-    # left_k_index = left_k_index.stack()
-
-    # end = time.time()
-    # print("time: ", end - start)
-
-
-
-
-
-    # left_k_index = [[row_index, col_index]
-    #                 for row_index, num_cols in enumerate(node_k)
-    #                 for col_index in range(num_cols)]
-
-    # left_k_index = tf.convert_to_tensor(left_k_index, dtype=tf.int32)
-
-    # sample_col_index = tf.gather_nd(sort_index, left_k_index)
-    # sample_row_index = left_k_index[:, 0]
-    #
-    # topk_index = tf.gather(num_targets_before, sample_row_index) + sample_col_index
-    #
-    # if source_index_sorted:
-    #     return topk_index
-    # else:
-    #     return tf.gather(source_index_perm, topk_index)
-
-    return topk_index
-
-

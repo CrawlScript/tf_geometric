@@ -132,9 +132,6 @@ optimizer = tf.keras.optimizers.Adam(learning_rate=5e-4)
 
 train_batch_generator = create_graph_generator(train_graphs, batch_size, shuffle=True, infinite=True)
 
-import time
-
-start_time = time.time()
 
 for step in tqdm(range(20000)):
     train_batch_graph = next(train_batch_generator)
@@ -154,4 +151,3 @@ for step in tqdm(range(20000)):
         accuracy = evaluate()
         print("step = {}\tloss = {}\taccuracy = {}".format(step, mean_loss, accuracy))
 
-        print("average time: ", (time.time() - start_time) / (step + 1))
