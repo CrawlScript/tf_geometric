@@ -10,6 +10,7 @@ from tf_geometric.utils.union_utils import convert_union_to_numpy
 from scipy.sparse.linalg import eigs, eigsh
 import scipy.sparse
 
+
 def remove_self_loop_edge(edge_index, edge_weight=None):
     edge_index_is_tensor = tf.is_tensor(edge_index)
     edge_weight_is_tensor = tf.is_tensor(edge_weight)
@@ -37,6 +38,44 @@ def convert_dense_adj_to_edge(dense_adj):
     col = tf.reshape(col, [-1])
     edge_index = tf.stack([row, col], axis=0)
     edge_weight = tf.reshape(dense_adj, [-1])
+    return edge_index, edge_weight
+
+
+def convert_dense_assign_to_edge(dense_assign, node_graph_index=None, num_nodes=None, num_clusters=None):
+    """
+    Convert a dense assignment matrix [num_nodes, num_clusters] of a Graph or BatchGraph to edge_index, edge_weight.
+    In the single-graph scenario (when node_graph_index is None), there are num_clusters clusters and 
+        the j_th column of each row correspond to the j_th clusters.
+    In the multi-graph scenario (where node_graph_index is not None), there are num_clusters * num_graphs clusters and
+        the j_th column of the i_th row correspond to the j_th cluster in the corresponding graph, and the cluster index
+        is num_clusters * node_graph_index[i] + j
+    
+    :param dense_assign: 
+    :param node_graph_index: 
+    :param num_nodes: 
+    :param num_clusters: 
+    :return: 
+    """
+    dense_shape = tf.shape(dense_assign)
+
+    # manually passing in num_row and num_col can boost the computation
+    if num_nodes is None:
+        num_nodes = dense_shape[0]
+    if num_clusters is None:
+        num_clusters = dense_shape[1]
+
+    row, col = tf.meshgrid(tf.range(num_nodes), tf.range(num_clusters), indexing="ij")
+
+    # multi graphs, the j_th clusters of the i_th graph is assigned a new cluster index: num_clusters * i + j
+    if node_graph_index is not None:
+        col += tf.expand_dims(node_graph_index, axis=-1) * num_clusters
+
+    row = tf.reshape(row, [-1])
+    col = tf.reshape(col, [-1])
+    edge_index = tf.stack([row, col], axis=0)
+
+    edge_weight = tf.reshape(dense_assign, [-1])
+
     return edge_index, edge_weight
 
 
@@ -89,7 +128,6 @@ def convert_edge_to_upper(edge_index, edge_properties=[]):
 
 # [[1,3,5], [2,1,4]] => [[1,3,5,2,1,4], [2,1,4,1,3,5]]
 def convert_edge_to_directed(edge_index, edge_properties=[]):
-
     edge_index_is_tensor = tf.is_tensor(edge_index)
     edge_properties_is_tensor = [tf.is_tensor(edge_property) for edge_property in edge_properties]
 
@@ -115,7 +153,6 @@ def convert_edge_to_directed(edge_index, edge_properties=[]):
 
 
 def add_self_loop_edge(edge_index, num_nodes, edge_weight=None, fill_weight=1.0):
-
     diagnal_edge_index = tf.stack([tf.range(num_nodes, dtype=tf.int32)] * 2, axis=0)
     updated_edge_index = tf.concat([edge_index, diagnal_edge_index], axis=1)
 
@@ -265,7 +302,8 @@ def edge_train_test_split(edge_index, test_size, edge_weight=None, mode="undirec
 
     # todo: warn user if they pass into "num_nodes", deprecated
     if "num_nodes" in kwargs:
-        warnings.warn("argument \"num_nodes\" is deprecated for the method \"edge_train_test_split\", you can remove it")
+        warnings.warn(
+            "argument \"num_nodes\" is deprecated for the method \"edge_train_test_split\", you can remove it")
 
     if mode == "undirected":
         is_edge_index_tensor = tf.is_tensor(edge_index)
@@ -303,7 +341,6 @@ def edge_train_test_split(edge_index, test_size, edge_weight=None, mode="undirec
 
 
 def compute_edge_mask_by_node_index(edge_index, node_index):
-
     edge_index_is_tensor = tf.is_tensor(edge_index)
 
     node_index = convert_union_to_numpy(node_index)
@@ -324,9 +361,8 @@ def compute_edge_mask_by_node_index(edge_index, node_index):
 
 
 def get_laplacian(edge_index, edge_weight, normalization_type, num_nodes, fill_weight=1.0):
-
     if normalization_type is not None:
-        assert normalization_type in [None,'sym', 'rw']
+        assert normalization_type in [None, 'sym', 'rw']
 
     row, col = edge_index[0], edge_index[1]
     deg = tf.math.unsorted_segment_sum(edge_weight, row, num_segments=num_nodes)
@@ -374,6 +410,7 @@ def get_laplacian(edge_index, edge_weight, normalization_type, num_nodes, fill_w
         edge_weight = tmp
 
     return edge_index, edge_weight
+
 
 def to_scipy_sparse_matrix(edge_index, edge_weight=None, num_nodes=None):
     r"""Converts a graph given by edge indices and edge attributes to a scipy
@@ -451,6 +488,7 @@ class RandomNeighborSampler(object):
         sampled_edge_weight = np.array(sampled_edge_weight)
         return sampled_edge_index, sampled_edge_weight
 
+
 class LaplacianMaxEigenvalue(object):
     def __init__(self, x, edge_index, edge_weight, is_undirected=True):
         self.num_nodes = x.shape[0]
@@ -460,7 +498,6 @@ class LaplacianMaxEigenvalue(object):
         else:
             self.edge_weight = np.ones([self.edge_index.shape[1]], dtype=np.float32)
         self.is_undirected = is_undirected
-
 
     def __call__(self, normalization_type='sym'):
         assert normalization_type in [None, 'sym', 'rw']
@@ -480,10 +517,3 @@ class LaplacianMaxEigenvalue(object):
         lambda_max = eig_fn(L, k=1, which='LM', return_eigenvectors=False)
 
         return float(lambda_max.real)
-
-
-
-
-
-
-

@@ -1,0 +1,50 @@
+# coding=utf-8
+import tensorflow as tf
+
+from tf_geometric.utils.graph_utils import convert_dense_adj_to_edge
+
+
+def cluster_pool(x, edge_index, edge_weight, assign_edge_index, assign_edge_weight, num_clusters, num_nodes=None):
+    """
+    Coarsen the input Graph based on cluster assignment of nodes and output pooled Graph.
+
+    :param x: Tensor, shape: [num_nodes, num_features], node features
+    :param edge_index: Tensor, shape: [2, num_edges], edge information
+    :param edge_weight: Tensor or None, shape: [num_edges]
+    :param assign_edge_index: Tensor, shape: [2, num_nodes], edge between clusters and nodes
+    :param assign_edge_weight: Tensor or None, shape: [num_nodes], edge between clusters and nodes
+    :param num_clusters: Number of clusters.
+    :param num_nodes: Number of nodes, Optional, used for boosting performance.
+    :return: Pooled Graph: [pooled_x, pooled_edge_index, pooled_edge_weight]
+    """
+
+    # Manually passing in num_nodes, num_clusters, and num_graphs can boost the performance
+    if num_nodes is None:
+        num_nodes = tf.shape(x)[0]
+
+    assign_row, assign_col = assign_edge_index[0], assign_edge_index[1]
+
+    transposed_sparse_assign_probs = tf.SparseTensor(
+        indices=tf.cast(tf.stack([assign_col, assign_row], axis=1), dtype=tf.int64),
+        values=assign_edge_weight,
+        dense_shape=[num_clusters, num_nodes]
+    )
+    transposed_sparse_assign_probs = tf.sparse.reorder(transposed_sparse_assign_probs)
+
+    sparse_adj = tf.SparseTensor(
+        indices=tf.cast(tf.transpose(edge_index, [1, 0]), dtype=tf.int64),
+        values=edge_weight,
+        dense_shape=[num_nodes, num_nodes]
+    )
+    sparse_adj = tf.sparse.reorder(sparse_adj)
+
+    # compute S'AS
+    # Since tf only support sparse @ dense, we compute S'AS as (S' @ (S' @ dense(A))')'
+    pooled_adj = tf.sparse.sparse_dense_matmul(transposed_sparse_assign_probs, tf.sparse.to_dense(sparse_adj))
+    pooled_adj = tf.sparse.sparse_dense_matmul(transposed_sparse_assign_probs, tf.transpose(pooled_adj, [1, 0]))
+    pooled_adj = tf.transpose(pooled_adj, [1, 0])
+
+    pooled_edge_index, pooled_edge_weight = convert_dense_adj_to_edge(pooled_adj)
+
+    pooled_x = tf.sparse.sparse_dense_matmul(transposed_sparse_assign_probs, x)
+    return pooled_x, pooled_edge_index, pooled_edge_weight

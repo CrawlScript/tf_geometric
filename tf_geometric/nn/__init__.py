@@ -16,7 +16,5 @@ from tf_geometric.nn.sampling.drop_edge import drop_edge
 
 from tf_geometric.nn.pool.common_pool import mean_pool, min_pool, max_pool, sum_pool
 from tf_geometric.nn.pool.topk_pool import topk_pool
-from tf_geometric.nn.pool.diff_pool import diff_pool
+from tf_geometric.nn.pool.diff_pool import diff_pool, diff_pool_coarsen
 from tf_geometric.nn.pool.set2set import set2set
-
-
