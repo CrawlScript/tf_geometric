@@ -104,6 +104,9 @@ diff_pool
 
 .. autofunction:: tf_geometric.nn.diff_pool
 
+.. autofunction:: tf_geometric.nn.diff_pool_coarsen
+
+
 
 set2set
 --------------------------------------------------------------
@@ -116,6 +119,8 @@ cluster_pool
 --------------------------------------------------------------
 
 .. autofunction:: tf_geometric.nn.cluster_pool
+
+
 
 
 sag_pool
