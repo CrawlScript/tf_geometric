@@ -36,6 +36,5 @@ def segment_softmax(data, segment_ids, num_segments):
 def segment_count(index, num_segments=None):
     data = tf.ones_like(index)
     if num_segments is None:
-        return tf.math.segment_sum(data, index)
-    else:
-        return tf.math.unsorted_segment_sum(data, index, num_segments=num_segments)
+        num_segments = tf.reduce_max(index) + 1
+    return tf.math.unsorted_segment_sum(data, index, num_segments=num_segments)

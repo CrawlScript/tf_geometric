@@ -268,13 +268,17 @@ class BatchGraph(Graph):
         return tf.reduce_max(self.node_graph_index) + 1
 
     def to_graphs(self):
-        num_nodes_list = tf.math.segment_sum(tf.ones([self.num_nodes]), self.node_graph_index)
+        # num_nodes_list = tf.math.segment_sum(tf.ones([self.num_nodes]), self.node_graph_index)
+        num_graphs = self.num_edges
+        num_nodes_list = tf.math.unsorted_segment_sum(tf.ones([self.num_nodes]), self.node_graph_index, num_graphs)
+
         num_nodes_before_graph = tf.concat([
             tf.zeros([1]),
             tf.math.cumsum(num_nodes_list)
         ], axis=0).numpy().astype(np.int32).tolist()
 
-        num_edges_list = tf.math.segment_sum(tf.ones([self.num_edges]), self.edge_graph_index)
+        # num_edges_list = tf.math.segment_sum(tf.ones([self.num_edges]), self.edge_graph_index)
+        num_edges_list = tf.math.unsorted_segment_sum(tf.ones([self.num_edges]), self.edge_graph_index, num_graphs)
         num_edges_before_graph = tf.concat([
             tf.zeros([1]),
             tf.math.cumsum(num_edges_list)
