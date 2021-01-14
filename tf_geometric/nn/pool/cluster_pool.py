@@ -1,7 +1,7 @@
 # coding=utf-8
 import tensorflow as tf
 
-from tf_geometric.utils.graph_utils import convert_dense_adj_to_edge
+from tf_geometric.utils.graph_utils import convert_dense_adj_to_edge, remove_self_loop_edge, add_self_loop_edge
 
 
 def cluster_pool(x, edge_index, edge_weight, assign_edge_index, assign_edge_weight, num_clusters, num_nodes=None):
@@ -21,7 +21,10 @@ def cluster_pool(x, edge_index, edge_weight, assign_edge_index, assign_edge_weig
 
     # Manually passing in num_nodes, num_clusters, and num_graphs can boost the performance
     if num_nodes is None:
-        num_nodes = tf.shape(x)[0]
+        if x is None:
+            raise Exception("Please provide num_nodes if x is None")
+        else:
+            num_nodes = tf.shape(x)[0]
 
     assign_row, assign_col = assign_edge_index[0], assign_edge_index[1]
 
@@ -46,6 +49,10 @@ def cluster_pool(x, edge_index, edge_weight, assign_edge_index, assign_edge_weig
     pooled_adj = tf.transpose(pooled_adj, [1, 0])
 
     pooled_edge_index, pooled_edge_weight = convert_dense_adj_to_edge(pooled_adj)
+    pooled_edge_index, pooled_edge_weight = remove_self_loop_edge(pooled_edge_index, pooled_edge_weight)
 
-    pooled_x = tf.sparse.sparse_dense_matmul(transposed_sparse_assign_probs, x)
+    if x is not None:
+        pooled_x = tf.sparse.sparse_dense_matmul(transposed_sparse_assign_probs, x)
+    else:
+        pooled_x = None
     return pooled_x, pooled_edge_index, pooled_edge_weight

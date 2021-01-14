@@ -11,6 +11,8 @@ from tf_geometric.nn.conv.tagcn import tagcn
 from tf_geometric.nn.conv.graph_sage import mean_graph_sage, mean_pool_graph_sage, max_pool_graph_sage, gcn_graph_sage, lstm_graph_sage
 from tf_geometric.nn.conv.appnp import appnp
 from tf_geometric.nn.conv.gin import gin
+from tf_geometric.nn.conv.le_conv import le_conv
+
 
 from tf_geometric.nn.sampling.drop_edge import drop_edge
 

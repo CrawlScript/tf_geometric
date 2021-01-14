@@ -34,7 +34,7 @@ def le_conv(x, edge_index, edge_weight, self_kernel, aggr_self_kernel, aggr_neig
     repeated_aggr_h = (repeated_aggr_self_h - repeated_aggr_neighbor_h) * tf.expand_dims(edge_weight, axis=-1)
     aggr_h = tf.math.unsorted_segment_sum(repeated_aggr_h, row, num_nodes)
 
-    h = self_h - aggr_h
+    h = self_h + aggr_h
 
     if activation is not None:
         h = activation(h)
