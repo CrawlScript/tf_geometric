@@ -114,8 +114,10 @@ def asap(x, edge_index, edge_weight, node_graph_index,
     assign_col = tf.boolean_mask(col_with_self_loop, assign_mask)
     assign_edge_index = tf.stack([assign_row, assign_col], axis=0)
 
-    assign_edge_weight = tf.reshape(tf.boolean_mask(normed_attention_score, assign_mask), [-1])
+    assign_edge_weight = tf.boolean_mask(normed_attention_score, assign_mask)
+    assign_edge_weight = tf.reshape(assign_edge_weight, [-1])
     assign_edge_weight = tf.stop_gradient(assign_edge_weight)
+
 
     # Coarsen in a large BatchGraph.
     _, pooled_edge_index, pooled_edge_weight = cluster_pool(
