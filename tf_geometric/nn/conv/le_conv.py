@@ -2,7 +2,10 @@
 import tensorflow as tf
 
 
-def le_conv(x, edge_index, edge_weight, self_kernel, aggr_self_kernel, aggr_neighbor_kernel, activation=None):
+def le_conv(x, edge_index, edge_weight,
+            self_kernel, self_bias,
+            aggr_self_kernel, aggr_self_bias,
+            aggr_neighbor_kernel, aggr_neighbor_bias, activation=None):
     """
     Functional API for LeConv in ASAP.
 
@@ -23,9 +26,16 @@ def le_conv(x, edge_index, edge_weight, self_kernel, aggr_self_kernel, aggr_neig
 
     num_nodes = tf.shape(x)[0]
     self_h = x @ self_kernel
+    if self_bias is not None:
+        self_h += self_bias
 
     aggr_self_h = x @ aggr_self_kernel
+    if aggr_self_bias is not None:
+        aggr_self_h += aggr_self_bias
+
     aggr_neighbor_h = x @ aggr_neighbor_kernel
+    if aggr_neighbor_bias is not None:
+        aggr_neighbor_h += aggr_neighbor_bias
 
     row, col = edge_index[0], edge_index[1]
 

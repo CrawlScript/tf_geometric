@@ -10,25 +10,51 @@ class MeanGraphSage(tf.keras.Model):
     GraphSAGE: `"Inductive Representation Learning on Large Graphs" <https://arxiv.org/abs/1706.02216>`_ paper
     """
 
-    def __init__(self, units, activation=tf.nn.relu, use_bias=True,
-                 normalize=False, *args, **kwargs):
+    def __init__(self, units, activation=tf.nn.relu, use_bias=True, concat=True,
+                 normalize=False,
+                 kernel_regularizer=None, bias_regularizer=None,
+                 *args, **kwargs):
+        """
+
+        :param units:
+        :param activation:
+        :param use_bias:
+        :param concat:
+        :param normalize:
+        :param kernel_regularizer: Regularizer function applied to the `kernel` weights matrix.
+        :param bias_regularizer: Regularizer function applied to the bias vector.
+        :param args:
+        :param kwargs:
+        """
         super().__init__(*args, **kwargs)
         self.units = units
         self.activation = activation
         self.use_bias = use_bias
+        self.concat = concat
         self.normalize = normalize
+
+        if concat and (units % 2 != 0):
+            raise Exception("units must be a event number if concat is True")
+
+        self.kernel_regularizer = kernel_regularizer
+        self.bias_regularizer = bias_regularizer
 
     def build(self, input_shape):
         x_shape = input_shape[0]
         num_features = x_shape[-1]
 
-        self.neighs_kernel = self.add_weight("neighs_kernel", shape=[num_features, self.units],
-                                             initializer="glorot_uniform")
-        self.self_kernel = self.add_weight("self_kernel", shape=[num_features, self.units],
-                                           initializer="glorot_uniform")
+        if self.concat:
+            kernel_units = self.units // 2
+        else:
+            kernel_units = self.units
+
+        self.neighs_kernel = self.add_weight("neighs_kernel", shape=[num_features, kernel_units],
+                                             initializer="glorot_uniform", regularizer=self.kernel_regularizer)
+        self.self_kernel = self.add_weight("self_kernel", shape=[num_features, kernel_units],
+                                           initializer="glorot_uniform", regularizer=self.kernel_regularizer)
 
         if self.use_bias:
-            self.bias = self.add_weight("bias", shape=[self.units * 2], initializer="zeros")
+            self.bias = self.add_weight("bias", shape=[self.units], initializer="zeros", regularizer=self.bias_regularizer)
 
     def call(self, inputs, cache=None, training=None, mask=None):
         """
@@ -43,8 +69,10 @@ class MeanGraphSage(tf.keras.Model):
             x, edge_index = inputs
             edge_weight = None
 
-        return mean_graph_sage(x, edge_index, edge_weight, self.neighs_kernel, self.self_kernel, self.bias,
-                               self.activation, self.normalize)
+        return mean_graph_sage(x, edge_index, edge_weight, self.neighs_kernel, self.self_kernel,
+                               bias=self.bias,
+                               activation=self.activation, concat=self.concat,
+                               normalize=self.normalize)
 
 
 class GCNGraphSage(tf.keras.Model):
@@ -85,31 +113,39 @@ class GCNGraphSage(tf.keras.Model):
 
 
 class MeanPoolGraphSage(tf.keras.Model):
-    def __init__(self, units, activation=tf.nn.relu, use_bias=True,
+    def __init__(self, units, activation=tf.nn.relu, use_bias=True, concat=True,
                  normalize=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.units = units
         self.activation = activation
         self.use_bias = use_bias
+        self.concat = concat
         self.normalize = normalize
+
+        if concat and (units % 2 != 0):
+            raise Exception("units must be a event number if concat is True")
 
     def build(self, input_shape):
         x_shape = input_shape[0]
         num_features = x_shape[-1]
 
-        self.mlp_kernel = self.add_weight("mlp_kernel", shape=[num_features, self.units * 4],
-                                          initializer="glorot_uniform")
+        if self.concat:
+            kernel_units = self.units // 2
+        else:
+            kernel_units = self.units
+
+        self.mlp_kernel = self.add_weight("mlp_kernel", shape=[num_features, kernel_units * 4], initializer="glorot_uniform")
         if self.use_bias:
-            self.mlp_bias = self.add_weight("mlp_bias", shape=[self.units * 4], initializer="zeros")
+            self.mlp_bias = self.add_weight("mlp_bias", shape=[kernel_units * 4], initializer="zeros")
         # self.mlp_kernel = keras.layers.Dense(self.units, input_dim=2, use_bias=True, kernel_regularizer= tf.nn.l2_normalize, activation=tf.nn.relu)
 
-        self.neighs_kernel = self.add_weight("neighs_kernel", shape=[self.units * 4, self.units],
+        self.neighs_kernel = self.add_weight("neighs_kernel", shape=[kernel_units * 4, kernel_units],
                                              initializer="glorot_uniform")
-        self.self_kernel = self.add_weight("self_kernel", shape=[num_features, self.units],
+        self.self_kernel = self.add_weight("self_kernel", shape=[num_features, kernel_units],
                                            initializer="glorot_uniform")
 
         if self.use_bias:
-            self.bias = self.add_weight("bias", shape=[self.units * 2], initializer="zeros")
+            self.bias = self.add_weight("bias", shape=[self.units], initializer="zeros")
 
     def call(self, inputs, cache=None, training=None, mask=None):
         """
@@ -126,34 +162,44 @@ class MeanPoolGraphSage(tf.keras.Model):
             edge_weight = None
 
         return mean_pool_graph_sage(x, edge_index, edge_weight, self.mlp_kernel, self.neighs_kernel,
-                                    self.self_kernel, self.mlp_bias, self.bias, self.activation,
-                                    self.normalize)
+                                    self.self_kernel, self.mlp_bias,
+                                    bias=self.bias, activation=self.activation,
+                                    concat=self.concat, normalize=self.normalize)
 
 
 class MaxPoolGraphSage(tf.keras.Model):
     def __init__(self, units, activation=tf.nn.relu, use_bias=True,
-                 normalize=False, *args, **kwargs):
+                 concat=True, normalize=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.units = units
         self.activation = activation
         self.use_bias = use_bias
+        self.concat = concat
         self.normalize = normalize
+
+        if concat and (units % 2 != 0):
+            raise Exception("units must be a event number if concat is True")
 
     def build(self, input_shape):
         x_shape = input_shape[0]
         num_features = x_shape[-1]
 
-        self.mlp_kernel = self.add_weight("mlp_kernel", shape=[num_features, self.units * 4],
+        if self.concat:
+            kernel_units = self.units // 2
+        else:
+            kernel_units = self.units
+
+        self.mlp_kernel = self.add_weight("mlp_kernel", shape=[num_features, kernel_units * 4],
                                           initializer="glorot_uniform")
         if self.use_bias:
-            self.mlp_bias = self.add_weight("mlp_bias", shape=[self.units * 4], initializer="zeros")
-        self.neighs_kernel = self.add_weight("neighs_kernel", shape=[self.units * 4, self.units],
+            self.mlp_bias = self.add_weight("mlp_bias", shape=[kernel_units * 4], initializer="zeros")
+        self.neighs_kernel = self.add_weight("neighs_kernel", shape=[kernel_units * 4, kernel_units],
                                              initializer="glorot_uniform")
-        self.self_kernel = self.add_weight("self_kernel", shape=[num_features, self.units],
+        self.self_kernel = self.add_weight("self_kernel", shape=[num_features, kernel_units],
                                            initializer="glorot_uniform")
 
         if self.use_bias:
-            self.bias = self.add_weight("bias", shape=[self.units * 2], initializer="zeros")
+            self.bias = self.add_weight("bias", shape=[self.units], initializer="zeros")
 
     def call(self, inputs, cache=None, training=None, mask=None):
         """
@@ -171,31 +217,42 @@ class MaxPoolGraphSage(tf.keras.Model):
 
         return max_pool_graph_sage(x, edge_index, edge_weight, self.mlp_kernel, self.neighs_kernel,
                                    self.self_kernel,
-                                   self.mlp_bias, self.bias, self.activation, self.normalize)
+                                   self.mlp_bias,
+                                   bias=self.bias, activation=self.activation,
+                                   concat=self.concat, normalize=self.normalize)
 
 
 class LSTMGraphSage(tf.keras.Model):
 
     def __init__(self, units, activation=tf.nn.relu, use_bias=True,
-                 normalize=False, *args, **kwargs):
+                 concat=True, normalize=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.units = units
         self.activation = activation
         self.use_bias = use_bias
+        self.concat = concat
         self.normalize = normalize
+
+        if concat and (units % 2 != 0):
+            raise Exception("units must be a event number if concat is True")
 
     def build(self, input_shape):
         x_shape = input_shape[0]
         num_features = x_shape[-1]
 
-        self.lstm = tf.keras.layers.LSTM(self.units, kernel_regularizer=tf.nn.l2_normalize, return_sequences=True)
-        self.neighs_kernel = self.add_weight("neighs_kernel", shape=[self.units, self.units],
+        if self.concat:
+            kernel_units = self.units // 2
+        else:
+            kernel_units = self.units
+
+        self.lstm = tf.keras.layers.LSTM(kernel_units, kernel_regularizer=tf.nn.l2_normalize, return_sequences=True)
+        self.neighs_kernel = self.add_weight("neighs_kernel", shape=[kernel_units, kernel_units],
                                              initializer="glorot_uniform")
-        self.self_kernel = self.add_weight("self_kernel", shape=[num_features, self.units],
+        self.self_kernel = self.add_weight("self_kernel", shape=[num_features, kernel_units],
                                            initializer="glorot_uniform")
 
         if self.use_bias:
-            self.bias = self.add_weight("bias", shape=[self.units * 2], initializer="zeros")
+            self.bias = self.add_weight("bias", shape=[self.units], initializer="zeros")
 
     def call(self, inputs, cache=None, training=None, mask=None):
         """
@@ -209,5 +266,6 @@ class LSTMGraphSage(tf.keras.Model):
         x, edge_index = inputs[0], inputs[1]
 
         return lstm_graph_sage(x, edge_index, self.lstm, self.neighs_kernel,
-                               self.self_kernel, self.bias, self.activation,
-                               self.normalize)
+                               self.self_kernel,
+                               bias=self.bias, activation=self.activation,
+                               concat=self.concat, normalize=self.normalize)

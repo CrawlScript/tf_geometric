@@ -69,16 +69,16 @@ class SAGPoolHModel(tf.keras.Model):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        self.gcns = []
         self.sag_pools = []
 
         for _ in range(3):
-            sag_pool = SAGPool(
-                feature_gnn=GCN(128, activation=tf.nn.relu),
+            self.gcns.append(GCN(128, activation=tf.nn.relu))
+            self.sag_pools.append(SAGPool(
                 score_gnn=GCN(1),
                 ratio=0.5,
                 score_activation=tf.nn.tanh
-            )
-            self.sag_pools.append(sag_pool)
+            ))
 
         self.mlp = tf.keras.Sequential([
             tf.keras.layers.Dense(128, activation=tf.nn.relu),
@@ -93,7 +93,8 @@ class SAGPoolHModel(tf.keras.Model):
         h = x
 
         outputs = []
-        for sag_pool in self.sag_pools:
+        for gcn, sag_pool in zip(self.gcns, self.sag_pools):
+            h = gcn([h, edge_index, edge_weight], training=training)
             h, edge_index, edge_weight, node_graph_index = sag_pool([h, edge_index, edge_weight, node_graph_index],
                                                                     training=training)
             output = tf.concat([

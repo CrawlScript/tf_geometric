@@ -22,3 +22,4 @@ from tf_geometric.nn.pool.diff_pool import diff_pool, diff_pool_coarsen
 from tf_geometric.nn.pool.set2set import set2set
 from tf_geometric.nn.pool.cluster_pool import cluster_pool
 from tf_geometric.nn.pool.sag_pool import sag_pool
+from tf_geometric.nn.pool.asap import asap

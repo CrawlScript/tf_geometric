@@ -8,8 +8,9 @@ from tf_geometric.nn import mean_reducer, max_reducer, sum_reducer
 from tf_geometric.nn.conv.gcn import gcn_mapper, gcn_norm_edge
 
 
-def mean_graph_sage(x, edge_index, edge_weight, neighbor_kernel, self_kernel, bias=None, activation=None,
-                    normalize=False):
+def mean_graph_sage(x, edge_index, edge_weight, neighbor_kernel, self_kernel, bias=None,
+                    activation=None,
+                    concat=True, normalize=False):
     """
 
     :param x: Tensor, shape: [num_nodes, num_features], node features
@@ -39,8 +40,10 @@ def mean_graph_sage(x, edge_index, edge_weight, neighbor_kernel, self_kernel, bi
     neighbor_msg = neighbor_reduced_msg @ neighbor_kernel
     x = x @ self_kernel
 
-    h = tf.concat([neighbor_msg, x], axis=1)
-    # h = x @ self_kernel + neighbor_msg
+    if concat:
+        h = tf.concat([x, neighbor_msg], axis=1)
+    else:
+        h = x + neighbor_msg
 
     if bias is not None:
         h += bias
@@ -55,6 +58,7 @@ def mean_graph_sage(x, edge_index, edge_weight, neighbor_kernel, self_kernel, bi
 
 
 def gcn_graph_sage(x, edge_index, edge_weight, kernel, bias=None, activation=None,
+                    concat=True,
                    normalize=False, cache=None):
     """
 
@@ -75,14 +79,16 @@ def gcn_graph_sage(x, edge_index, edge_weight, kernel, bias=None, activation=Non
     if edge_weight is not None:
         edge_weight = tf.ones([edge_index.shape[1]], dtype=tf.float32)
 
-    updated_edge_index, normed_edge_weight = gcn_norm_edge(edge_index, x.shape[0], edge_weight, cache)
+    num_nodes = tf.shape(x)[0]
+
+    updated_edge_index, normed_edge_weight = gcn_norm_edge(edge_index, num_nodes, edge_weight, cache)
     row, col = updated_edge_index
     repeated_x = tf.gather(x, row)
     neighbor_x = tf.gather(x, col)
 
     neighbor_x = gcn_mapper(repeated_x, neighbor_x, edge_weight=normed_edge_weight)
 
-    reduced_msg = sum_reducer(neighbor_x, row, num_nodes=x.shape[0])
+    reduced_msg = sum_reducer(neighbor_x, row, num_nodes=num_nodes)
 
     h = reduced_msg @ kernel
     if bias is not None:
@@ -98,7 +104,8 @@ def gcn_graph_sage(x, edge_index, edge_weight, kernel, bias=None, activation=Non
 
 
 def mean_pool_graph_sage(x, edge_index, edge_weight, mlp_kernel, neighbor_kernel, self_kernel,
-                         mlp_bias=None, bias=None, activation=None, normalize=False):
+                         mlp_bias=None, bias=None, activation=None,
+                         concat=True, normalize=False):
     """
 
         :param x: Tensor, shape: [num_nodes, num_features], node features
@@ -139,7 +146,11 @@ def mean_pool_graph_sage(x, edge_index, edge_weight, mlp_kernel, neighbor_kernel
     from_neighbor = reduced_h @ neighbor_kernel
     from_x = x @ self_kernel
 
-    output = tf.concat([from_neighbor, from_x], axis=1)
+    if concat:
+        output = tf.concat([from_x, from_neighbor], axis=1)
+    else:
+        output = from_x + from_neighbor
+
     if bias is not None:
         output += bias
 
@@ -153,7 +164,8 @@ def mean_pool_graph_sage(x, edge_index, edge_weight, mlp_kernel, neighbor_kernel
 
 
 def max_pool_graph_sage(x, edge_index, edge_weight, mlp_kernel, neighbor_kernel, self_kernel,
-                        mlp_bias=None, bias=None, activation=None, normalize=False):
+                        mlp_bias=None, bias=None, activation=None,
+                        concat=True, normalize=False):
     """
 
             :param x: Tensor, shape: [num_nodes, num_features], node features
@@ -192,7 +204,11 @@ def max_pool_graph_sage(x, edge_index, edge_weight, mlp_kernel, neighbor_kernel,
     from_neighs = reduced_h @ neighbor_kernel
     from_x = x @ self_kernel
 
-    output = tf.concat([from_neighs, from_x], axis=1)
+    if concat:
+        output = tf.concat([from_x, from_neighs], axis=1)
+    else:
+        output = from_x + from_neighs
+
     if bias is not None:
         output += bias
 
@@ -206,7 +222,8 @@ def max_pool_graph_sage(x, edge_index, edge_weight, mlp_kernel, neighbor_kernel,
 
 
 def lstm_graph_sage(x, edge_index, lstm, neighbor_kernel, self_kernel,
-                    bias=None, activation=None, normalize=False):
+                    bias=None, activation=None,
+                    concat=True, normalize=False):
     """
 
             :param x: Tensor, shape: [num_nodes, num_features], node features.
@@ -249,7 +266,11 @@ def lstm_graph_sage(x, edge_index, lstm, neighbor_kernel, self_kernel,
     from_neighs = reduced_h @ neighbor_kernel
     from_x = x @ self_kernel
 
-    output = tf.concat([from_neighs, from_x], axis=1)
+    if concat:
+        output = tf.concat([from_x, from_neighs], axis=1)
+    else:
+        output = from_x + from_neighs
+
     if bias is not None:
         output += bias
 

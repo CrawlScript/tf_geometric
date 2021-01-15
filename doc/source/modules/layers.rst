@@ -140,3 +140,11 @@ SAGPool
 .. autoclass:: tf_geometric.layers.SAGPool
    :special-members: __init__
    :members: call
+
+
+
+ASAP
+--------------------
+.. autoclass:: tf_geometric.layers.ASAP
+   :special-members: __init__
+   :members: call

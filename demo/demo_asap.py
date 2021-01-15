@@ -1,14 +1,13 @@
 # coding=utf-8
 import os
 
-from tf_geometric.layers import DiffPool, GCN
+from tf_geometric.layers import ASAP, GCN
 from tf_geometric.utils import tf_utils
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 import tf_geometric as tfg
 import tensorflow as tf
-from tensorflow import keras
 import numpy as np
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
@@ -61,70 +60,51 @@ def create_graph_generator(graphs, batch_size, infinite=False, shuffle=False):
             break
 
 
-batch_size = 50
+batch_size = 128
 
 
-# Multi-layer GCN Model
-class GCNModel(tf.keras.Model):
+class ASAPModel(tf.keras.Model):
 
-    def __init__(self, units_list, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.gcns = [
-            # tfg.layers.GCN(units, activation=tf.nn.relu if i < len(units_list) - 1 else None)
-            tfg.layers.MeanGraphSage(units, concat=False, activation=tf.nn.relu if i < len(units_list) - 1 else None)
-            for i, units in enumerate(units_list)
-        ]
+        self.gcns = []
+        self.asaps = []
 
-    def call(self, inputs, training=None, mask=None):
-        x, edge_index, edge_weight = inputs
-        h = x
-        for gcn in self.gcns:
-            h = gcn([h, edge_index, edge_weight], training=training)
-        return h
-
-
-
-class DiffPoolModel(tf.keras.Model):
-
-    def __init__(self, num_clusters_list, num_features_list, num_classes, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        self.diff_pools = []
-
-        for num_features, num_clusters in zip(num_features_list, num_clusters_list):
-            diff_pool = DiffPool(
-                feature_gnn=GCNModel([num_features, num_features]),
-                assign_gnn=GCNModel([num_features, num_clusters]),
-                units=num_features, num_clusters=num_clusters, activation=tf.nn.relu
-            )
-            self.diff_pools.append(diff_pool)
+        for _ in range(3):
+            self.gcns.append(GCN(64, activation=tf.nn.relu))
+            self.asaps.append(ASAP(ratio=0.5, drop_rate=0.1))
 
         self.mlp = tf.keras.Sequential([
+            tf.keras.layers.Dense(64, activation=tf.nn.relu),
             tf.keras.layers.Dropout(0.5),
             tf.keras.layers.Dense(num_classes)
         ])
 
     def call(self, inputs, training=None, mask=None):
+
         x, edge_index, edge_weight, node_graph_index = inputs
         h = x
-        graph_h_list = []
-        for diff_pool in self.diff_pools:
-            h, edge_index, edge_weight, node_graph_index = diff_pool([h, edge_index, edge_weight, node_graph_index],
-                                                                     training=training)
-            graph_h = tfg.nn.max_pool(h, node_graph_index)
-            graph_h_list.append(graph_h)
 
-        graph_h = tf.concat(graph_h_list, axis=-1)
-        logits = self.mlp(graph_h, training=training)
+        outputs = []
+        for gcn, asap in zip(self.gcns, self.asaps):
+            h = gcn([h, edge_index, edge_weight], training=training)
+            h, edge_index, edge_weight, node_graph_index = asap([h, edge_index, edge_weight, node_graph_index],
+                                                                    training=training)
+            output = tf.concat([
+                tfg.nn.mean_pool(h, node_graph_index),
+                tfg.nn.max_pool(h, node_graph_index)
+            ], axis=-1)
+            outputs.append(output)
 
-        return logits
+        h = tf.reduce_sum(tf.stack(outputs, axis=1), axis=1)
+
+        # Predict Graph Labels
+        h = self.mlp(h, training=training)
+        return h
 
 
-num_clusters_list = [20, 5]
-num_features_list = [128, 128]
-
-model = DiffPoolModel(num_clusters_list, num_features_list, num_classes)
+model = ASAPModel()
 
 
 def forward(batch_graph, training=False):
@@ -133,7 +113,7 @@ def forward(batch_graph, training=False):
 
 
 def evaluate():
-    accuracy_m = keras.metrics.Accuracy()
+    accuracy_m = tf.keras.metrics.Accuracy()
 
     for test_batch_graph in create_graph_generator(test_graphs, batch_size, shuffle=False, infinite=False):
         logits = forward(test_batch_graph)
@@ -143,9 +123,10 @@ def evaluate():
     return accuracy_m.result().numpy()
 
 
-optimizer = tf.keras.optimizers.Adam(learning_rate=1e-3)
+optimizer = tf.keras.optimizers.Adam(learning_rate=1e-2)
 
 train_batch_generator = create_graph_generator(train_graphs, batch_size, shuffle=True, infinite=True)
+
 
 for step in tqdm(range(20000)):
     train_batch_graph = next(train_batch_generator)
@@ -164,3 +145,4 @@ for step in tqdm(range(20000)):
         mean_loss = tf.reduce_mean(losses)
         accuracy = evaluate()
         print("step = {}\tloss = {}\taccuracy = {}".format(step, mean_loss, accuracy))
+

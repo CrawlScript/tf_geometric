@@ -127,3 +127,10 @@ sag_pool
 --------------------------------------------------------------
 
 .. autofunction:: tf_geometric.nn.sag_pool
+
+
+
+asap
+--------------------------------------------------------------
+
+.. autofunction:: tf_geometric.nn.asap

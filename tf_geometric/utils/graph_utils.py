@@ -38,6 +38,11 @@ def convert_dense_adj_to_edge(dense_adj):
     col = tf.reshape(col, [-1])
     edge_index = tf.stack([row, col], axis=0)
     edge_weight = tf.reshape(dense_adj, [-1])
+
+    edge_mask = tf.not_equal(edge_weight, 0.0)
+    edge_index = tf.boolean_mask(edge_index, edge_mask, axis=1)
+    edge_weight = tf.boolean_mask(edge_weight, edge_mask)
+
     return edge_index, edge_weight
 
 

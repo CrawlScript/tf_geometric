@@ -49,7 +49,8 @@ def cluster_pool(x, edge_index, edge_weight, assign_edge_index, assign_edge_weig
     pooled_adj = tf.transpose(pooled_adj, [1, 0])
 
     pooled_edge_index, pooled_edge_weight = convert_dense_adj_to_edge(pooled_adj)
-    pooled_edge_index, pooled_edge_weight = remove_self_loop_edge(pooled_edge_index, pooled_edge_weight)
+
+    # pooled_edge_index, pooled_edge_weight = remove_self_loop_edge(pooled_edge_index, pooled_edge_weight)
 
     if x is not None:
         pooled_x = tf.sparse.sparse_dense_matmul(transposed_sparse_assign_probs, x)

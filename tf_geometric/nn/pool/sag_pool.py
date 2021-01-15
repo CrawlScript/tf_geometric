@@ -5,7 +5,7 @@ from tf_geometric.nn.pool.topk_pool import topk_pool
 
 
 def sag_pool(x, edge_index, edge_weight, node_graph_index,
-             feature_gnn, score_gnn, K=None, ratio=None,
+             score_gnn, K=None, ratio=None,
              score_activation=None, training=None, cache=None):
     """
     Functional API for SAGPool
@@ -14,8 +14,6 @@ def sag_pool(x, edge_index, edge_weight, node_graph_index,
     :param edge_index: Tensor, shape: [2, num_edges], edge information
     :param edge_weight: Tensor or None, shape: [num_edges]
     :param node_graph_index: Tensor/NDArray, shape: [num_nodes], graph index for each node
-    :param feature_gnn: A GNN model to learn pooled node features, [x, edge_index, edge_weight] => updated_x,
-        where updated_x corresponds to high-order node features.
     :param score_gnn: A GNN model to score nodes for the pooling, [x, edge_index, edge_weight] => node_score.
     :param K: Keep top K targets for each source
     :param ratio: Keep num_targets * ratio targets for each source
@@ -27,10 +25,8 @@ def sag_pool(x, edge_index, edge_weight, node_graph_index,
     """
 
     if cache is None:
-        h = feature_gnn([x, edge_index, edge_weight], training=training)
         node_score = score_gnn([x, edge_index, edge_weight], training=training)
     else:
-        h = feature_gnn([x, edge_index, edge_weight], training=training, cache=cache)
         node_score = score_gnn([x, edge_index, edge_weight], training=training, cache=cache)
 
     topk_node_index = topk_pool(node_graph_index, node_score, K=K, ratio=ratio)
@@ -39,7 +35,7 @@ def sag_pool(x, edge_index, edge_weight, node_graph_index,
         node_score = score_activation(node_score)
 
     pooled_graph = BatchGraph(
-        x=h * node_score,
+        x=x * node_score,
         edge_index=edge_index,
         node_graph_index=node_graph_index,
         edge_graph_index=None,

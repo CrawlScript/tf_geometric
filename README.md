@@ -87,7 +87,7 @@ We recommend you to get started with some demo.
 + [Self-Attention Graph Pooling (SAGPooling)](demo/demo_sag_pool_h.py)
 + [Hierarchical Graph Representation Learning with Differentiable Pooling (DiffPool)](demo/demo_diff_pool.py)
 + [Order Matters: Sequence to Sequence for Sets (Set2Set)](demo/demo_set2set.py)
-
++ [ASAP: Adaptive Structure Aware Pooling for Learning Hierarchical Graph Representations (ASAP)](demo/demo_asap.py)
 
 
 
