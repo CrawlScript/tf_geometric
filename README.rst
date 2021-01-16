@@ -95,6 +95,7 @@ Graph Classification
 * `Self-Attention Graph Pooling (SAGPooling) <demo/demo_sag_pool_h.py>`_
 * `Hierarchical Graph Representation Learning with Differentiable Pooling (DiffPool) <demo/demo_diff_pool.py>`_
 * `Order Matters: Sequence to Sequence for Sets (Set2Set) <demo/demo_set2set.py>`_
+* `ASAP: Adaptive Structure Aware Pooling for Learning Hierarchical Graph Representations (ASAP) <demo/demo_asap.py>`_
 
 Link Prediction
 ^^^^^^^^^^^^^^^
