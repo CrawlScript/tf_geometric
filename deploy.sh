@@ -1,3 +1,4 @@
+pyclean .
 m2r README.md
 rm -rf tf_geometric.egg-info
 rm -rf dist
