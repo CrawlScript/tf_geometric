@@ -20,8 +20,8 @@ for graph in train_graphs + valid_graphs + test_graphs:
 num_classes = train_graphs[0].y.shape[1]
 
 graph_sages = [
-    tfg.layers.MaxPoolGraphSage(units=256, activation=tf.nn.relu),
-    tfg.layers.MaxPoolGraphSage(units=256, activation=tf.nn.relu)
+    tfg.layers.MaxPoolGraphSage(units=256, activation=tf.nn.relu, concat=True),
+    tfg.layers.MaxPoolGraphSage(units=256, activation=tf.nn.relu, concat=True)
 ]
 
 fc = tf.keras.Sequential([
@@ -84,7 +84,7 @@ def evaluate(graphs):
 
 optimizer = tf.keras.optimizers.Adam(learning_rate=1e-2)
 
-for epoch in tqdm(range(10)):
+for epoch in tqdm(range(20)):
 
     for graph in train_graphs:
         with tf.GradientTape() as tape:

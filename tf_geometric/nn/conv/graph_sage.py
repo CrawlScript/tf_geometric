@@ -8,7 +8,10 @@ from tf_geometric.nn import mean_reducer, max_reducer, sum_reducer
 from tf_geometric.nn.conv.gcn import gcn_mapper, gcn_norm_edge
 
 
-def mean_graph_sage(x, edge_index, edge_weight, neighbor_kernel, self_kernel, bias=None,
+def mean_graph_sage(x, edge_index, edge_weight,
+                    self_kernel,
+                    neighbor_kernel,
+                    bias=None,
                     activation=None,
                     concat=True, normalize=False):
     """
@@ -16,8 +19,8 @@ def mean_graph_sage(x, edge_index, edge_weight, neighbor_kernel, self_kernel, bi
     :param x: Tensor, shape: [num_nodes, num_features], node features
     :param edge_index: Tensor, shape: [2, num_edges], edge information
     :param edge_weight: Tensor or None, shape: [num_edges]
-    :param neighbor_kernel: Tensor, shape: [num_features, num_hidden_units], weight.
     :param self_kernel: Tensor, shape: [num_features, num_hidden_units], weight
+    :param neighbor_kernel: Tensor, shape: [num_features, num_hidden_units], weight.
     :param bias: Tensor, shape: [num_output_features], bias
     :param activation: Activation function to use.
     :param normalize: If set to :obj:`True`, output features
@@ -58,7 +61,6 @@ def mean_graph_sage(x, edge_index, edge_weight, neighbor_kernel, self_kernel, bi
 
 
 def gcn_graph_sage(x, edge_index, edge_weight, kernel, bias=None, activation=None,
-                    concat=True,
                    normalize=False, cache=None):
     """
 
@@ -103,26 +105,27 @@ def gcn_graph_sage(x, edge_index, edge_weight, kernel, bias=None, activation=Non
     return h
 
 
-def mean_pool_graph_sage(x, edge_index, edge_weight, mlp_kernel, neighbor_kernel, self_kernel,
-                         mlp_bias=None, bias=None, activation=None,
+def mean_pool_graph_sage(x, edge_index, edge_weight,
+                         self_kernel, neighbor_mlp_kernel, neighbor_kernel,
+                         neighbor_mlp_bias=None, bias=None, activation=None,
                          concat=True, normalize=False):
     """
 
-        :param x: Tensor, shape: [num_nodes, num_features], node features
-        :param edge_index: Tensor, shape: [2, num_edges], edge information
-        :param edge_weight: Tensor or None, shape: [num_edges]
-        :param mlp_kernel: Tensor, shape: [num_features, num_hidden_units]. weight.
-        :param neighbor_kernel: Tensor, shape: [num_hidden_units, num_hidden_units], weight.
-        :param self_kernel: Tensor, shape: [num_features, num_hidden_units], weight.
-        :param mlp_bias: Tensor, shape: [num_hidden_units * 2], bias
-        :param bias: Tensor, shape: [num_output_features], bias.
-        :param activation: Activation function to use.
-        :param normalize: If set to :obj:`True`, output features
-                    will be :math:`\ell_2`-normalized, *i.e.*,
-                    :math:`\frac{\mathbf{x}^{\prime}_i}
-                    {\| \mathbf{x}^{\prime}_i \|_2}`.
-                    (default: :obj:`False`)
-        :return: Updated node features (x), shape: [num_nodes, num_output_features]
+    :param x: Tensor, shape: [num_nodes, num_features], node features
+    :param edge_index: Tensor, shape: [2, num_edges], edge information
+    :param edge_weight: Tensor or None, shape: [num_edges]
+    :param self_kernel: Tensor, shape: [num_features, num_hidden_units], weight.
+    :param neighbor_mlp_kernel: Tensor, shape: [num_features, num_hidden_units]. weight.
+    :param neighbor_kernel: Tensor, shape: [num_hidden_units, num_hidden_units], weight.
+    :param neighbor_mlp_bias: Tensor, shape: [num_hidden_units * 2], bias
+    :param bias: Tensor, shape: [num_output_features], bias.
+    :param activation: Activation function to use.
+    :param normalize: If set to :obj:`True`, output features
+                will be :math:`\ell_2`-normalized, *i.e.*,
+                :math:`\frac{\mathbf{x}^{\prime}_i}
+                {\| \mathbf{x}^{\prime}_i \|_2}`.
+                (default: :obj:`False`)
+    :return: Updated node features (x), shape: [num_nodes, num_output_features]
     """
 
     if edge_weight is not None:
@@ -134,9 +137,9 @@ def mean_pool_graph_sage(x, edge_index, edge_weight, mlp_kernel, neighbor_kernel
 
     neighbor_x = gcn_mapper(repeated_x, neighbor_x, edge_weight=edge_weight)
 
-    h = neighbor_x @ mlp_kernel
-    if mlp_bias is not None:
-        h += mlp_bias
+    h = neighbor_x @ neighbor_mlp_kernel
+    if neighbor_mlp_bias is not None:
+        h += neighbor_mlp_bias
 
     if activation is not None:
         h = activation(h)
@@ -163,18 +166,19 @@ def mean_pool_graph_sage(x, edge_index, edge_weight, mlp_kernel, neighbor_kernel
     return output
 
 
-def max_pool_graph_sage(x, edge_index, edge_weight, mlp_kernel, neighbor_kernel, self_kernel,
-                        mlp_bias=None, bias=None, activation=None,
+def max_pool_graph_sage(x, edge_index, edge_weight,
+                        self_kernel, neighbor_mlp_kernel, neighbor_kernel,
+                        neighbor_mlp_bias=None, bias=None, activation=None,
                         concat=True, normalize=False):
     """
 
             :param x: Tensor, shape: [num_nodes, num_features], node features
             :param edge_index: Tensor, shape: [2, num_edges], edge information
             :param edge_weight: Tensor or None, shape: [num_edges]
-            :param mlp_kernel: Tensor, shape: [num_features, num_hidden_units]. weight.
-            :param neighbor_kernel: Tensor, shape: [num_hidden_units, num_hidden_units], weight.
             :param self_kernel: Tensor, shape: [num_features, num_hidden_units], weight.
-            :param mlp_bias: Tensor, shape: [num_hidden_units * 2], bias
+            :param neighbor_mlp_kernel: Tensor, shape: [num_features, num_hidden_units]. weight.
+            :param neighbor_kernel: Tensor, shape: [num_hidden_units, num_hidden_units], weight.
+            :param neighbor_mlp_bias: Tensor, shape: [num_hidden_units * 2], bias
             :param bias: Tensor, shape: [num_output_features], bias.
             :param activation: Activation function to use.
             :param normalize: If set to :obj:`True`, output features
@@ -193,9 +197,9 @@ def max_pool_graph_sage(x, edge_index, edge_weight, mlp_kernel, neighbor_kernel,
 
     neighbor_x = gcn_mapper(repeated_x, neighbor_x, edge_weight=edge_weight)
 
-    h = neighbor_x @ mlp_kernel
-    if mlp_bias is not None:
-        h += mlp_bias
+    h = neighbor_x @ neighbor_mlp_kernel
+    if neighbor_mlp_bias is not None:
+        h += neighbor_mlp_bias
 
     if activation is not None:
         h = activation(h)
@@ -221,26 +225,26 @@ def max_pool_graph_sage(x, edge_index, edge_weight, mlp_kernel, neighbor_kernel,
     return output
 
 
-def lstm_graph_sage(x, edge_index, lstm, neighbor_kernel, self_kernel,
+def lstm_graph_sage(x, edge_index, lstm, self_kernel, neighbor_kernel,
                     bias=None, activation=None,
                     concat=True, normalize=False):
     """
 
-            :param x: Tensor, shape: [num_nodes, num_features], node features.
-            :param edge_index: Tensor, shape: [2, num_edges], edge information.
-            :param lstm: Long Short-Term Merory.
-            :param neighbor_kernel: Tensor, shape: [num_hidden_units, num_hidden_units], weight.
-            :param self_kernel: Tensor, shape: [num_features, num_hidden_units], weight.
-            :param mlp_bias: Tensor, shape: [num_hidden_units * 2], bias
-            :param bias: Tensor, shape: [num_output_features], bias.
-            :param activation: Activation function to use.
-            :param normalize: If set to :obj:`True`, output features
-                        will be :math:`\ell_2`-normalized, *i.e.*,
-                        :math:`\frac{\mathbf{x}^{\prime}_i}
-                        {\| \mathbf{x}^{\prime}_i \|_2}`.
-                        (default: :obj:`False`)
-            :return: Updated node features (x), shape: [num_nodes, num_output_features]
-            """
+
+    :param x: Tensor, shape: [num_nodes, num_features], node features.
+    :param edge_index: Tensor, shape: [2, num_edges], edge information.
+    :param lstm: Long Short-Term Merory.
+    :param self_kernel: Tensor, shape: [num_features, num_hidden_units], weight.
+    :param neighbor_kernel: Tensor, shape: [num_hidden_units, num_hidden_units], weight.
+    :param bias: Tensor, shape: [num_output_features], bias.
+    :param activation: Activation function to use.
+    :param normalize: If set to :obj:`True`, output features
+                will be :math:`\ell_2`-normalized, *i.e.*,
+                :math:`\frac{\mathbf{x}^{\prime}_i}
+                {\| \mathbf{x}^{\prime}_i \|_2}`.
+                (default: :obj:`False`)
+    :return: Updated node features (x), shape: [num_nodes, num_output_features]
+    """
 
     row, col = edge_index
     row_numpy = row.numpy()
@@ -263,13 +267,13 @@ def lstm_graph_sage(x, edge_index, lstm, neighbor_kernel, self_kernel,
 
     reduced_h = tf.reduce_mean(neighbor_h, axis=1)
 
-    from_neighs = reduced_h @ neighbor_kernel
+    from_neighbor = reduced_h @ neighbor_kernel
     from_x = x @ self_kernel
 
     if concat:
-        output = tf.concat([from_x, from_neighs], axis=1)
+        output = tf.concat([from_x, from_neighbor], axis=1)
     else:
-        output = from_x + from_neighs
+        output = from_x + from_neighbor
 
     if bias is not None:
         output += bias
