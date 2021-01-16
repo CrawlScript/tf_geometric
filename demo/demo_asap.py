@@ -1,11 +1,7 @@
 # coding=utf-8
 import os
-
-from tf_geometric.layers import ASAP, GCN
-from tf_geometric.utils import tf_utils
-
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-
+from tf_geometric.layers import ASAP, GCN
 import tf_geometric as tfg
 import tensorflow as tf
 import numpy as np

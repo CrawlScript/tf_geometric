@@ -148,3 +148,8 @@ ASAP
 .. autoclass:: tf_geometric.layers.ASAP
    :special-members: __init__
    :members: call
+
+
+.. autoclass:: tf_geometric.layers.LEConv
+   :special-members: __init__
+   :members: call

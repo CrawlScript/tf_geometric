@@ -134,3 +134,5 @@ asap
 --------------------------------------------------------------
 
 .. autofunction:: tf_geometric.nn.asap
+
+.. autofunction:: tf_geometric.nn.le_conv
