@@ -11,6 +11,45 @@ from scipy.sparse.linalg import eigs, eigsh
 import scipy.sparse
 
 
+def convert_x_to_3d(x, source_index, K=None, pad=True):
+
+    source_index_perm = tf.argsort(source_index, stable=True)
+    sorted_source_index = tf.gather(source_index, source_index_perm)
+    permed_x = tf.gather(x, source_index_perm)
+
+    num_targets = tf.shape(sorted_source_index)[0]
+    target_ones = tf.ones([num_targets], dtype=tf.int32)
+    num_targets_for_sources = tf.math.segment_sum(target_ones, sorted_source_index)
+    max_num_targets_for_sources = tf.reduce_max(num_targets_for_sources)
+
+    # max index of source + 1
+    num_seen_sources = tf.shape(num_targets_for_sources)[0]
+
+    num_targets_before = tf.concat([
+        tf.zeros([1], dtype=tf.int32),
+        tf.math.cumsum(num_targets_for_sources)[:-1]
+    ], axis=0)
+
+    target_index_for_source = tf.range(0, num_targets) - tf.gather(num_targets_before, sorted_source_index)
+
+    if K is None:
+        K = max_num_targets_for_sources
+    elif K > max_num_targets_for_sources:
+        if not pad:
+            K = max_num_targets_for_sources
+    elif K < max_num_targets_for_sources:
+            mask = tf.less(target_index_for_source, K)
+            target_index_for_source = tf.boolean_mask(target_index_for_source, mask)
+            sorted_source_index = tf.boolean_mask(sorted_source_index, mask)
+            permed_x = tf.boolean_mask(permed_x, mask)
+
+
+    h = tf.zeros([num_seen_sources, K, tf.shape(x)[-1]], dtype=x.dtype)
+    index = tf.stack([sorted_source_index, target_index_for_source], axis=1)
+    h = tf.tensor_scatter_nd_update(h, index, permed_x)
+    return h
+
+
 def remove_self_loop_edge(edge_index, edge_weight=None):
     edge_index_is_tensor = tf.is_tensor(edge_index)
     edge_weight_is_tensor = tf.is_tensor(edge_weight)

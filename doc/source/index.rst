@@ -124,6 +124,7 @@ Graph Classification
 * `Hierarchical Graph Representation Learning with Differentiable Pooling (DiffPool) <https://github.com/CrawlScript/tf_geometric/blob/master/demo/demo_diff_pool.py>`_
 * `Order Matters: Sequence to Sequence for Sets (Set2Set) <https://github.com/CrawlScript/tf_geometric/blob/master/demo/demo_set2set.py>`_
 * `ASAP: Adaptive Structure Aware Pooling for Learning Hierarchical Graph Representations (ASAP) <https://github.com/CrawlScript/tf_geometric/blob/master/demo/demo_asap.py>`_
+* `An End-to-End Deep Learning Architecture for Graph Classification (SortPool) <https://github.com/CrawlScript/tf_geometric/blob/master/demo/demo_sort_pool.py>`_
 
 
 

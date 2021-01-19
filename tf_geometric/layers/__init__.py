@@ -18,3 +18,4 @@ from tf_geometric.layers.pool.diff_pool import DiffPool
 from tf_geometric.layers.pool.set2set import Set2Set
 from tf_geometric.layers.pool.sag_pool import SAGPool
 from tf_geometric.layers.pool.asap import ASAP
+from tf_geometric.layers.pool.sort_pool import SortPool

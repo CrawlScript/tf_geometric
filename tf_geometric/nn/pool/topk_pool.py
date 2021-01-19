@@ -6,8 +6,8 @@ from tf_geometric.utils.union_utils import union_len
 def topk_pool(source_index, score, K=None, ratio=None):
     """
 
-    :param sorted_source_index: index of source node (of edge) or source graph (of node)
-    :param sorted_score: 1-D Array
+    :param source_index: index of source node (of edge) or source graph (of node)
+    :param score: 1-D Array
     :param K: Keep top K targets for each source
     :param ratio: Keep num_targets * ratio targets for each source
     :return: sampled_edge_index, sampled_edge_score, sample_index

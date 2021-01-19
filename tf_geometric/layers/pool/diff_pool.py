@@ -45,7 +45,7 @@ class DiffPool(tf.keras.Model):
 
         :param inputs: List of graph info: [x, edge_index, edge_weight, node_graph_index]
         :param cache: A dict for caching A' for GCN. Different graph should not share the same cache dict.
-        :return: Updated node features (x), shape: [num_nodes, units]
+        :return: Pooled graph: [pooled_x, pooled_edge_index, pooled_edge_weight, pooled_node_graph_index]
         """
         x, edge_index, edge_weight, node_graph_index = inputs
 
