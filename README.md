@@ -8,6 +8,7 @@ Inspired by __rusty1s/pytorch_geometric__, we build a GNN library for TensorFlow
 
 + Homepage: [https://github.com/CrawlScript/tf_geometric](https://github.com/CrawlScript/tf_geometric)
 + Documentation: [https://tf-geometric.readthedocs.io](https://tf-geometric.readthedocs.io) ([中文版](https://tf-geometric.readthedocs.io/en/latest/index_cn.html))
++ Paper: [Efficient Graph Deep Learning in TensorFlow with tf_geometric](https://arxiv.org/abs/2101.11552)
 
 
 ## Efficient and Friendly
@@ -303,4 +304,22 @@ for graph in test_data:
         updater=tfg.nn.sum_updater
     )
     print(outputs)
+```
+
+
+
+
+## Cite
+
+If you use tf_geometric in a scientific publication, we would appreciate citations to the following paper:
+
+```html
+@misc{hu2021efficient,
+      title={Efficient Graph Deep Learning in TensorFlow with tf_geometric}, 
+      author={Jun Hu and Shengsheng Qian and Quan Fang and Youze Wang and Quan Zhao and Huaiwen Zhang and Changsheng Xu},
+      year={2021},
+      eprint={2101.11552},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG}
+}
 ```

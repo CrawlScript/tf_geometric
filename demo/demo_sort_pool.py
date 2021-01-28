@@ -5,7 +5,7 @@ from tf_geometric.layers import SAGPool, GCN, SortPool, MeanGraphSage
 from tf_geometric.utils import tf_utils
 from tf_geometric.utils.graph_utils import convert_x_to_3d
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "4"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 import tf_geometric as tfg
 import tensorflow as tf
