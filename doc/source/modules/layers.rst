@@ -153,3 +153,15 @@ ASAP
 .. autoclass:: tf_geometric.layers.LEConv
    :special-members: __init__
    :members: call
+
+
+
+
+SortPool
+--------------------
+.. autoclass:: tf_geometric.layers.SortPool
+   :special-members: __init__
+   :members: call
+
+
+

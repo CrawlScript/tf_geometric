@@ -16,6 +16,7 @@ Inspired by **rusty1s/pytorch_geometric**\ , we build a GNN library for TensorFl
 
 * **Github:**\  `https://github.com/CrawlScript/tf_geometric <https://github.com/CrawlScript/tf_geometric>`_
 * **Documentation:**\  `https://tf-geometric.readthedocs.io <https://tf-geometric.readthedocs.io>`_
+* **Paper:**\  `Efficient Graph Deep Learning in TensorFlow with tf_geometric <https://arxiv.org/abs/2101.11552>`_
 
 
 
@@ -141,6 +142,25 @@ Save and Load Models
 
 * `Save and Load Models <https://github.com/CrawlScript/tf_geometric/blob/master/demo/demo_save_and_load_model.py>`_
 * `Save and Load Models with tf.train.Checkpoint <https://github.com/CrawlScript/tf_geometric/blob/master/demo/demo_checkpoint.py>`_
+
+
+
+Cite
+----
+
+If you use tf_geometric in a scientific publication, we would appreciate citations to the following paper:
+
+.. code-block:: html
+
+   @misc{hu2021efficient,
+         title={Efficient Graph Deep Learning in TensorFlow with tf_geometric},
+         author={Jun Hu and Shengsheng Qian and Quan Fang and Youze Wang and Quan Zhao and Huaiwen Zhang and Changsheng Xu},
+         year={2021},
+         eprint={2101.11552},
+         archivePrefix={arXiv},
+         primaryClass={cs.LG}
+   }
+
 
 
 

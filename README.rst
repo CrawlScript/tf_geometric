@@ -12,6 +12,7 @@ Homepage and Documentation
 
 * Homepage: `https://github.com/CrawlScript/tf_geometric <https://github.com/CrawlScript/tf_geometric>`_
 * Documentation: `https://tf-geometric.readthedocs.io <https://tf-geometric.readthedocs.io>`_ (\ `中文版 <https://tf-geometric.readthedocs.io/en/latest/index_cn.html>`_\ )
+* Paper: `Efficient Graph Deep Learning in TensorFlow with tf_geometric <https://arxiv.org/abs/2101.11552>`_
 
 Efficient and Friendly
 ----------------------
@@ -96,6 +97,7 @@ Graph Classification
 * `Hierarchical Graph Representation Learning with Differentiable Pooling (DiffPool) <demo/demo_diff_pool.py>`_
 * `Order Matters: Sequence to Sequence for Sets (Set2Set) <demo/demo_set2set.py>`_
 * `ASAP: Adaptive Structure Aware Pooling for Learning Hierarchical Graph Representations (ASAP) <demo/demo_asap.py>`_
+* `An End-to-End Deep Learning Architecture for Graph Classification (SortPool) <demo/demo_sort_pool.py>`_
 
 Link Prediction
 ^^^^^^^^^^^^^^^
@@ -317,3 +319,19 @@ We provide both OOP and Functional API, with which you can make some cool things
            updater=tfg.nn.sum_updater
        )
        print(outputs)
+
+Cite
+----
+
+If you use tf_geometric in a scientific publication, we would appreciate citations to the following paper:
+
+.. code-block:: html
+
+   @misc{hu2021efficient,
+         title={Efficient Graph Deep Learning in TensorFlow with tf_geometric}, 
+         author={Jun Hu and Shengsheng Qian and Quan Fang and Youze Wang and Quan Zhao and Huaiwen Zhang and Changsheng Xu},
+         year={2021},
+         eprint={2101.11552},
+         archivePrefix={arXiv},
+         primaryClass={cs.LG}
+   }

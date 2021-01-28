@@ -136,3 +136,11 @@ asap
 .. autofunction:: tf_geometric.nn.asap
 
 .. autofunction:: tf_geometric.nn.le_conv
+
+
+
+
+sort_pool
+--------------------------------------------------------------
+
+.. autofunction:: tf_geometric.nn.sort_pool

@@ -17,6 +17,7 @@ tf_geometric是一个高效且友好的图神经网络库，同时支持TensorFl
 
 * **Github主页:**\  `https://github.com/CrawlScript/tf_geometric <https://github.com/CrawlScript/tf_geometric>`_
 * **开发文档:**\  `https://tf-geometric.readthedocs.io <https://tf-geometric.readthedocs.io>`_
+* **论文:**\  `Efficient Graph Deep Learning in TensorFlow with tf_geometric <https://arxiv.org/abs/2101.11552>`_
 
 
 
@@ -145,6 +146,27 @@ tf_geometric使用消息传递机制来实现图神经网络：相比于基于�
 
 * `模型保存和载入 <https://github.com/CrawlScript/tf_geometric/blob/master/demo/demo_save_and_load_model.py>`_
 * `使用tf.train.Checkpoint进行模型保存和载入 <https://github.com/CrawlScript/tf_geometric/blob/master/demo/demo_checkpoint.py>`_
+
+
+
+
+引用
+----
+
+如果您在科研出版物中使用了tf_geometric，欢迎引用下方的论文：
+
+
+.. code-block:: html
+
+   @misc{hu2021efficient,
+         title={Efficient Graph Deep Learning in TensorFlow with tf_geometric},
+         author={Jun Hu and Shengsheng Qian and Quan Fang and Youze Wang and Quan Zhao and Huaiwen Zhang and Changsheng Xu},
+         year={2021},
+         eprint={2101.11552},
+         archivePrefix={arXiv},
+         primaryClass={cs.LG}
+   }
+
 
 
 
