@@ -49,7 +49,7 @@ class LEConv(tf.keras.Model):
         super().__init__(*args, **kwargs)
         self.units = units
 
-        self.acvitation = activation
+        self.activation = activation
 
         self.self_use_bias = self_use_bias
         self.aggr_self_use_bias = aggr_self_use_bias
@@ -82,4 +82,4 @@ class LEConv(tf.keras.Model):
                        self.self_kernel, self.self_bias,
                        self.aggr_self_kernel, self.aggr_self_bias,
                        self.aggr_neighbor_kernel, self.aggr_neighbor_bias,
-                       activation=self.acvitation)
+                       activation=self.activation)

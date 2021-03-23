@@ -35,7 +35,7 @@ class GCN(tf.keras.Model):
         super().__init__(*args, **kwargs)
         self.units = units
 
-        self.acvitation = activation
+        self.activation = activation
         self.use_bias = use_bias
 
         self.kernel = None
@@ -73,4 +73,4 @@ class GCN(tf.keras.Model):
             edge_weight = None
 
         return gcn(x, edge_index, edge_weight, self.kernel, self.bias,
-                   activation=self.acvitation, renorm=self.renorm, improved=self.improved, cache=cache)
+                   activation=self.activation, renorm=self.renorm, improved=self.improved, cache=cache)

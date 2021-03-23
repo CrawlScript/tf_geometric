@@ -1,6 +1,16 @@
 # coding=utf-8
 
 import os
+
+from tf_geometric.utils import tf_utils
+#
+# def test(**kwargs):
+#     def f(x):
+#         return x
+#     return f
+#
+# tf_utils.function = test
+
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 import tf_geometric as tfg
 import tensorflow as tf
@@ -89,7 +99,6 @@ class GINPoolNetwork(keras.Model):
             keras.layers.Dense(num_classes)
         ])
 
-    # @tf_utils.function(experimental_relax_shapes=True)
     def call(self, inputs, training=False, mask=None):
 
         if len(inputs) == 4:
@@ -115,31 +124,14 @@ model = GINPoolNetwork(5, 32, num_classes)
 batch_size = len(train_graphs)
 
 
-def evaluate(graphs, batch_size):
-    accuracy_m = keras.metrics.Accuracy()
-
-    for batch_graph in create_graph_generator(graphs, batch_size, shuffle=False, infinite=False):
-        inputs = [batch_graph.x, batch_graph.edge_index, batch_graph.edge_weight,
-                  batch_graph.node_graph_index]
-        logits = model(inputs)
-        preds = tf.argmax(logits, axis=-1)
-        accuracy_m.update_state(batch_graph.y, preds)
-
-    return accuracy_m.result().numpy()
+def forward(batch_graph, training=None):
+    inputs = [batch_graph.x, batch_graph.edge_index, batch_graph.edge_weight, batch_graph.node_graph_index]
+    return model(inputs, training=training)
 
 
-# optimizer = tf.keras.optimizers.Adam(learning_rate=0.01)
-optimizer = tf.keras.optimizers.Adam(learning_rate=3e-3)
-train_batch_generator = create_graph_generator(train_graphs, batch_size, shuffle=True, infinite=True)
-
-
-best_test_acc = 0
-for step in tqdm(range(0, 4000)):
-    batch_graph = next(train_batch_generator)
+def train_step(batch_graph):
     with tf.GradientTape() as tape:
-        inputs = [batch_graph.x, batch_graph.edge_index, batch_graph.edge_weight,
-                  batch_graph.node_graph_index]
-        logits = model(inputs, training=True)
+        logits = forward(batch_graph, training=True)
         losses = tf.nn.softmax_cross_entropy_with_logits(
             logits=logits,
             labels=tf.one_hot(batch_graph.y, depth=num_classes)
@@ -149,6 +141,30 @@ for step in tqdm(range(0, 4000)):
     vars = tape.watched_variables()
     grads = tape.gradient(loss, vars)
     optimizer.apply_gradients(zip(grads, vars))
+    return loss
+
+
+def evaluate(graphs, batch_size):
+    corrects_list = []
+    for batch_graph in create_graph_generator(graphs, batch_size, shuffle=False, infinite=False):
+        logits = forward(batch_graph)
+        preds = tf.argmax(logits, axis=-1)
+        corrects_list.append(tf.equal(preds, batch_graph.y))
+    corrects = tf.concat(corrects_list, axis=0)
+    accuracy = tf.reduce_mean(tf.cast(corrects, tf.float32))
+    return accuracy
+
+
+# optimizer = tf.keras.optimizers.Adam(learning_rate=0.01)
+optimizer = tf.keras.optimizers.Adam(learning_rate=3e-3)
+train_batch_generator = create_graph_generator(train_graphs, batch_size, shuffle=True, infinite=True)
+
+
+
+best_test_acc = 0
+for step in tqdm(range(0, 4000)):
+    batch_graph = next(train_batch_generator)
+    loss = train_step(batch_graph)
 
     if step % 10 == 0:
         train_acc = evaluate(train_graphs, batch_size)

@@ -1,5 +1,6 @@
 # coding=utf-8
 import os
+
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 from tf_geometric.utils import tf_utils
 import tensorflow as tf
@@ -12,7 +13,6 @@ graph, (train_index, valid_index, test_index) = tfg.datasets.CoraDataset().load_
 num_classes = graph.y.max() + 1
 drop_rate = 0.5
 learning_rate = 1e-2
-
 
 model = tfg.layers.APPNP([64, num_classes], alpha=0.1, num_iterations=10,
                          dense_drop_rate=drop_rate, edge_drop_rate=drop_rate)
@@ -30,7 +30,7 @@ def forward(graph, training=False):
 model.cache_normed_edge(graph)
 
 
-@tf.function
+@tf_utils.function
 def compute_loss(logits, mask_index, vars):
     masked_logits = tf.gather(logits, mask_index)
     masked_labels = tf.gather(graph.y, mask_index)
@@ -45,7 +45,19 @@ def compute_loss(logits, mask_index, vars):
     return tf.reduce_mean(losses) + tf.add_n(l2_losses) * 5e-4
 
 
-@tf.function
+@tf_utils.function
+def train_step():
+    with tf.GradientTape() as tape:
+        logits = forward(graph, training=True)
+        loss = compute_loss(logits, train_index, tape.watched_variables())
+
+    vars = tape.watched_variables()
+    grads = tape.gradient(loss, vars)
+    optimizer.apply_gradients(zip(grads, vars))
+    return loss
+
+
+@tf_utils.function
 def evaluate():
     logits = forward(graph)
     masked_logits = tf.gather(logits, test_index)
@@ -61,18 +73,10 @@ def evaluate():
 optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
 
 for step in range(1, 401):
-    with tf.GradientTape() as tape:
-        logits = forward(graph, training=True)
-        loss = compute_loss(logits, train_index, tape.watched_variables())
-
-    vars = tape.watched_variables()
-    grads = tape.gradient(loss, vars)
-    optimizer.apply_gradients(zip(grads, vars))
-
+    loss = train_step()
     if step % 20 == 0:
         accuracy = evaluate()
         print("step = {}\tloss = {}\taccuracy = {}".format(step, loss, accuracy))
-
 
 print("\nstart speed test...")
 num_test_iterations = 1000
@@ -85,4 +89,3 @@ print("mean forward time: {} seconds".format((end_time - start_time) / num_test_
 if tf.__version__[0] == "1":
     print("** @tf_utils.function is disabled in TensorFlow 1.x. "
           "Upgrade to TensorFlow 2.x for 10X faster speed. **")
-

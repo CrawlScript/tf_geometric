@@ -1,5 +1,6 @@
 # coding=utf-8
 import os
+
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 from tf_geometric.utils import tf_utils
 import tf_geometric as tfg
@@ -63,6 +64,18 @@ def compute_loss(logits, mask_index, vars):
 
 
 @tf_utils.function
+def train_step():
+    with tf.GradientTape() as tape:
+        logits = forward(graph, training=True)
+        loss = compute_loss(logits, train_index, tape.watched_variables())
+
+    vars = tape.watched_variables()
+    grads = tape.gradient(loss, vars)
+    optimizer.apply_gradients(zip(grads, vars))
+    return loss
+
+
+@tf_utils.function
 def evaluate():
     logits = forward(graph)
     masked_logits = tf.gather(logits, test_index)
@@ -77,13 +90,7 @@ def evaluate():
 optimizer = tf.keras.optimizers.Adam(learning_rate=5e-3)
 
 for step in range(1, 401):
-    with tf.GradientTape() as tape:
-        logits = forward(graph, training=True)
-        loss = compute_loss(logits, train_index, tape.watched_variables())
-
-    vars = tape.watched_variables()
-    grads = tape.gradient(loss, vars)
-    optimizer.apply_gradients(zip(grads, vars))
+    loss = train_step()
 
     if step % 20 == 0:
         accuracy = evaluate()

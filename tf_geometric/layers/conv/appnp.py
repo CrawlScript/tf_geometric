@@ -49,7 +49,7 @@ class APPNP(tf.keras.Model):
         super().__init__(*args, **kwargs)
         self.units_list = units_list
         self.dense_activation = dense_activation
-        self.acvitation = activation
+        self.activation = activation
         self.num_iterations = num_iterations
         self.alpha = alpha
         self.dense_drop_rate = dense_drop_rate
@@ -87,7 +87,7 @@ class APPNP(tf.keras.Model):
             edge_weight = None
 
         return appnp(x, edge_index, edge_weight, self.kernels, self.biases,
-                     dense_activation=self.dense_activation, activation=self.acvitation,
+                     dense_activation=self.dense_activation, activation=self.activation,
                      num_iterations=self.num_iterations, alpha=self.alpha,
                      dense_drop_rate=self.dense_drop_rate, edge_drop_rate=self.edge_drop_rate,
                      cache=cache, training=training)

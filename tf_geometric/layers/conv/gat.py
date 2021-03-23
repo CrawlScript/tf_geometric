@@ -49,7 +49,7 @@ class GAT(tf.keras.Model):
         self.kernel = None
         self.bias = None
 
-        self.acvitation = activation
+        self.activation = activation
         self.use_bias = use_bias
         self.num_heads = num_heads
         self.split_value_heads = split_value_heads
@@ -89,7 +89,7 @@ class GAT(tf.keras.Model):
         return gat(x, edge_index,
                    self.query_kernel, self.query_bias, self.query_activation,
                    self.key_kernel, self.key_bias, self.key_activation,
-                   self.kernel, self.bias, self.acvitation,
+                   self.kernel, self.bias, self.activation,
                    num_heads=self.num_heads,
                    split_value_heads=self.split_value_heads,
                    drop_rate=self.drop_rate,

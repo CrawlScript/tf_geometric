@@ -31,7 +31,7 @@ class DiffPool(tf.keras.Model):
         self.assign_gnn = assign_gnn
 
         self.num_clusters = num_clusters
-        self.acvitation = activation
+        self.activation = activation
 
         if use_bias and units is None:
             raise Exception("The \"units\" parameter is required when you set use_bias=True.")
@@ -51,4 +51,4 @@ class DiffPool(tf.keras.Model):
 
         return diff_pool(x, edge_index, edge_weight, node_graph_index,
                          self.feature_gnn, self.assign_gnn, self.num_clusters,
-                         bias=self.bias, activation=self.acvitation, training=training, cache=cache)
+                         bias=self.bias, activation=self.activation, training=training, cache=cache)

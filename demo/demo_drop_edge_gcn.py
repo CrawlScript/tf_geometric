@@ -58,7 +58,7 @@ def forward(graph, training=False):
     return model([graph.x, edge_index, edge_weight], training=training)
 
 
-@tf.function
+@tf_utils.function
 def compute_loss(logits, mask_index, vars):
     masked_logits = tf.gather(logits, mask_index)
     masked_labels = tf.gather(graph.y, mask_index)
@@ -73,7 +73,7 @@ def compute_loss(logits, mask_index, vars):
     return tf.reduce_mean(losses) + tf.add_n(l2_losses) * l2_coe
 
 
-@tf.function
+@tf_utils.function
 def evaluate():
     logits = forward(graph)
     masked_logits = tf.gather(logits, test_index)

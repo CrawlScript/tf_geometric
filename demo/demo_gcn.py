@@ -47,7 +47,7 @@ def forward(graph, training=False):
 model.gcn0.cache_normed_edge(graph)
 
 
-@tf.function
+@tf_utils.function
 def compute_loss(logits, mask_index, vars):
     masked_logits = tf.gather(logits, mask_index)
     masked_labels = tf.gather(graph.y, mask_index)
@@ -62,7 +62,19 @@ def compute_loss(logits, mask_index, vars):
     return tf.reduce_mean(losses) + tf.add_n(l2_losses) * 5e-4
 
 
-@tf.function
+@tf_utils.function
+def train_step():
+    with tf.GradientTape() as tape:
+        logits = forward(graph, training=True)
+        loss = compute_loss(logits, train_index, tape.watched_variables())
+
+    vars = tape.watched_variables()
+    grads = tape.gradient(loss, vars)
+    optimizer.apply_gradients(zip(grads, vars))
+    return loss
+
+
+@tf_utils.function
 def evaluate():
     logits = forward(graph)
     masked_logits = tf.gather(logits, test_index)
@@ -78,14 +90,7 @@ def evaluate():
 optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
 
 for step in range(1, 201):
-    with tf.GradientTape() as tape:
-        logits = forward(graph, training=True)
-        loss = compute_loss(logits, train_index, tape.watched_variables())
-
-    vars = tape.watched_variables()
-    grads = tape.gradient(loss, vars)
-    optimizer.apply_gradients(zip(grads, vars))
-
+    loss = train_step()
     if step % 20 == 0:
         accuracy = evaluate()
         print("step = {}\tloss = {}\taccuracy = {}".format(step, loss, accuracy))
