@@ -35,9 +35,8 @@ class LaplacianLambdaMax(object):
 
         edge_index, edge_weight = remove_self_loop_edge(edge_index, edge_weight)
 
-        edge_index, edge_weight = get_laplacian(data.edge_index, edge_weight,
-                                                self.normalization,
-                                                num_nodes=data.x.shape[0])
+        edge_index, edge_weight = get_laplacian(data.edge_index, data.x.shape[0], edge_weight,
+                                                self.normalization)
         # edge_index, edge_weight = add_self_loop_edge(edge_index, data.x.shape[0], edge_weight, fill_weight=-1.)
 
         L = to_scipy_sparse_matrix(edge_index, edge_weight, data.x.shape[0])

@@ -1,7 +1,7 @@
 # coding=utf-8
 
 import tensorflow as tf
-from tf_geometric.nn.conv.chebynet import chebynet_norm_edge, chebynet
+from tf_geometric.nn.conv.chebynet import chebynet_norm_edge, chebynet, chebynet_cache_normed_edge
 from tf_geometric.layers.kernel.map_reduce import MapReduceGNN
 
 
@@ -13,7 +13,7 @@ class ChebyNet(MapReduceGNN):
 
     """
 
-    def __init__(self, units, K, lambda_max, activation=None, use_bias=True, normalization_type='sym',
+    def __init__(self, units, K, activation=None, use_bias=True, normalization_type="sym",
                  kernel_regularizer=None, bias_regularizer=None,
                  *args, **kwargs):
         """
@@ -32,19 +32,17 @@ class ChebyNet(MapReduceGNN):
         self.units = units
 
         assert K > 0
-        assert lambda_max is not None
         assert normalization_type in [None, 'sym', 'rw'], 'Invalid normalization'
 
         self.K = K
 
         self.use_bias = use_bias
 
-        self.kernel = None
+        self.kernels = []
         self.bias = None
 
         self.activation = activation
         self.normalization_type = normalization_type
-        self.lambda_max = lambda_max
 
         self.kernel_regularizer = kernel_regularizer
         self.bias_regularizer = bias_regularizer
@@ -53,11 +51,27 @@ class ChebyNet(MapReduceGNN):
         x_shape = input_shapes[0]
         num_features = x_shape[-1]
 
-        self.kernel = self.add_weight("kernel", shape=[self.K, num_features, self.units],
+        for k in range(self.K):
+            kernel = self.add_weight("kernel{}".format(k), shape=[num_features, self.units],
                                       initializer="glorot_uniform", regularizer=self.kernel_regularizer)
+            self.kernels.append(kernel)
+
+        # self.kernel = self.add_weight("kernel", shape=[self.K, num_features, self.units],
+        #                               initializer="glorot_uniform", regularizer=self.kernel_regularizer)
         if self.use_bias:
             self.bias = self.add_weight("bias", shape=[self.units],
                                         initializer="zeros", regularizer=self.bias_regularizer)
+
+    def cache_normed_edge(self, graph, override=False):
+        """
+        Manually compute the normed edge based on this layer's GCN normalization configuration (self.renorm and self.improved) and put it in graph.cache.
+        If the normed edge already exists in graph.cache and the override parameter is False, this method will do nothing.
+
+        :param graph: tfg.Graph, the input graph.
+        :param override: Whether to override existing cached normed edge.
+        :return: None
+        """
+        chebynet_cache_normed_edge(graph, self.normalization_type, override=override)
 
     def call(self, inputs, cache=None, training=None, mask=None):
         """
@@ -73,5 +87,4 @@ class ChebyNet(MapReduceGNN):
             x, edge_index = inputs
             edge_weight = None
 
-        return chebynet(x, edge_index, edge_weight, self.K, self.lambda_max, self.kernel, self.bias, self.activation,
-                       self.normalization_type)
+        return chebynet(x, edge_index, edge_weight, self.K, self.kernels, self.bias, self.activation, self.normalization_type, cache=cache)

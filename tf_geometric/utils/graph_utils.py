@@ -400,7 +400,7 @@ def compute_edge_mask_by_node_index(edge_index, node_index):
     return edge_mask
 
 
-def get_laplacian(edge_index, edge_weight, normalization_type, num_nodes, fill_weight=1.0):
+def get_laplacian(edge_index, num_nodes, edge_weight, normalization_type, fill_weight=1.0):
     if normalization_type is not None:
         assert normalization_type in [None, 'sym', 'rw']
 
@@ -530,8 +530,8 @@ class RandomNeighborSampler(object):
 
 
 class LaplacianMaxEigenvalue(object):
-    def __init__(self, x, edge_index, edge_weight, is_undirected=True):
-        self.num_nodes = x.shape[0]
+    def __init__(self, edge_index, num_nodes, edge_weight, is_undirected=True):
+        self.num_nodes = num_nodes
         self.edge_index = convert_union_to_numpy(edge_index, np.int32)
         if edge_weight is not None:
             self.edge_weight = convert_union_to_numpy(edge_weight)
@@ -544,9 +544,7 @@ class LaplacianMaxEigenvalue(object):
 
         edge_index, edge_weight = remove_self_loop_edge(self.edge_index, self.edge_weight)
 
-        edge_index, edge_weight = get_laplacian(self.edge_index, edge_weight,
-                                                normalization_type,
-                                                num_nodes=self.num_nodes)
+        edge_index, edge_weight = get_laplacian(self.edge_index, self.num_nodes, edge_weight, normalization_type)
 
         L = to_scipy_sparse_matrix(edge_index, edge_weight, self.num_nodes)
 

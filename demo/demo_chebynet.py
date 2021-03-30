@@ -15,20 +15,20 @@ graph, (train_index, valid_index, test_index) = CoraDataset().load_data()
 
 num_classes = graph.y.max() + 1
 
-graph_lambda_max = LaplacianMaxEigenvalue(graph.x, graph.edge_index, graph.edge_weight)
 
-model = tfg.layers.ChebyNet(64, K=3, activation=tf.nn.relu,
-                            lambda_max=graph_lambda_max(normalization_type='rw'))
+model = tfg.layers.ChebyNet(64, K=3, activation=tf.nn.relu)
 fc = tf.keras.Sequential([
     keras.layers.Dropout(0.5),
     keras.layers.Dense(num_classes)
 ])
 
+model.cache_normed_edge(graph)
+
 
 # @tf_utils.function can speed up functions for TensorFlow 2.x
 @tf_utils.function
 def forward(graph, training=False):
-    h = model([graph.x, graph.edge_index, graph.edge_weight])
+    h = model([graph.x, graph.edge_index, graph.edge_weight], cache=graph.cache)
     h = fc(h, training=training)
     return h
 
