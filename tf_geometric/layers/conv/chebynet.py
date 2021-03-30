@@ -14,6 +14,7 @@ class ChebyNet(MapReduceGNN):
     """
 
     def __init__(self, units, K, activation=None, use_bias=True, normalization_type="sym",
+                 use_dynamic_lambda_max=False,
                  kernel_regularizer=None, bias_regularizer=None,
                  *args, **kwargs):
         """
@@ -25,6 +26,8 @@ class ChebyNet(MapReduceGNN):
         :param activation: Activation function to use.
         :param normalization_type: The normalization scheme for the graph
             Laplacian (default: :obj:`"sym"`)
+        :param use_dynamic_lambda_max: If true, compute max eigen value for each forward,
+            otherwise use 2.0 as the max eigen value
         :param kernel_regularizer: Regularizer function applied to the `kernel` weights matrix.
         :param bias_regularizer: Regularizer function applied to the bias vector.
         """
@@ -43,6 +46,7 @@ class ChebyNet(MapReduceGNN):
 
         self.activation = activation
         self.normalization_type = normalization_type
+        self.use_dynamic_lambda_max = use_dynamic_lambda_max
 
         self.kernel_regularizer = kernel_regularizer
         self.bias_regularizer = bias_regularizer
@@ -71,7 +75,8 @@ class ChebyNet(MapReduceGNN):
         :param override: Whether to override existing cached normed edge.
         :return: None
         """
-        chebynet_cache_normed_edge(graph, self.normalization_type, override=override)
+        chebynet_cache_normed_edge(graph, self.normalization_type,
+                                   use_dynamic_lambda_max=self.use_dynamic_lambda_max, override=override)
 
     def call(self, inputs, cache=None, training=None, mask=None):
         """
@@ -87,4 +92,5 @@ class ChebyNet(MapReduceGNN):
             x, edge_index = inputs
             edge_weight = None
 
-        return chebynet(x, edge_index, edge_weight, self.K, self.kernels, self.bias, self.activation, self.normalization_type, cache=cache)
+        return chebynet(x, edge_index, edge_weight, self.K, self.kernels, self.bias, self.activation,
+                        self.normalization_type, use_dynamic_lambda_max=self.use_dynamic_lambda_max, cache=cache)
