@@ -99,8 +99,8 @@ def train_dataset_fn(ctx):
         create_replica_train_generator,
         output_types=((tf.float32, tf.int32, tf.int32), tf.int32),
         output_shapes=(
-        (tf.TensorShape([None, graphs[0].x.shape[1]]), tf.TensorShape([2, None]), tf.TensorShape([None])),
-        tf.TensorShape([None])
+            (tf.TensorShape([None, graphs[0].x.shape[1]]), tf.TensorShape([2, None]), tf.TensorShape([None])),
+            tf.TensorShape([None])
         )
     )
 
@@ -158,4 +158,4 @@ model.fit(distributed_train_dataset, steps_per_epoch=len(graphs) // batch_size, 
           callbacks=[EvaluationCallback()], verbose=1)
 
 accuracy = evaluate()
-print("final test_accuracy = {}".format(accuracy))
+print("\nfinal test_accuracy = {}".format(accuracy))

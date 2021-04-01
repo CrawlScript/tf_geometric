@@ -112,6 +112,13 @@ Save and Load Models
 * `Save and Load Models <demo/demo_save_and_load_model.py>`_
 * `Save and Load Models with tf.train.Checkpoint <demo/demo_checkpoint.py>`_
 
+Distributed Training
+^^^^^^^^^^^^^^^^^^^^
+
+
+* `Distributed GCN for Node Classification <demo/demo_distributed_gcn.py>`_
+* `Distributed MeanPooling for Graph Classification <demo/demo_distributed_mean_pool.py>`_
+
 Installation
 ------------
 
