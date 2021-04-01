@@ -1,20 +1,17 @@
 # coding=utf-8
 import os
+
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 from tf_geometric.utils import tf_utils
 import tf_geometric as tfg
 import tensorflow as tf
-import numpy as np
 from tensorflow import keras
 from tf_geometric.datasets import CoraDataset
-from tf_geometric.utils.graph_utils import LaplacianMaxEigenvalue
 from tqdm import tqdm
-
 
 graph, (train_index, valid_index, test_index) = CoraDataset().load_data()
 
 num_classes = graph.y.max() + 1
-
 
 model = tfg.layers.ChebyNet(64, K=3, activation=tf.nn.relu)
 fc = tf.keras.Sequential([
@@ -33,6 +30,7 @@ def forward(graph, training=False):
     return h
 
 
+@tf_utils.function
 def compute_loss(logits, mask_index, vars):
     masked_logits = tf.gather(logits, mask_index)
     masked_labels = tf.gather(graph.y, mask_index)
@@ -47,22 +45,11 @@ def compute_loss(logits, mask_index, vars):
     return tf.reduce_mean(losses) + tf.add_n(l2_losses) * 5e-4
 
 
-def evaluate(mask):
-    logits = forward(graph)
-    masked_logits = tf.gather(logits, mask)
-    masked_labels = tf.gather(graph.y, mask)
-
-    y_pred = tf.argmax(masked_logits, axis=-1, output_type=tf.int32)
-
-    accuracy_m = keras.metrics.Accuracy()
-    accuracy_m.update_state(masked_labels, y_pred)
-    return accuracy_m.result().numpy()
-
-
 optimizer = tf.keras.optimizers.Adam(learning_rate=1e-2)
 
-best_test_acc = tmp_valid_acc = 0
-for step in tqdm(range(1, 101)):
+
+@tf_utils.function
+def train_step():
     with tf.GradientTape() as tape:
         logits = forward(graph, training=True)
         loss = compute_loss(logits, train_index, tape.watched_variables())
@@ -70,10 +57,27 @@ for step in tqdm(range(1, 101)):
     vars = tape.watched_variables()
     grads = tape.gradient(loss, vars)
     optimizer.apply_gradients(zip(grads, vars))
+    return loss
 
-    valid_acc = evaluate(valid_index)
-    test_acc = evaluate(test_index)
+
+@tf_utils.function
+def evaluate():
+    logits = forward(graph)
+    masked_logits = tf.gather(logits, test_index)
+    masked_labels = tf.gather(graph.y, test_index)
+
+    y_pred = tf.argmax(masked_logits, axis=-1, output_type=tf.int32)
+
+    corrects = tf.equal(y_pred, masked_labels)
+    accuracy = tf.reduce_mean(tf.cast(corrects, tf.float32))
+    return accuracy
+
+
+best_test_acc = 0
+for step in tqdm(range(1, 101)):
+    loss = train_step()
+
+    test_acc = evaluate()
     if test_acc > best_test_acc:
         best_test_acc = test_acc
-        tmp_valid_acc = valid_acc
-    print("step = {}\tloss = {}\tvalid_acc = {}\tbest_test_acc = {}".format(step, loss, tmp_valid_acc, best_test_acc))
+    print("step = {}\tloss = {}\tbest_test_acc = {}".format(step, loss, best_test_acc))

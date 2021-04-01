@@ -145,6 +145,14 @@ Save and Load Models
 
 
 
+Distributed Training
+::::::::::::::::::::
+
+* `Distributed GCN for Node Classification <https://github.com/CrawlScript/tf_geometric/blob/master/demo/demo_distributed_gcn.py>`_
+* `Distributed MeanPooling for Graph Classification <https://github.com/CrawlScript/tf_geometric/blob/master/demo/demo_distributed_mean_pool.py>`_
+
+
+
 Cite
 ----
 

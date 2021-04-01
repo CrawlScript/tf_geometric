@@ -1,16 +1,6 @@
 # coding=utf-8
 
 import os
-
-from tf_geometric.utils import tf_utils
-#
-# def test(**kwargs):
-#     def f(x):
-#         return x
-#     return f
-#
-# tf_utils.function = test
-
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 import tf_geometric as tfg
 import tensorflow as tf

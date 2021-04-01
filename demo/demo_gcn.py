@@ -1,5 +1,6 @@
 # coding=utf-8
 import os
+
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 from tf_geometric.utils import tf_utils
 import tensorflow as tf
@@ -62,6 +63,9 @@ def compute_loss(logits, mask_index, vars):
     return tf.reduce_mean(losses) + tf.add_n(l2_losses) * 5e-4
 
 
+optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
+
+
 @tf_utils.function
 def train_step():
     with tf.GradientTape() as tape:
@@ -87,14 +91,11 @@ def evaluate():
     return accuracy
 
 
-optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
-
 for step in range(1, 201):
     loss = train_step()
     if step % 20 == 0:
         accuracy = evaluate()
         print("step = {}\tloss = {}\taccuracy = {}".format(step, loss, accuracy))
-
 
 print("\nstart speed test...")
 num_test_iterations = 1000

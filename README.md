@@ -103,6 +103,14 @@ We recommend you to get started with some demo.
 + [Save and Load Models](demo/demo_save_and_load_model.py)
 + [Save and Load Models with tf.train.Checkpoint](demo/demo_checkpoint.py)
 
+
+### Distributed Training
+
++ [Distributed GCN for Node Classification](demo/demo_distributed_gcn.py)
++ [Distributed MeanPooling for Graph Classification](demo/demo_distributed_mean_pool.py)
+
+
+
 ## Installation
 
 Requirements:

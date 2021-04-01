@@ -1,10 +1,9 @@
 # coding=utf-8
 import tensorflow as tf
 from tf_geometric.nn.conv.gin import gin
-from tf_geometric.layers.kernel.map_reduce import MapReduceGNN
 
 
-class GIN(MapReduceGNN):
+class GIN(tf.keras.Model):
     """
     Graph Isomorphism Network  Layer
     """

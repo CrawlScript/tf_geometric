@@ -149,6 +149,15 @@ tf_geometric使用消息传递机制来实现图神经网络：相比于基于�
 
 
 
+分布式训练
+::::::::::::::::::::
+
+* `分布式图卷积网络（节点分类） <https://github.com/CrawlScript/tf_geometric/blob/master/demo/demo_distributed_gcn.py>`_
+* `分布式平均池化（图分类） <https://github.com/CrawlScript/tf_geometric/blob/master/demo/demo_distributed_mean_pool.py>`_
+
+
+
+
 
 引用
 ----
