@@ -90,6 +90,7 @@ We recommend you to get started with some demo.
 + [Order Matters: Sequence to Sequence for Sets (Set2Set)](demo/demo_set2set.py)
 + [ASAP: Adaptive Structure Aware Pooling for Learning Hierarchical Graph Representations (ASAP)](demo/demo_asap.py)
 + [An End-to-End Deep Learning Architecture for Graph Classification (SortPool)](demo/demo_sort_pool.py)
++ [Spectral Clustering with Graph Neural Networks for Graph Pooling (MinCutPool)](demo/demo_min_cut_pool.py)
 
 
 

@@ -128,6 +128,7 @@ tf_geometric使用消息传递机制来实现图神经网络：相比于基于�
 * `Order Matters: Sequence to Sequence for Sets (Set2Set) <https://github.com/CrawlScript/tf_geometric/blob/master/demo/demo_set2set.py>`_
 * `ASAP: Adaptive Structure Aware Pooling for Learning Hierarchical Graph Representations (ASAP) <https://github.com/CrawlScript/tf_geometric/blob/master/demo/demo_asap.py>`_
 * `An End-to-End Deep Learning Architecture for Graph Classification (SortPool) <https://github.com/CrawlScript/tf_geometric/blob/master/demo/demo_sort_pool.py>`_
+* `最小割池化 Spectral Clustering with Graph Neural Networks for Graph Pooling (MinCutPool) <https://github.com/CrawlScript/tf_geometric/blob/master/demo/demo_min_cut_pool.py>`_
 
 
 
