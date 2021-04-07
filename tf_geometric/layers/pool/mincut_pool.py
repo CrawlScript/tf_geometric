@@ -3,10 +3,10 @@
 
 import tensorflow as tf
 
-from tf_geometric.nn.pool.diff_pool import diff_pool
+from tf_geometric.nn.pool.mincut_pool import mincut_pool
 
 
-class DiffPool(tf.keras.Model):
+class MincutPool(tf.keras.Model):
     """
     OOP API for DiffPool: "Hierarchical graph representation learning with differentiable pooling"
     """

@@ -24,3 +24,4 @@ from tf_geometric.nn.pool.cluster_pool import cluster_pool
 from tf_geometric.nn.pool.sag_pool import sag_pool
 from tf_geometric.nn.pool.asap import asap
 from tf_geometric.nn.pool.sort_pool import sort_pool
+from tf_geometric.nn.pool.min_cut_pool import min_cut_pool_compute_loss

@@ -35,18 +35,17 @@ def cluster_pool(x, edge_index, edge_weight, assign_edge_index, assign_edge_weig
     )
     transposed_sparse_assign_probs = tf.sparse.reorder(transposed_sparse_assign_probs)
 
-    sparse_adj = tf.SparseTensor(
+    transposed_sparse_adj = tf.SparseTensor(
         indices=tf.cast(tf.transpose(edge_index, [1, 0]), dtype=tf.int64),
         values=edge_weight,
         dense_shape=[num_nodes, num_nodes]
     )
-    sparse_adj = tf.sparse.reorder(sparse_adj)
+    transposed_sparse_adj = tf.sparse.reorder(transposed_sparse_adj)
 
     # compute S'AS
-    # Since tf only support sparse @ dense, we compute S'AS as (S' @ (S' @ dense(A))')'
-    pooled_adj = tf.sparse.sparse_dense_matmul(transposed_sparse_assign_probs, tf.sparse.to_dense(sparse_adj))
+    # Since tf only support sparse @ dense, we compute S'AS as S' @ (S' @ dense(A'))'
+    pooled_adj = tf.sparse.sparse_dense_matmul(transposed_sparse_assign_probs, tf.sparse.to_dense(transposed_sparse_adj))
     pooled_adj = tf.sparse.sparse_dense_matmul(transposed_sparse_assign_probs, tf.transpose(pooled_adj, [1, 0]))
-    pooled_adj = tf.transpose(pooled_adj, [1, 0])
 
     pooled_edge_index, pooled_edge_weight = convert_dense_adj_to_edge(pooled_adj)
 

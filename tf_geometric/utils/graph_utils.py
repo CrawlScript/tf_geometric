@@ -555,3 +555,27 @@ class LaplacianMaxEigenvalue(object):
         lambda_max = eig_fn(L, k=1, which='LM', return_eigenvectors=False)
 
         return float(lambda_max.real)
+
+
+def adj_norm_edge(edge_index, num_nodes, edge_weight=None, add_self_loop=False):
+
+    if edge_weight is None:
+        edge_weight = tf.ones([tf.shape(edge_index)[1]], dtype=tf.float32)
+
+    if add_self_loop:
+        fill_weight = 1.0
+        edge_index, edge_weight = add_self_loop_edge(edge_index, num_nodes, edge_weight=edge_weight,
+                                                     fill_weight=fill_weight)
+
+    row, col = edge_index[0], edge_index[1]
+    deg = tf.math.unsorted_segment_sum(edge_weight, row, num_segments=num_nodes)
+    deg_inv_sqrt = tf.pow(deg, -0.5)
+    deg_inv_sqrt = tf.where(
+        tf.math.logical_or(tf.math.is_inf(deg_inv_sqrt), tf.math.is_nan(deg_inv_sqrt)),
+        tf.zeros_like(deg_inv_sqrt),
+        deg_inv_sqrt
+    )
+
+    normed_edge_weight = tf.gather(deg_inv_sqrt, row) * edge_weight * tf.gather(deg_inv_sqrt, col)
+
+    return edge_index, normed_edge_weight
