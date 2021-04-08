@@ -31,7 +31,7 @@ def mean_graph_sage(x, edge_index, edge_weight,
     :return: Updated node features (x), shape: [num_nodes, num_output_features]
     """
 
-    row, col = edge_index
+    row, col = edge_index[0], edge_index[1]
     repeated_x = tf.gather(x, row)
     neighbor_x = tf.gather(x, col)
 
@@ -39,6 +39,59 @@ def mean_graph_sage(x, edge_index, edge_weight,
         neighbor_x = gcn_mapper(repeated_x, neighbor_x, edge_weight=edge_weight)
 
     neighbor_reduced_msg = mean_reducer(neighbor_x, row, num_nodes=x.shape[0])
+
+    neighbor_msg = neighbor_reduced_msg @ neighbor_kernel
+    x = x @ self_kernel
+
+    if concat:
+        h = tf.concat([x, neighbor_msg], axis=1)
+    else:
+        h = x + neighbor_msg
+
+    if bias is not None:
+        h += bias
+
+    if activation is not None:
+        h = activation(h)
+
+    if normalize:
+        h = tf.nn.l2_normalize(h, axis=-1)
+
+    return h
+
+
+
+def sum_graph_sage(x, edge_index, edge_weight,
+                    self_kernel,
+                    neighbor_kernel,
+                    bias=None,
+                    activation=None,
+                    concat=True, normalize=False):
+    """
+
+    :param x: Tensor, shape: [num_nodes, num_features], node features
+    :param edge_index: Tensor, shape: [2, num_edges], edge information
+    :param edge_weight: Tensor or None, shape: [num_edges]
+    :param self_kernel: Tensor, shape: [num_features, num_hidden_units], weight
+    :param neighbor_kernel: Tensor, shape: [num_features, num_hidden_units], weight.
+    :param bias: Tensor, shape: [num_output_features], bias
+    :param activation: Activation function to use.
+    :param normalize: If set to :obj:`True`, output features
+                will be :math:`\ell_2`-normalized, *i.e.*,
+                :math:`\frac{\mathbf{x}^{\prime}_i}
+                {\| \mathbf{x}^{\prime}_i \|_2}`.
+                (default: :obj:`False`)
+    :return: Updated node features (x), shape: [num_nodes, num_output_features]
+    """
+
+    row, col = edge_index[0], edge_index[1]
+    repeated_x = tf.gather(x, row)
+    neighbor_x = tf.gather(x, col)
+
+    if edge_weight is not None:
+        neighbor_x = gcn_mapper(repeated_x, neighbor_x, edge_weight=edge_weight)
+
+    neighbor_reduced_msg = sum_reducer(neighbor_x, row, num_nodes=x.shape[0])
 
     neighbor_msg = neighbor_reduced_msg @ neighbor_kernel
     x = x @ self_kernel

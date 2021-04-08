@@ -557,7 +557,14 @@ class LaplacianMaxEigenvalue(object):
         return float(lambda_max.real)
 
 
-def adj_norm_edge(edge_index, num_nodes, edge_weight=None, add_self_loop=False):
+# CACHE_KEY_ADJ_NORMED_EDGE = "adj_normed_edge"
+
+def adj_norm_edge(edge_index, num_nodes, edge_weight=None, add_self_loop=False, cache=None):
+    cache_key = "adj_normed_edge"
+    if cache is not None:
+        cached_data = cache.get(cache_key, None)
+        if cached_data is not None:
+            return cached_data
 
     if edge_weight is None:
         edge_weight = tf.ones([tf.shape(edge_index)[1]], dtype=tf.float32)
@@ -577,5 +584,8 @@ def adj_norm_edge(edge_index, num_nodes, edge_weight=None, add_self_loop=False):
     )
 
     normed_edge_weight = tf.gather(deg_inv_sqrt, row) * edge_weight * tf.gather(deg_inv_sqrt, col)
+
+    if cache is not None:
+        cache[cache_key] = edge_index, normed_edge_weight
 
     return edge_index, normed_edge_weight

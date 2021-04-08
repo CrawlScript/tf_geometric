@@ -54,7 +54,7 @@ def diff_pool_coarsen(x, edge_index, edge_weight, node_graph_index, dense_assign
 
 def diff_pool(x, edge_index, edge_weight, node_graph_index,
               feature_gnn, assign_gnn,
-              num_clusters, bias=None, activation=None, cache=None, training=None, return_side_effect=False):
+              num_clusters, bias=None, activation=None, cache=None, training=None):
     """
     Functional API for DiffPool: "Hierarchical graph representation learning with differentiable pooling"
 
@@ -74,7 +74,6 @@ def diff_pool(x, edge_index, edge_weight, node_graph_index,
         training mode (adding dropout) or in inference mode (doing nothing).
     :return: [pooled_x, pooled_edge_index, pooled_edge_weight, pooled_node_graph_index]
     """
-
 
     if edge_weight is None:
         num_edges = tf.shape(edge_index)[-1]
@@ -103,9 +102,4 @@ def diff_pool(x, edge_index, edge_weight, node_graph_index,
     if activation is not None:
         pooled_h = activation(pooled_h)
 
-    output = [pooled_h, pooled_edge_index, pooled_edge_weight, pooled_node_graph_index]
-    if not return_side_effect:
-        return output
-    else:
-        side_effect = [assign_probs]
-        return output + side_effect
+    return pooled_h, pooled_edge_index, pooled_edge_weight, pooled_node_graph_index

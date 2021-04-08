@@ -53,6 +53,8 @@ graph_sage
 
 .. autofunction:: tf_geometric.nn.mean_graph_sage
 
+.. autofunction:: tf_geometric.nn.sum_graph_sage
+
 .. autofunction:: tf_geometric.nn.mean_pool_graph_sage
 
 .. autofunction:: tf_geometric.nn.max_pool_graph_sage
@@ -144,3 +146,15 @@ sort_pool
 --------------------------------------------------------------
 
 .. autofunction:: tf_geometric.nn.sort_pool
+
+
+min_cut_pool
+--------------------------------------------------------------
+
+.. autofunction:: tf_geometric.nn.min_cut_pool
+
+.. autofunction:: tf_geometric.nn.min_cut_pool_coarsen
+
+.. autofunction:: tf_geometric.nn.min_cut_pool_compute_losses
+
+

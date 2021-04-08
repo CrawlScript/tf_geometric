@@ -40,7 +40,7 @@ class DiffPool(tf.keras.Model):
             self.bias = self.add_weight("bias", shape=[units],
                                         initializer="zeros", regularizer=bias_regularizer)
 
-    def call(self, inputs, cache=None, training=None, mask=None, return_side_effect=False):
+    def call(self, inputs, cache=None, training=None, mask=None):
         """
 
         :param inputs: List of graph info: [x, edge_index, edge_weight, node_graph_index]
@@ -51,5 +51,4 @@ class DiffPool(tf.keras.Model):
 
         return diff_pool(x, edge_index, edge_weight, node_graph_index,
                          self.feature_gnn, self.assign_gnn, self.num_clusters,
-                         bias=self.bias, activation=self.activation, training=training, cache=cache,
-                         return_side_effect=return_side_effect)
+                         bias=self.bias, activation=self.activation, training=training, cache=cache)

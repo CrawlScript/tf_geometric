@@ -20,8 +20,10 @@ for graph in train_graphs + valid_graphs + test_graphs:
 num_classes = train_graphs[0].y.shape[1]
 
 graph_sages = [
-    tfg.layers.MaxPoolGraphSage(units=256, activation=tf.nn.relu, concat=True),
-    tfg.layers.MaxPoolGraphSage(units=256, activation=tf.nn.relu, concat=True)
+    # tfg.layers.MaxPoolGraphSage(units=256, activation=tf.nn.relu, concat=True),
+    # tfg.layers.MaxPoolGraphSage(units=256, activation=tf.nn.relu, concat=True)
+    tfg.layers.MeanGraphSage(units=256, activation=tf.nn.relu, concat=True),
+    tfg.layers.MeanGraphSage(units=256, activation=tf.nn.relu, concat=True)
 ]
 
 fc = tf.keras.Sequential([

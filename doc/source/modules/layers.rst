@@ -61,6 +61,11 @@ GraphSage
    :members: call
 
 
+.. autoclass:: tf_geometric.layers.SumGraphSage
+   :special-members: __init__
+   :members: call
+
+
 .. autoclass:: tf_geometric.layers.MeanPoolGraphSage
    :special-members: __init__
    :members: call
@@ -163,5 +168,12 @@ SortPool
    :special-members: __init__
    :members: call
 
+
+
+MinCutPool
+--------------------
+.. autoclass:: tf_geometric.layers.MinCutPool
+   :special-members: __init__
+   :members: call
 
 

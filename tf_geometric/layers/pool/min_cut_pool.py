@@ -3,18 +3,19 @@
 
 import tensorflow as tf
 
-from tf_geometric.nn.pool.mincut_pool import mincut_pool
+from tf_geometric.nn.pool.min_cut_pool import min_cut_pool
 
 
-class MincutPool(tf.keras.Model):
+class MinCutPool(tf.keras.Model):
     """
-    OOP API for DiffPool: "Hierarchical graph representation learning with differentiable pooling"
+    OOP API for MinCutPool: "Spectral Clustering with Graph Neural Networks for Graph Pooling"
     """
 
     def __init__(self, feature_gnn, assign_gnn, units, num_clusters, activation=None, use_bias=True,
+                 gnn_use_normed_edge=True,
                  bias_regularizer=None, *args, **kwargs):
         """
-        DiffPool
+        MinCutPool
 
         :param feature_gnn: A GNN model to learn pooled node features, [x, edge_index, edge_weight] => updated_x,
             where updated_x corresponds to high-order node features.
@@ -40,7 +41,9 @@ class MincutPool(tf.keras.Model):
             self.bias = self.add_weight("bias", shape=[units],
                                         initializer="zeros", regularizer=bias_regularizer)
 
-    def call(self, inputs, cache=None, training=None, mask=None, return_side_effect=False):
+        self.gnn_use_normed_edge = gnn_use_normed_edge
+
+    def call(self, inputs, cache=None, training=None, mask=None, return_losses=False):
         """
 
         :param inputs: List of graph info: [x, edge_index, edge_weight, node_graph_index]
@@ -49,7 +52,15 @@ class MincutPool(tf.keras.Model):
         """
         x, edge_index, edge_weight, node_graph_index = inputs
 
-        return diff_pool(x, edge_index, edge_weight, node_graph_index,
-                         self.feature_gnn, self.assign_gnn, self.num_clusters,
-                         bias=self.bias, activation=self.activation, training=training, cache=cache,
-                         return_side_effect=return_side_effect)
+        outputs, loss_func = min_cut_pool(x, edge_index, edge_weight, node_graph_index,
+                                          self.feature_gnn, self.assign_gnn, self.num_clusters,
+                                          bias=self.bias, activation=self.activation,
+                                          gnn_use_normed_edge=self.gnn_use_normed_edge,
+                                          training=training, cache=cache,
+                                          return_losses=True)
+        self.add_loss(loss_func)
+
+        if not return_losses:
+            return outputs
+        else:
+            return outputs, loss_func

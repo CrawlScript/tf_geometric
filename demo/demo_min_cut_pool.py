@@ -1,8 +1,7 @@
 # coding=utf-8
 import os
 
-from tf_geometric.layers import DiffPool, GCN
-from tf_geometric.utils import tf_utils
+from tf_geometric.layers import MinCutPool
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
@@ -72,7 +71,8 @@ class GCNModel(tf.keras.Model):
 
         self.gcns = [
             # tfg.layers.GCN(units, activation=tf.nn.relu if i < len(units_list) - 1 else None)
-            tfg.layers.MeanGraphSage(units, concat=False, activation=tf.nn.relu if i < len(units_list) - 1 else None)
+            # tfg.layers.GCN(units, activation=tf.nn.relu)
+            tfg.layers.SumGraphSage(units, concat=False, activation=tf.nn.relu)
             for i, units in enumerate(units_list)
         ]
 
@@ -84,65 +84,87 @@ class GCNModel(tf.keras.Model):
         return h
 
 
+class AssignGCNModel(tf.keras.Model):
 
-class DiffPoolModel(tf.keras.Model):
+    def __init__(self, gcn_units_list, mlp_units_list, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.gcn_model = GCNModel(units_list=gcn_units_list)
+        self.mlp = tf.keras.Sequential([
+            tf.keras.layers.Dense(units, activation=tf.nn.relu if i < len(mlp_units_list) - 1 else None)
+            for i, units in enumerate(mlp_units_list)
+        ])
+    def call(self, inputs, training=None, mask=None):
+        x, edge_index, edge_weight = inputs
+        h = self.gcn_model([x, edge_index, edge_weight], training=training)
+        h = self.mlp(h, training=training)
+        return h
+
+
+class MinCutPoolModel(tf.keras.Model):
 
     def __init__(self, num_clusters_list, num_features_list, num_classes, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.diff_pools = []
+        self.min_cut_pools = []
 
-        for num_features, num_clusters in zip(num_features_list, num_clusters_list):
-            diff_pool = DiffPool(
-                feature_gnn=GCNModel([num_features, num_features]),
-                assign_gnn=GCNModel([num_features, num_clusters]),
-                units=num_features, num_clusters=num_clusters, activation=tf.nn.relu
+        for i, (num_features, num_clusters) in enumerate(zip(num_features_list, num_clusters_list)):
+            assign_gcn_model = AssignGCNModel([num_features, num_features], [num_clusters])
+            min_cut_pool = MinCutPool(
+                feature_gnn=assign_gcn_model.gcn_model,
+                assign_gnn=assign_gcn_model, activation=tf.nn.relu,
+                units=num_features, num_clusters=num_clusters
             )
-            self.diff_pools.append(diff_pool)
+            self.min_cut_pools.append(min_cut_pool)
 
         self.mlp = tf.keras.Sequential([
             tf.keras.layers.Dropout(0.5),
             tf.keras.layers.Dense(num_classes)
         ])
 
-    def call(self, inputs, training=None, mask=None, return_side_effect=False):
+    def call(self, inputs, training=None, mask=None, cache=None, return_losses=False):
         x, edge_index, edge_weight, node_graph_index = inputs
         h = x
         graph_h_list = []
         mean_cut_loss_list = []
         mean_orth_loss_list = []
-        for diff_pool in self.diff_pools:
-            pooled_h, pooled_edge_index, pooled_edge_weight, pooled_node_graph_index, assign_probs = diff_pool([h, edge_index, edge_weight, node_graph_index],
-                                                                                   training=training, return_side_effect=True)
-            graph_h = tfg.nn.max_pool(pooled_h, pooled_node_graph_index)
+        for min_cut_pool in self.min_cut_pools:
+            (pooled_h, pooled_edge_index, pooled_edge_weight, pooled_node_graph_index), loss_func = \
+                min_cut_pool([h, edge_index, edge_weight, node_graph_index], training=training, cache=cache,
+                             return_losses=True)
+
+            graph_h = tf.concat([
+                tfg.nn.mean_pool(pooled_h, pooled_node_graph_index),
+                tfg.nn.max_pool(pooled_h, pooled_node_graph_index)
+            ], axis=-1)
             graph_h_list.append(graph_h)
-            min_cut_losses, orth_losses = tfg.nn.min_cut_pool_compute_loss(edge_index, edge_weight, node_graph_index, assign_probs)
-            mean_cut_loss_list.append(tf.reduce_mean(min_cut_losses))
-            mean_orth_loss_list.append(tf.reduce_mean(orth_losses))
-            # print(min_cut_losses)
+
+            if return_losses:
+                min_cut_loss, orth_loss = loss_func()
+                mean_cut_loss_list.append(min_cut_loss)
+                mean_orth_loss_list.append(orth_loss)
 
             h, edge_index, edge_weight, node_graph_index = pooled_h, pooled_edge_index, pooled_edge_weight, pooled_node_graph_index
-
-        cut_loss = tf.add_n(mean_cut_loss_list)
-        orth_loss = tf.add_n(mean_orth_loss_list)
 
         graph_h = tf.concat(graph_h_list, axis=-1)
         logits = self.mlp(graph_h, training=training)
 
-        if not return_side_effect:
+        if not return_losses:
             return logits
         else:
-            return logits, cut_loss, orth_loss
+            cut_loss = tf.add_n(mean_cut_loss_list)
+            orth_loss = tf.add_n(mean_orth_loss_list)
+            return logits, (cut_loss, orth_loss)
+
 
 num_clusters_list = [20, 5]
 num_features_list = [128, 128]
 
-model = DiffPoolModel(num_clusters_list, num_features_list, num_classes)
+model = MinCutPoolModel(num_clusters_list, num_features_list, num_classes)
 
 
-def forward(batch_graph, training=False, return_side_effect=False):
+def forward(batch_graph, training=False, return_losses=False):
     return model([batch_graph.x, batch_graph.edge_index, batch_graph.edge_weight, batch_graph.node_graph_index],
-                 training=training, return_side_effect=return_side_effect)
+                 training=training, return_losses=return_losses)
 
 
 def evaluate():
@@ -163,7 +185,7 @@ train_batch_generator = create_graph_generator(train_graphs, batch_size, shuffle
 for step in tqdm(range(20000)):
     train_batch_graph = next(train_batch_generator)
     with tf.GradientTape() as tape:
-        logits, cut_loss, orth_loss = forward(train_batch_graph, training=True, return_side_effect=True)
+        logits, (cut_loss, orth_loss) = forward(train_batch_graph, training=True, return_losses=True)
         cls_losses = tf.nn.softmax_cross_entropy_with_logits(
             logits=logits,
             labels=tf.one_hot(train_batch_graph.y, depth=num_classes)
@@ -177,4 +199,6 @@ for step in tqdm(range(20000)):
 
     if step % 20 == 0:
         accuracy = evaluate()
-        print("step = {}\tloss = {}\taccuracy = {}".format(step, loss, accuracy))
+        print(
+            "step = {}\tloss = {}\tcut_loss = {}\torth_loss = {}\taccuracy = {}".format(step, loss, cut_loss, orth_loss,
+                                                                                        accuracy))

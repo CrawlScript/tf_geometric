@@ -8,7 +8,7 @@ from tf_geometric.nn.conv.gat import gat
 from tf_geometric.nn.conv.chebynet import chebynet, chebynet_norm_edge
 from tf_geometric.nn.conv.sgc import sgc
 from tf_geometric.nn.conv.tagcn import tagcn
-from tf_geometric.nn.conv.graph_sage import mean_graph_sage, mean_pool_graph_sage, max_pool_graph_sage, gcn_graph_sage, lstm_graph_sage
+from tf_geometric.nn.conv.graph_sage import mean_graph_sage, sum_graph_sage, mean_pool_graph_sage, max_pool_graph_sage, gcn_graph_sage, lstm_graph_sage
 from tf_geometric.nn.conv.appnp import appnp
 from tf_geometric.nn.conv.gin import gin
 from tf_geometric.nn.conv.le_conv import le_conv
@@ -24,4 +24,4 @@ from tf_geometric.nn.pool.cluster_pool import cluster_pool
 from tf_geometric.nn.pool.sag_pool import sag_pool
 from tf_geometric.nn.pool.asap import asap
 from tf_geometric.nn.pool.sort_pool import sort_pool
-from tf_geometric.nn.pool.min_cut_pool import min_cut_pool_compute_loss
+from tf_geometric.nn.pool.min_cut_pool import min_cut_pool, min_cut_pool_coarsen, min_cut_pool_compute_losses
