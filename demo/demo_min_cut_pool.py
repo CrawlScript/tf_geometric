@@ -130,7 +130,7 @@ class MinCutPoolModel(tf.keras.Model):
         for min_cut_pool in self.min_cut_pools:
             (pooled_h, pooled_edge_index, pooled_edge_weight, pooled_node_graph_index), loss_func = \
                 min_cut_pool([h, edge_index, edge_weight, node_graph_index], training=training, cache=cache,
-                             return_losses=True)
+                             return_loss_func=True)
 
             graph_h = tf.concat([
                 tfg.nn.mean_pool(pooled_h, pooled_node_graph_index),

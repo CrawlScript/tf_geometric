@@ -98,6 +98,7 @@ Graph Classification
 * `Order Matters: Sequence to Sequence for Sets (Set2Set) <demo/demo_set2set.py>`_
 * `ASAP: Adaptive Structure Aware Pooling for Learning Hierarchical Graph Representations (ASAP) <demo/demo_asap.py>`_
 * `An End-to-End Deep Learning Architecture for Graph Classification (SortPool) <demo/demo_sort_pool.py>`_
+* `Spectral Clustering with Graph Neural Networks for Graph Pooling (MinCutPool) <demo/demo_min_cut_pool.py>`_
 
 Link Prediction
 ^^^^^^^^^^^^^^^

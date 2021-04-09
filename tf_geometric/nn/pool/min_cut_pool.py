@@ -15,7 +15,8 @@ def _compute_STAS_trace(transposed_S, transposed_A, num_clusters):
     return trace
 
 
-def min_cut_pool_compute_losses(edge_index, edge_weight, node_graph_index, dense_assign, normed_edge_weight=None, cache=None):
+def min_cut_pool_compute_losses(edge_index, edge_weight, node_graph_index, dense_assign, normed_edge_weight=None,
+                                cache=None):
     dense_shape = tf.shape(dense_assign)
     num_nodes = dense_shape[0]
     num_clusters = dense_shape[1]
@@ -90,7 +91,7 @@ def min_cut_pool_compute_losses(edge_index, edge_weight, node_graph_index, dense
 
 
 def min_cut_pool_coarsen(x, edge_index, edge_weight, node_graph_index, dense_assign,
-                      num_nodes=None, num_clusters=None, num_graphs=None, normed_edge_weight=None, cache=None):
+                         num_nodes=None, num_clusters=None, num_graphs=None, normed_edge_weight=None, cache=None):
     """
     Coarsening method for MinCutPool: "Spectral Clustering with Graph Neural Networks for Graph Pooling"
     Coarsen the input BatchGraph (graphs) based on cluster assignment of nodes and output pooled BatchGraph (graphs).
@@ -131,8 +132,10 @@ def min_cut_pool_coarsen(x, edge_index, edge_weight, node_graph_index, dense_ass
 
     # Coarsen in a large BatchGraph.
     # Here num_clusters is the sum of number of clusters of graphs in the BatchGraph
-    pooled_x, pooled_edge_index, pooled_edge_weight = cluster_pool(x, edge_index, normed_edge_weight, assign_edge_index, assign_edge_weight,
-                                                                   num_clusters=num_clusters * num_graphs, num_nodes=num_nodes)
+    pooled_x, pooled_edge_index, pooled_edge_weight = cluster_pool(x, edge_index, normed_edge_weight, assign_edge_index,
+                                                                   assign_edge_weight,
+                                                                   num_clusters=num_clusters * num_graphs,
+                                                                   num_nodes=num_nodes)
 
     pooled_node_graph_index = tf.reshape(tf.tile(tf.expand_dims(tf.range(num_graphs), axis=-1), [1, num_clusters]), -1)
 
@@ -144,10 +147,11 @@ def min_cut_pool_coarsen(x, edge_index, edge_weight, node_graph_index, dense_ass
 
 
 def min_cut_pool(x, edge_index, edge_weight, node_graph_index,
-              feature_gnn, assign_gnn,
-              num_clusters, bias=None, activation=None,
-              gnn_use_normed_edge=True,
-              cache=None, training=None, return_losses=False):
+                 feature_gnn, assign_gnn,
+                 num_clusters, bias=None, activation=None,
+                 gnn_use_normed_edge=True,
+                 return_loss_func=False, return_losses=False,
+                 cache=None, training=None):
     """
     Functional API for MinCutPool: "Spectral Clustering with Graph Neural Networks for Graph Pooling"
 
@@ -162,11 +166,18 @@ def min_cut_pool(x, edge_index, edge_weight, node_graph_index,
     :param num_clusters: Number of clusters for pooling.
     :param bias: Tensor, shape: [num_output_features], bias
     :param activation: Activation function to use.
+    :param gnn_use_normed_edge: Boolean. Whether to use normalized edge for feature_gnn and assign_gnn.
+    :param return_loss_func: Boolean. If True, return (outputs, loss_func), where loss_func is a callable function
+        that returns a list of losses.
+    :param return_losses: Boolean. If True, return (outputs, losses), where losses is a list of losses.
     :param cache: A dict for caching A' for GCN. Different graph should not share the same cache dict.
     :param training: Python boolean indicating whether the layer should behave in
         training mode (adding dropout) or in inference mode (doing nothing).
     :return: [pooled_x, pooled_edge_index, pooled_edge_weight, pooled_node_graph_index]
     """
+
+    if return_loss_func and return_losses:
+        raise Exception("return_loss_func and return_losses cannot be set to True at the same time")
 
     if edge_weight is None:
         num_edges = tf.shape(edge_index)[-1]
@@ -206,12 +217,16 @@ def min_cut_pool(x, edge_index, edge_weight, node_graph_index,
 
     outputs = pooled_h, pooled_edge_index, pooled_edge_weight, pooled_node_graph_index
 
-    if not return_losses:
-        return outputs
-    else:
+    if return_loss_func or return_losses:
         # callable loss function
         def loss_func():
             return min_cut_pool_compute_losses(edge_index, edge_weight, node_graph_index, assign_probs,
                                                normed_edge_weight=normed_edge_weight, cache=cache)
-        return outputs, loss_func
 
+        if return_loss_func:
+            return outputs, loss_func
+        else:
+            losses = loss_func()
+            return outputs, losses
+    else:
+        return outputs

@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 setup(
     name="tf_geometric",
     python_requires='>3.5.0',
-    version="0.0.47",
+    version="0.0.48",
     author="Jun Hu",
     author_email="hujunxianligong@gmail.com",
     packages=find_packages(

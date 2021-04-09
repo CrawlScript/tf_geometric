@@ -25,6 +25,7 @@ class MinCutPool(tf.keras.Model):
         :param num_clusters: Number of clusters for pooling.
         :param activation: Activation function to use.
         :param use_bias: Boolean, whether the layer uses a bias vector. If true, the "units" parameter must be provided.
+        :param gnn_use_normed_edge: Boolean. Whether to use normalized edge for feature_gnn and assign_gnn.
         :param bias_regularizer: Regularizer function applied to the bias vector.
         """
         super().__init__(*args, **kwargs)
@@ -43,13 +44,20 @@ class MinCutPool(tf.keras.Model):
 
         self.gnn_use_normed_edge = gnn_use_normed_edge
 
-    def call(self, inputs, cache=None, training=None, mask=None, return_losses=False):
+    def call(self, inputs, cache=None, training=None, mask=None, return_loss_func=False, return_losses=False):
         """
 
         :param inputs: List of graph info: [x, edge_index, edge_weight, node_graph_index]
         :param cache: A dict for caching A' for GCN. Different graph should not share the same cache dict.
+        :param return_loss_func: Boolean. If True, return (outputs, loss_func), where loss_func is a callable function
+            that returns a list of losses.
+        :param return_losses: Boolean. If True, return (outputs, losses), where losses is a list of losses.
         :return: Pooled graph: [pooled_x, pooled_edge_index, pooled_edge_weight, pooled_node_graph_index]
         """
+
+        if return_loss_func and return_losses:
+            raise Exception("return_loss_func and return_losses cannot be set to True at the same time")
+
         x, edge_index, edge_weight, node_graph_index = inputs
 
         outputs, loss_func = min_cut_pool(x, edge_index, edge_weight, node_graph_index,
@@ -57,10 +65,14 @@ class MinCutPool(tf.keras.Model):
                                           bias=self.bias, activation=self.activation,
                                           gnn_use_normed_edge=self.gnn_use_normed_edge,
                                           training=training, cache=cache,
-                                          return_losses=True)
+                                          return_loss_func=True)
         self.add_loss(loss_func)
 
-        if not return_losses:
-            return outputs
-        else:
+        if return_loss_func:
             return outputs, loss_func
+        elif return_losses:
+            losses = loss_func()
+            return outputs, losses
+        else:
+            return outputs
+
