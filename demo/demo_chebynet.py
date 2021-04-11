@@ -13,7 +13,7 @@ graph, (train_index, valid_index, test_index) = CoraDataset().load_data()
 
 num_classes = graph.y.max() + 1
 
-model = tfg.layers.ChebyNet(64, K=3, activation=tf.nn.relu)
+model = tfg.layers.ChebyNet(64, k=3, activation=tf.nn.relu)
 fc = tf.keras.Sequential([
     keras.layers.Dropout(0.5),
     keras.layers.Dense(num_classes)

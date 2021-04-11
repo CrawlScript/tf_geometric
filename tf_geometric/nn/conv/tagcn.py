@@ -5,14 +5,14 @@ from tf_geometric.nn.kernel.map_reduce import aggregate_neighbors, sum_reducer, 
 from tf_geometric.nn.conv.gcn import gcn_norm_edge, gcn_mapper
 
 
-def tagcn(x, edge_index, edge_weight, K, kernel, bias=None, activation=None, renorm=False, improved=False, cache=None):
+def tagcn(x, edge_index, edge_weight, k, kernel, bias=None, activation=None, renorm=False, improved=False, cache=None):
     """
     Functional API for Topology Adaptive Graph Convolutional Network (TAGCN).
 
     :param x: Tensor, shape: [num_nodes, num_features], node features.
     :param edge_index: Tensor, shape: [2, num_edges], edge information.
     :param edge_weight: Tensor or None, shape: [num_edges].
-    :param K: Number of hops.(default: :obj:`3`)
+    :param k: Number of hops.(default: :obj:`3`)
     :param kernel: Tensor, shape: [num_features, num_output_features], weight.
     :param bias: Tensor, shape: [num_output_features], bias.
     :param activation: Activation function to use.
@@ -25,7 +25,7 @@ def tagcn(x, edge_index, edge_weight, K, kernel, bias=None, activation=None, ren
     xs = [x]
     updated_edge_index, normed_edge_weight = gcn_norm_edge(edge_index, x.shape[0], edge_weight,
                                                            renorm, improved, cache)
-    for k in range(K):
+    for k in range(k):
         h = aggregate_neighbors(
             xs[-1], updated_edge_index, normed_edge_weight,
             gcn_mapper,

@@ -1,5 +1,8 @@
 # coding=utf-8
 import os
+
+from tf_geometric.utils import tf_utils
+
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 import tf_geometric as tfg
 from tf_geometric.datasets.ppi import PPIDataset
@@ -22,8 +25,21 @@ num_classes = train_graphs[0].y.shape[1]
 graph_sages = [
     # tfg.layers.MaxPoolGraphSage(units=256, activation=tf.nn.relu, concat=True),
     # tfg.layers.MaxPoolGraphSage(units=256, activation=tf.nn.relu, concat=True)
+
+    # tfg.layers.MeanPoolGraphSage(units=256, activation=tf.nn.relu, concat=True),
+    # tfg.layers.MeanPoolGraphSage(units=256, activation=tf.nn.relu, concat=True)
+
     tfg.layers.MeanGraphSage(units=256, activation=tf.nn.relu, concat=True),
     tfg.layers.MeanGraphSage(units=256, activation=tf.nn.relu, concat=True)
+
+    # tfg.layers.SumGraphSage(units=256, activation=tf.nn.relu, concat=True),
+    # tfg.layers.SumGraphSage(units=256, activation=tf.nn.relu, concat=True)
+
+    # tfg.layers.LSTMGraphSage(units=256, activation=tf.nn.relu, concat=True),
+    # tfg.layers.LSTMGraphSage(units=256, activation=tf.nn.relu, concat=True)
+
+    # tfg.layers.GCNGraphSage(units=256, activation=tf.nn.relu),
+    # tfg.layers.GCNGraphSage(units=256, activation=tf.nn.relu)
 ]
 
 fc = tf.keras.Sequential([
@@ -36,15 +52,11 @@ num_sampled_neighbors_list = [25, 10]
 
 def forward(graph, training=False):
     neighbor_sampler = graph.cache["sampler"]
-
     h = graph.x
-
     for i, (graph_sage, num_sampled_neighbors) in enumerate(zip(graph_sages, num_sampled_neighbors_list)):
         sampled_edge_index, sampled_edge_weight = neighbor_sampler.sample(k=num_sampled_neighbors)
         h = graph_sage([h, sampled_edge_index, sampled_edge_weight], training=training)
-
     h = fc(h, training=training)
-
     return h
 
 

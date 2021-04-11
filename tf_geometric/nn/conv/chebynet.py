@@ -77,7 +77,7 @@ def chebynet_cache_normed_edge(graph, normalization_type="sym", use_dynamic_lamb
                        use_dynamic_lambda_max=use_dynamic_lambda_max, cache=graph.cache)
 
 
-def chebynet(x, edge_index, edge_weight, K, kernels, bias=None, activation=None, normalization_type="sym", use_dynamic_lambda_max=False, cache=None):
+def chebynet(x, edge_index, edge_weight, k, kernels, bias=None, activation=None, normalization_type="sym", use_dynamic_lambda_max=False, cache=None):
     num_nodes = tf.shape(x)[0]
     # lambda_max = chebynet_compute_lambda_max(x, edge_index, edge_weight, normalization_type, cache=cache)
 
@@ -88,11 +88,11 @@ def chebynet(x, edge_index, edge_weight, K, kernels, bias=None, activation=None,
     T1_x = x
     out = tf.matmul(T0_x, kernels[0])
 
-    if K > 1:
+    if k > 1:
         T1_x = aggregate_neighbors(x, norm_edge_index, norm_edge_weight, gcn_mapper, sum_reducer, identity_updater)
         out += tf.matmul(T1_x, kernels[1])
 
-    for i in range(2, K):
+    for i in range(2, k):
         T2_x = aggregate_neighbors(T1_x, norm_edge_index, norm_edge_weight, gcn_mapper, sum_reducer,
                                    identity_updater)  ##L^T_{k-1}(L^)
         T2_x = 2.0 * T2_x - T0_x

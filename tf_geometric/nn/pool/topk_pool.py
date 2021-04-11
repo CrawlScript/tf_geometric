@@ -3,19 +3,19 @@ import tensorflow as tf
 from tf_geometric.utils.union_utils import union_len
 
 
-def topk_pool(source_index, score, K=None, ratio=None):
+def topk_pool(source_index, score, k=None, ratio=None):
     """
 
     :param source_index: index of source node (of edge) or source graph (of node)
     :param score: 1-D Array
-    :param K: Keep top K targets for each source
+    :param k: Keep top k targets for each source
     :param ratio: Keep num_targets * ratio targets for each source
     :return: sampled_edge_index, sampled_edge_score, sample_index
     """
 
-    if K is None and ratio is None:
+    if k is None and ratio is None:
         raise Exception("you should provide either k or ratio for topk_pool")
-    elif K is not None and ratio is not None:
+    elif k is not None and ratio is not None:
         raise Exception("you should provide either k or ratio for topk_pool, not both of them")
 
     # currently, we consider the source_index is not sorted
@@ -57,9 +57,9 @@ def topk_pool(source_index, score, K=None, ratio=None):
 
     sort_index = tf.argsort(score_matrix, axis=-1, direction="DESCENDING")
 
-    if K is not None:
+    if k is not None:
         node_k = tf.math.minimum(
-            tf.cast(tf.fill([num_seen_sources], K), dtype=tf.int32),
+            tf.cast(tf.fill([num_seen_sources], k), dtype=tf.int32),
             num_targets_for_sources
         )
     else:

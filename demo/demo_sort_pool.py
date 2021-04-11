@@ -72,8 +72,8 @@ class SortPoolModel(tf.keras.Model):
 
         self.gcns = [GCN(128, activation=tf.nn.relu) for _ in range(3)]
 
-        self.K = 30
-        self.sort_pool = SortPool(K=self.K)
+        self.k = 30
+        self.sort_pool = SortPool(k=self.k)
         self.conv1d = tf.keras.layers.Conv1D(128, 5, activation=tf.nn.relu)
         self.flatten = tf.keras.layers.Flatten()
 
@@ -93,7 +93,7 @@ class SortPoolModel(tf.keras.Model):
 
         pooled_x, pooled_edge_index, pooled_edge_weight, pooled_node_graph_index = \
             self.sort_pool([h, edge_index, edge_weight, node_graph_index], training=training)
-        h = convert_x_to_3d(pooled_x, node_graph_index, K=self.K)
+        h = convert_x_to_3d(pooled_x, node_graph_index, k=self.k)
         h = self.conv1d(h)
         # h = tf.reduce_max(h, axis=1)
         h = self.flatten(h)

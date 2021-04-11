@@ -1,6 +1,4 @@
 # coding=utf-8
-
-
 import tensorflow as tf
 import numpy as np
 
@@ -30,6 +28,8 @@ def mean_graph_sage(x, edge_index, edge_weight,
                 (default: :obj:`False`)
     :return: Updated node features (x), shape: [num_nodes, num_output_features]
     """
+    num_nodes = tf.shape(x)[0]
+    # num_edges = tf.shape(edge_index)[1]
 
     row, col = edge_index[0], edge_index[1]
     repeated_x = tf.gather(x, row)
@@ -38,7 +38,7 @@ def mean_graph_sage(x, edge_index, edge_weight,
     if edge_weight is not None:
         neighbor_x = gcn_mapper(repeated_x, neighbor_x, edge_weight=edge_weight)
 
-    neighbor_reduced_msg = mean_reducer(neighbor_x, row, num_nodes=x.shape[0])
+    neighbor_reduced_msg = mean_reducer(neighbor_x, row, num_nodes=num_nodes)
 
     neighbor_msg = neighbor_reduced_msg @ neighbor_kernel
     x = x @ self_kernel
@@ -83,6 +83,8 @@ def sum_graph_sage(x, edge_index, edge_weight,
                 (default: :obj:`False`)
     :return: Updated node features (x), shape: [num_nodes, num_output_features]
     """
+    num_nodes = tf.shape(x)[0]
+    # num_edges = tf.shape(edge_index)[1]
 
     row, col = edge_index[0], edge_index[1]
     repeated_x = tf.gather(x, row)
@@ -91,7 +93,7 @@ def sum_graph_sage(x, edge_index, edge_weight,
     if edge_weight is not None:
         neighbor_x = gcn_mapper(repeated_x, neighbor_x, edge_weight=edge_weight)
 
-    neighbor_reduced_msg = sum_reducer(neighbor_x, row, num_nodes=x.shape[0])
+    neighbor_reduced_msg = sum_reducer(neighbor_x, row, num_nodes=num_nodes)
 
     neighbor_msg = neighbor_reduced_msg @ neighbor_kernel
     x = x @ self_kernel
@@ -131,10 +133,11 @@ def gcn_graph_sage(x, edge_index, edge_weight, kernel, bias=None, activation=Non
         :param cache: A dict for caching A' for GCN. Different graph should not share the same cache dict.
         :return: Updated node features (x), shape: [num_nodes, num_output_features]
     """
-    if edge_weight is not None:
-        edge_weight = tf.ones([edge_index.shape[1]], dtype=tf.float32)
-
     num_nodes = tf.shape(x)[0]
+    num_edges = tf.shape(edge_index)[1]
+
+    if edge_weight is not None:
+        edge_weight = tf.ones([num_edges], dtype=tf.float32)
 
     updated_edge_index, normed_edge_weight = gcn_norm_edge(edge_index, num_nodes, edge_weight, cache)
     row, col = updated_edge_index
@@ -181,10 +184,13 @@ def mean_pool_graph_sage(x, edge_index, edge_weight,
     :return: Updated node features (x), shape: [num_nodes, num_output_features]
     """
 
-    if edge_weight is not None:
-        edge_weight = tf.ones([edge_index.shape[1]], dtype=tf.float32)
+    num_nodes = tf.shape(x)[0]
+    num_edges = tf.shape(edge_index)[1]
 
-    row, col = edge_index
+    if edge_weight is not None:
+        edge_weight = tf.ones([num_edges], dtype=tf.float32)
+
+    row, col = edge_index[0], edge_index[1]
     repeated_x = tf.gather(x, row)
     neighbor_x = tf.gather(x, col)
 
@@ -197,7 +203,7 @@ def mean_pool_graph_sage(x, edge_index, edge_weight,
     if activation is not None:
         h = activation(h)
 
-    reduced_h = mean_reducer(h, row, num_nodes=x.shape[0])
+    reduced_h = mean_reducer(h, row, num_nodes=num_nodes)
 
     from_neighbor = reduced_h @ neighbor_kernel
     from_x = x @ self_kernel
@@ -241,8 +247,11 @@ def max_pool_graph_sage(x, edge_index, edge_weight,
                         (default: :obj:`False`)
             :return: Updated node features (x), shape: [num_nodes, num_output_features]
             """
+    num_nodes = tf.shape(x)[0]
+    num_edges = tf.shape(edge_index)[1]
+
     if edge_weight is not None:
-        edge_weight = tf.ones([edge_index.shape[1]], dtype=tf.float32)
+        edge_weight = tf.ones([num_edges], dtype=tf.float32)
 
     row, col = edge_index[0], edge_index[1]
     repeated_x = tf.gather(x, row)
@@ -257,7 +266,7 @@ def max_pool_graph_sage(x, edge_index, edge_weight,
     if activation is not None:
         h = activation(h)
 
-    reduced_h = max_reducer(h, row, num_nodes=tf.shape(x)[0])
+    reduced_h = max_reducer(h, row, num_nodes=num_nodes)
     from_neighs = reduced_h @ neighbor_kernel
     from_x = x @ self_kernel
 
@@ -280,7 +289,7 @@ def max_pool_graph_sage(x, edge_index, edge_weight,
 
 def lstm_graph_sage(x, edge_index, lstm, self_kernel, neighbor_kernel,
                     bias=None, activation=None,
-                    concat=True, normalize=False):
+                    concat=True, normalize=False, training=False):
     """
 
 
@@ -298,25 +307,32 @@ def lstm_graph_sage(x, edge_index, lstm, self_kernel, neighbor_kernel,
                 (default: :obj:`False`)
     :return: Updated node features (x), shape: [num_nodes, num_output_features]
     """
+    num_nodes = tf.shape(x)[0]
+    num_edges = tf.shape(edge_index)[1]
 
-    row, col = edge_index
-    row_numpy = row.numpy()
-    col_numpy = col.numpy()
-    num_neighbors = 0
-    for i in row_numpy:
-        if i == 0:
-            num_neighbors += 1
-        else:
-            break
+    row, col = edge_index[0], edge_index[1]
 
-    neighbors = np.zeros((x.shape[0], num_neighbors), dtype=np.int)
+    sort_index = tf.argsort(row, axis=-1, direction='ASCENDING')
+    row = tf.gather(row, sort_index)
+    col = tf.gather(col, sort_index)
 
-    for i in range(x.shape[0]):
-        neighbors[i] = col_numpy[i * num_neighbors:(i + 1) * num_neighbors]
+    degree = tf.math.unsorted_segment_sum(tf.ones([num_edges], dtype=tf.int32), row, num_nodes)
 
-    neighbor_x = tf.gather(x, neighbors)
+    num_sampled_neighbors = tf.reduce_max(degree)
+    num_edges_before_row = tf.concat([tf.zeros([1], dtype=tf.int32), tf.math.cumsum(degree)[:-1]], axis=0)
+    matrix_col_index = tf.range(num_edges) - tf.gather(num_edges_before_row, row)
 
-    neighbor_h = lstm(neighbor_x)
+    neighbor_matrix = tf.fill((num_nodes, num_sampled_neighbors), num_nodes)
+    neighbor_matrix = tf.tensor_scatter_nd_update(
+        neighbor_matrix,
+        tf.stack([row, matrix_col_index], axis=1),
+        col
+    )
+
+    padded_x = tf.concat([x, tf.zeros([1, tf.shape(x)[-1]], x.dtype)], axis=0)
+
+    neighbor_x = tf.gather(padded_x, neighbor_matrix)
+    neighbor_h = lstm(neighbor_x, training=training)
 
     reduced_h = tf.reduce_mean(neighbor_h, axis=1)
 

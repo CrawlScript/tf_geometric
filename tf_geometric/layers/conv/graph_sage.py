@@ -418,4 +418,4 @@ class LSTMGraphSage(tf.keras.Model):
                                self.self_kernel,
                                self.neighbor_kernel,
                                bias=self.bias, activation=self.activation,
-                               concat=self.concat, normalize=self.normalize)
+                               concat=self.concat, normalize=self.normalize, training=training)

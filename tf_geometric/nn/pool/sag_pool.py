@@ -5,7 +5,7 @@ from tf_geometric.nn.pool.topk_pool import topk_pool
 
 
 def sag_pool(x, edge_index, edge_weight, node_graph_index,
-             score_gnn, K=None, ratio=None,
+             score_gnn, k=None, ratio=None,
              score_activation=None, training=None, cache=None):
     """
     Functional API for SAGPool
@@ -15,7 +15,7 @@ def sag_pool(x, edge_index, edge_weight, node_graph_index,
     :param edge_weight: Tensor or None, shape: [num_edges]
     :param node_graph_index: Tensor/NDArray, shape: [num_nodes], graph index for each node
     :param score_gnn: A GNN model to score nodes for the pooling, [x, edge_index, edge_weight] => node_score.
-    :param K: Keep top K targets for each source
+    :param k: Keep top k targets for each source
     :param ratio: Keep num_targets * ratio targets for each source
     :param score_activation: Activation to use for node_score before multiplying node_features with node_score
     :param training: Python boolean indicating whether the layer should behave in
@@ -29,7 +29,7 @@ def sag_pool(x, edge_index, edge_weight, node_graph_index,
     else:
         node_score = score_gnn([x, edge_index, edge_weight], training=training, cache=cache)
 
-    topk_node_index = topk_pool(node_graph_index, node_score, K=K, ratio=ratio)
+    topk_node_index = topk_pool(node_graph_index, node_score, k=k, ratio=ratio)
 
     if score_activation is not None:
         node_score = score_activation(node_score)

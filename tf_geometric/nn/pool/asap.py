@@ -23,7 +23,7 @@ def asap(x, edge_index, edge_weight, node_graph_index,
          le_conv_self_kernel, le_conv_self_bias,
          le_conv_aggr_self_kernel, le_conv_aggr_self_bias,
          le_conv_aggr_neighbor_kernel, le_conv_aggr_neighbor_bias,
-         K=None, ratio=None,
+         k=None, ratio=None,
          le_conv_activation=tf.nn.sigmoid,
          drop_rate=0.0, training=None, cache=None):
     """
@@ -33,7 +33,7 @@ def asap(x, edge_index, edge_weight, node_graph_index,
     :param edge_index: Tensor, shape: [2, num_edges], edge information
     :param edge_weight: Tensor or None, shape: [num_edges]
     :param node_graph_index: Tensor/NDArray, shape: [num_nodes], graph index for each node
-    :param K: Keep top K targets for each source
+    :param k: Keep top k targets for each source
     :param ratio: Keep num_targets * ratio targets for each source
     :param le_conv_activation: Activation to use for node_score before multiplying node_features with node_score
     :param training: Python boolean indicating whether the layer should behave in
@@ -46,7 +46,8 @@ def asap(x, edge_index, edge_weight, node_graph_index,
     # num_graphs = tf.reduce_max(node_graph_index) + 1
 
     edge_index, edge_weight = remove_self_loop_edge(edge_index, edge_weight)
-    edge_index_with_self_loop, edge_weight_with_self_loop = add_self_loop_edge(edge_index, num_nodes=num_nodes, edge_weight=edge_weight)
+    edge_index_with_self_loop, edge_weight_with_self_loop = add_self_loop_edge(edge_index, num_nodes=num_nodes,
+                                                                               edge_weight=edge_weight)
 
     row_with_self_loop, col_with_self_loop = edge_index_with_self_loop[0], edge_index_with_self_loop[1]
 
@@ -89,8 +90,7 @@ def asap(x, edge_index, edge_weight, node_graph_index,
                          le_conv_aggr_neighbor_kernel, le_conv_aggr_neighbor_bias,
                          activation=None)
 
-
-    topk_node_index = topk_pool(node_graph_index, node_score, K=K, ratio=ratio)
+    topk_node_index = topk_pool(node_graph_index, node_score, k=k, ratio=ratio)
     topk_node_score = tf.gather(node_score, topk_node_index)
     if le_conv_activation is not None:
         topk_node_score = le_conv_activation(topk_node_score)
@@ -117,7 +117,6 @@ def asap(x, edge_index, edge_weight, node_graph_index,
     assign_edge_weight = tf.boolean_mask(normed_attention_score, assign_mask)
     assign_edge_weight = tf.reshape(assign_edge_weight, [-1])
     assign_edge_weight = tf.stop_gradient(assign_edge_weight)
-
 
     # Coarsen in a large BatchGraph.
     _, pooled_edge_index, pooled_edge_weight = cluster_pool(

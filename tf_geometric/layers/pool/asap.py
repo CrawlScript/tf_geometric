@@ -10,7 +10,7 @@ class ASAP(tf.keras.Model):
     OOP API for ASAP: Adaptive Structure Aware Pooling for Learning Hierarchical Graph Representation
     """
 
-    def __init__(self, K=None, ratio=None, drop_rate=0.0,
+    def __init__(self, k=None, ratio=None, drop_rate=0.0,
                  attention_units=None,
                  le_conv_activation=tf.nn.sigmoid,
                  le_conv_use_bias=True,
@@ -37,7 +37,7 @@ class ASAP(tf.keras.Model):
         self.le_conv_aggr_self_bias = None
         self.le_conv_aggr_neighbor_kernel = None
 
-        self.K = K
+        self.k = k
         self.ratio = ratio
         self.drop_rate = drop_rate
         self.le_conv_activation = le_conv_activation
@@ -97,11 +97,11 @@ class ASAP(tf.keras.Model):
         x, edge_index, edge_weight, node_graph_index = inputs
 
         return asap(x, edge_index, edge_weight, node_graph_index,
-                        self.attention_gcn_kernel, self.attention_gcn_bias,
-                        self.attention_query_kernel, self.attention_query_bias,
-                        self.attention_score_kernel, self.attention_score_bias,
-                        self.le_conv_self_kernel, self.le_conv_self_bias,
-                        self.le_conv_aggr_self_kernel, self.le_conv_aggr_self_bias,
-                        self.le_conv_aggr_neighbor_kernel, None,
-                        K=self.K, ratio=self.ratio, le_conv_activation=self.le_conv_activation,
-                        drop_rate=self.drop_rate, training=training, cache=cache)
+                    self.attention_gcn_kernel, self.attention_gcn_bias,
+                    self.attention_query_kernel, self.attention_query_bias,
+                    self.attention_score_kernel, self.attention_score_bias,
+                    self.le_conv_self_kernel, self.le_conv_self_bias,
+                    self.le_conv_aggr_self_kernel, self.le_conv_aggr_self_bias,
+                    self.le_conv_aggr_neighbor_kernel, None,
+                    k=self.k, ratio=self.ratio, le_conv_activation=self.le_conv_activation,
+                    drop_rate=self.drop_rate, training=training, cache=cache)

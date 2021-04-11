@@ -12,14 +12,14 @@ class ChebyNet(tf.keras.Model):
 
     """
 
-    def __init__(self, units, K, activation=None, use_bias=True, normalization_type="sym",
+    def __init__(self, units, k, activation=None, use_bias=True, normalization_type="sym",
                  use_dynamic_lambda_max=False,
                  kernel_regularizer=None, bias_regularizer=None,
                  *args, **kwargs):
         """
 
         :param units: Positive integer, dimensionality of the output space.
-        :param K: Chebyshev filter size (default: '3").
+        :param k: Chebyshev filter size (default: '3").
         :param lambda_max:
         :param use_bias: Boolean, whether the layer uses a bias vector.
         :param activation: Activation function to use.
@@ -33,10 +33,10 @@ class ChebyNet(tf.keras.Model):
         super().__init__(*args, **kwargs)
         self.units = units
 
-        assert K > 0
+        assert k > 0
         assert normalization_type in [None, 'sym', 'rw'], 'Invalid normalization'
 
-        self.K = K
+        self.k = k
 
         self.use_bias = use_bias
 
@@ -54,7 +54,7 @@ class ChebyNet(tf.keras.Model):
         x_shape = input_shapes[0]
         num_features = x_shape[-1]
 
-        for k in range(self.K):
+        for k in range(self.k):
             kernel = self.add_weight("kernel{}".format(k), shape=[num_features, self.units],
                                       initializer="glorot_uniform", regularizer=self.kernel_regularizer)
             self.kernels.append(kernel)
@@ -91,5 +91,5 @@ class ChebyNet(tf.keras.Model):
             x, edge_index = inputs
             edge_weight = None
 
-        return chebynet(x, edge_index, edge_weight, self.K, self.kernels, self.bias, self.activation,
+        return chebynet(x, edge_index, edge_weight, self.k, self.kernels, self.bias, self.activation,
                         self.normalization_type, use_dynamic_lambda_max=self.use_dynamic_lambda_max, cache=cache)

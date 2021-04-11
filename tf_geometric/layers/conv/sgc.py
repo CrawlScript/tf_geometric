@@ -29,7 +29,7 @@ class SGC(tf.keras.Model):
         self.use_bias = use_bias
         self.renorm = renorm
         self.improved = improved
-        self.K = k
+        self.k = k
         self.activation = activation
         self.kernel = None
         self.bias = None
@@ -72,6 +72,6 @@ class SGC(tf.keras.Model):
             x, edge_index = inputs
             edge_weight = None
 
-        return sgc(x, edge_index, edge_weight, self.K, self.kernel,
+        return sgc(x, edge_index, edge_weight, self.k, self.kernel,
                    bias=self.bias, activation=self.activation,
                    renorm=self.renorm, improved=self.improved, cache=cache)

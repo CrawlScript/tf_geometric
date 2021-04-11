@@ -62,7 +62,7 @@ def gat(x, edge_index,
     qk_edge_index_ = tf.concat([edge_index + i * num_nodes for i in range(num_heads)], axis=1)
 
     scale = tf.math.sqrt(tf.cast(tf.shape(Q_)[-1], tf.float32))
-    att_score_ = tf.reduce_sum(Q_ * K_ / scale, axis=-1)
+    att_score_ = tf.reduce_sum(Q_ * K_, axis=-1) / scale
     normed_att_score_ = segment_softmax(att_score_, qk_edge_index_[0], num_nodes * num_heads)
 
     if training and drop_rate > 0.0:

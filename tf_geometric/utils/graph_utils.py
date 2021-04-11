@@ -11,7 +11,7 @@ from scipy.sparse.linalg import eigs, eigsh
 import scipy.sparse
 
 
-def convert_x_to_3d(x, source_index, K=None, pad=True):
+def convert_x_to_3d(x, source_index, k=None, pad=True):
 
     source_index_perm = tf.argsort(source_index, stable=True)
     sorted_source_index = tf.gather(source_index, source_index_perm)
@@ -32,19 +32,19 @@ def convert_x_to_3d(x, source_index, K=None, pad=True):
 
     target_index_for_source = tf.range(0, num_targets) - tf.gather(num_targets_before, sorted_source_index)
 
-    if K is None:
-        K = max_num_targets_for_sources
-    elif K > max_num_targets_for_sources:
+    if k is None:
+        k = max_num_targets_for_sources
+    elif k > max_num_targets_for_sources:
         if not pad:
-            K = max_num_targets_for_sources
-    elif K < max_num_targets_for_sources:
-            mask = tf.less(target_index_for_source, K)
+            k = max_num_targets_for_sources
+    elif k < max_num_targets_for_sources:
+            mask = tf.less(target_index_for_source, k)
             target_index_for_source = tf.boolean_mask(target_index_for_source, mask)
             sorted_source_index = tf.boolean_mask(sorted_source_index, mask)
             permed_x = tf.boolean_mask(permed_x, mask)
 
 
-    h = tf.zeros([num_seen_sources, K, tf.shape(x)[-1]], dtype=x.dtype)
+    h = tf.zeros([num_seen_sources, k, tf.shape(x)[-1]], dtype=x.dtype)
     index = tf.stack([sorted_source_index, target_index_for_source], axis=1)
     h = tf.tensor_scatter_nd_update(h, index, permed_x)
     return h
