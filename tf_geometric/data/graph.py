@@ -422,5 +422,5 @@ class BatchGraph(Graph):
         :return:
         """
         self.edge_index, [self.edge_weight, self.edge_graph_index] = \
-            convert_edge_to_directed(self.edge_index, [self.edge_weight, self.edge_graph_index])
+            convert_edge_to_directed(self.edge_index, [self.edge_weight, self.edge_graph_index], merge_modes=["sum", "max"])
         return self

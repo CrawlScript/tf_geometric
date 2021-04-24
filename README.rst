@@ -173,7 +173,7 @@ We provide both OOP and Functional API, with which you can make some cool things
    # A graph usually consists of x(node features), edge_index and edge_weight(optional)
 
    # Node Features => (num_nodes, num_features)
-   x = np.random.randn(5, 20).astype(np.float32) # 5 nodes, 20 features
+   x = np.random.randn(5, 20).astype(np.float32)  # 5 nodes, 20 features
 
    # Edge Index => (2, num_edges)
    # Each column of edge_index (u, v) represents an directed edge from u to v.

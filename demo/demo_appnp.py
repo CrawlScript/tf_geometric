@@ -39,8 +39,8 @@ def compute_loss(logits, mask_index, vars):
         labels=tf.one_hot(masked_labels, depth=num_classes)
     )
 
-    kernel_vals = [var for var in vars if "kernel" in var.name]
-    l2_losses = [tf.nn.l2_loss(kernel_var) for kernel_var in kernel_vals]
+    kernel_vars = [var for var in vars if "kernel" in var.name]
+    l2_losses = [tf.nn.l2_loss(kernel_var) for kernel_var in kernel_vars]
 
     return tf.reduce_mean(losses) + tf.add_n(l2_losses) * 5e-4
 

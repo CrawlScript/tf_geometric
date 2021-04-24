@@ -1,8 +1,5 @@
 # coding=utf-8
 import os
-
-from tf_geometric.utils import tf_utils
-
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 import tf_geometric as tfg
 from tf_geometric.datasets.ppi import PPIDataset
@@ -66,8 +63,8 @@ def compute_loss(logits, vars):
         labels=tf.convert_to_tensor(graph.y, dtype=tf.float32)
     )
 
-    kernel_vals = [var for var in vars if "kernel" in var.name]
-    l2_losses = [tf.nn.l2_loss(kernel_var) for kernel_var in kernel_vals]
+    kernel_vars = [var for var in vars if "kernel" in var.name]
+    l2_losses = [tf.nn.l2_loss(kernel_var) for kernel_var in kernel_vars]
 
     return tf.reduce_mean(losses) + tf.add_n(l2_losses) * 1e-5
 

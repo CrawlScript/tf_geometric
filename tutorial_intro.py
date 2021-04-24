@@ -40,7 +40,7 @@ outputs = tfg.nn.gcn(
     tf.Variable(x),
     tf.constant(edge_index),
     tf.constant(edge_weight),
-    tf.Variable(tf.random.truncated_normal([20, 2])) # GCN Weight
+    tf.Variable(tf.random.truncated_normal([20, 2]))  # GCN Weight
 )
 print(outputs)
 

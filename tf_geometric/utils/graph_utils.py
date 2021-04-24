@@ -4,15 +4,12 @@ import numpy as np
 import networkx as nx
 from sklearn.model_selection import train_test_split
 import warnings
-
 from tf_geometric.utils.union_utils import convert_union_to_numpy
-
 from scipy.sparse.linalg import eigs, eigsh
 import scipy.sparse
 
 
 def convert_x_to_3d(x, source_index, k=None, pad=True):
-
     source_index_perm = tf.argsort(source_index, stable=True)
     sorted_source_index = tf.gather(source_index, source_index_perm)
     permed_x = tf.gather(x, source_index_perm)
@@ -38,11 +35,10 @@ def convert_x_to_3d(x, source_index, k=None, pad=True):
         if not pad:
             k = max_num_targets_for_sources
     elif k < max_num_targets_for_sources:
-            mask = tf.less(target_index_for_source, k)
-            target_index_for_source = tf.boolean_mask(target_index_for_source, mask)
-            sorted_source_index = tf.boolean_mask(sorted_source_index, mask)
-            permed_x = tf.boolean_mask(permed_x, mask)
-
+        mask = tf.less(target_index_for_source, k)
+        target_index_for_source = tf.boolean_mask(target_index_for_source, mask)
+        sorted_source_index = tf.boolean_mask(sorted_source_index, mask)
+        permed_x = tf.boolean_mask(permed_x, mask)
 
     h = tf.zeros([num_seen_sources, k, tf.shape(x)[-1]], dtype=x.dtype)
     index = tf.stack([sorted_source_index, target_index_for_source], axis=1)
@@ -142,58 +138,6 @@ def convert_edge_to_nx_graph(edge_index, edge_properties=[], convert_to_directed
         g = g.to_directed()
 
     return g
-
-
-def convert_edge_to_upper(edge_index, edge_properties=[]):
-    edge_index_is_tensor = tf.is_tensor(edge_index)
-    edge_properties_is_tensor = [tf.is_tensor(edge_property) for edge_property in edge_properties]
-
-    g = convert_edge_to_nx_graph(edge_index, edge_properties, convert_to_directed=False)
-
-    sorted_edges = [sorted(edge) for edge in g.edges]
-    edge_index = np.array(sorted_edges).T
-
-    edge_properties = [
-        np.array([item[2] for item in g.edges.data("p_{}".format(i))])
-        if edge_property is not None else None
-        for i, edge_property in enumerate(edge_properties)
-    ]
-
-    if edge_index_is_tensor:
-        edge_index = tf.convert_to_tensor(edge_index)
-
-    edge_properties = [
-        tf.convert_to_tensor(edge_property) if edge_properties_is_tensor[i] else edge_property
-        for i, edge_property in enumerate(edge_properties)
-    ]
-
-    return edge_index, edge_properties
-
-
-# [[1,3,5], [2,1,4]] => [[1,3,5,2,1,4], [2,1,4,1,3,5]]
-def convert_edge_to_directed(edge_index, edge_properties=[]):
-    edge_index_is_tensor = tf.is_tensor(edge_index)
-    edge_properties_is_tensor = [tf.is_tensor(edge_property) for edge_property in edge_properties]
-
-    g = convert_edge_to_nx_graph(edge_index, edge_properties, convert_to_directed=True)
-
-    edge_index = np.array(g.edges).T
-
-    edge_properties = [
-        np.array([item[2] for item in g.edges.data("p_{}".format(i))])
-        if edge_property is not None else None
-        for i, edge_property in enumerate(edge_properties)
-    ]
-
-    if edge_index_is_tensor:
-        edge_index = tf.convert_to_tensor(edge_index)
-
-    edge_properties = [
-        tf.convert_to_tensor(edge_property) if edge_properties_is_tensor[i] else edge_property
-        for i, edge_property in enumerate(edge_properties)
-    ]
-
-    return edge_index, edge_properties
 
 
 def add_self_loop_edge(edge_index, num_nodes, edge_weight=None, fill_weight=1.0):
@@ -356,7 +300,7 @@ def edge_train_test_split(edge_index, test_size, edge_weight=None, mode="undirec
         edge_index = convert_union_to_numpy(edge_index, dtype=np.int32)
         edge_weight = convert_union_to_numpy(edge_weight, dtype=np.float32)
 
-        upper_edge_index, [upper_edge_weight] = convert_edge_to_upper(edge_index, [edge_weight])
+        upper_edge_index, [upper_edge_weight] = convert_edge_to_upper(edge_index, [edge_weight], merge_modes=["max"])
 
         num_unique_edges = upper_edge_index.shape[1]
         train_indices, test_indices = train_test_split(list(range(num_unique_edges)), test_size=test_size)
@@ -496,37 +440,66 @@ class RandomNeighborSampler(object):
 
         self.num_sources = len(self.neighbor_dict)
         self.source_index = sorted(self.neighbor_dict.keys())
-        self.neighbors_list = [self.neighbor_dict[a] for a in self.source_index]
-        self.num_neighbors_list = np.array([len(neighbors) for neighbors in self.neighbors_list])
-        self.neighbor_index_list = [np.arange(num_neighbors) for num_neighbors in self.num_neighbors_list]
+        self.num_neighbors_dict = {node_index: len(neighbors) for node_index, neighbors in self.neighbor_dict.items()}
 
-    def sample(self, k=None, ratio=None):
+    def sample(self, k=None, ratio=None, central_node_index=None):
+        # if k is None and ratio is None:
+        #     raise Exception("you should provide either k or ratio")
+        # elif k is not None and ratio is not None:
+        #     raise Exception("you should provide either k or ratio, not both of them")
+
+        if k is not None and ratio is not None:
+            raise Exception("k and ratio cannot be provided simultaneously")
+
         if k is None and ratio is None:
-            raise Exception("you should provide either k or ratio")
-        elif k is not None and ratio is not None:
-            raise Exception("you should provide either k or ratio, not both of them")
-
-        if ratio is not None:
-            num_sampled_neighbors = np.ceil(self.num_neighbors_list * ratio).astype(np.int32)
+            sample_all = True
         else:
-            num_sampled_neighbors = np.full([self.num_sources], fill_value=k)
+            sample_all = False
+
+        central_node_index_is_none = central_node_index is None
+
+        if central_node_index_is_none:
+            central_node_index = self.source_index
+
+        # num_central_nodes = len(central_node_index)
 
         sampled_edge_index = []
         sampled_edge_weight = []
 
-        for i, (a, neighbors, num_sampled_neighbors, neighbor_index) in \
-                enumerate(zip(self.source_index, self.neighbors_list, num_sampled_neighbors, self.neighbor_index_list)):
-            # sampled_neighbors = np.random.choice(neighbors, num_sampled_neighbors, replace=True)
-            sampled_neighbor_index = np.random.choice(neighbor_index, num_sampled_neighbors, replace=True)
-            sampled_neighbors = [neighbors[i] for i in sampled_neighbor_index]
+        for i in central_node_index:
+            if i not in self.neighbor_dict:
+                continue
+            neighbors = self.neighbor_dict[i]
 
-            for (b, weight) in sampled_neighbors:
-                sampled_edge_index.append([a, b])
+            if sample_all:
+                sampled_neighbors = neighbors
+            else:
+                if ratio is None:
+                    num_sampled_neighbors = k
+                else:
+                    num_sampled_neighbors = np.ceil(self.num_neighbors_dict.get(i, 0) * ratio).astype(np.int32)
+
+                sampled_neighbor_index = np.random.choice(len(neighbors), num_sampled_neighbors, replace=True)
+                sampled_neighbors = [neighbors[i] for i in sampled_neighbor_index]
+
+            for (j, weight) in sampled_neighbors:
+                sampled_edge_index.append([i, j])
                 sampled_edge_weight.append(weight)
 
         sampled_edge_index = np.array(sampled_edge_index).T
         sampled_edge_weight = np.array(sampled_edge_weight)
-        return sampled_edge_index, sampled_edge_weight
+
+        sampled_node_index = np.unique(np.reshape(sampled_edge_index, [-1]))
+        central_node_index_set = {i for i in central_node_index}
+        non_central_node_index = [i for i in sampled_node_index if i not in central_node_index_set]
+        sampled_node_index = np.concatenate([central_node_index, non_central_node_index], axis=0)
+
+        sampled_edge = sampled_edge_index, sampled_edge_weight
+        if not central_node_index_is_none:
+            node_index = sampled_node_index, central_node_index, non_central_node_index
+            return sampled_edge, node_index
+        else:
+            return sampled_edge
 
 
 class LaplacianMaxEigenvalue(object):
@@ -589,3 +562,215 @@ def adj_norm_edge(edge_index, num_nodes, edge_weight=None, add_self_loop=False, 
         cache[cache_key] = edge_index, normed_edge_weight
 
     return edge_index, normed_edge_weight
+
+
+def reindex_sampled_edge_index(sampled_edge_index, sampled_node_index):
+    sampled_edge_index_is_tensor = tf.is_tensor(sampled_edge_index)
+    sampled_node_index_is_tensor = tf.is_tensor(sampled_node_index)
+
+    if not sampled_edge_index_is_tensor:
+        sampled_edge_index = tf.convert_to_tensor(sampled_edge_index)
+
+    if not sampled_node_index_is_tensor:
+        sampled_node_index = tf.convert_to_tensor(sampled_node_index)
+
+    sampled_node_index = tf.cast(sampled_node_index, sampled_edge_index.dtype)
+
+    node_index_dict = tf.lookup.StaticHashTable(
+        initializer=tf.lookup.KeyValueTensorInitializer(
+            keys=sampled_node_index,
+            values=tf.range(0, tf.shape(sampled_node_index)[0])
+        ),
+        default_value=-1
+    )
+    row, col = sampled_edge_index[0], sampled_edge_index[1]
+    reindexed_row = node_index_dict[row]
+    reindexed_col = node_index_dict[col]
+    reindexed_edge_index = tf.stack([reindexed_row, reindexed_col], axis=0)
+
+    if not sampled_edge_index_is_tensor:
+        reindexed_edge_index = reindexed_edge_index.numpy()
+
+    return reindexed_edge_index
+
+
+def convert_edge_index_to_edge_hash(edge_index, num_nodes=None):
+    edge_index_is_tensor = tf.is_tensor(edge_index)
+    num_nodes_is_none = num_nodes is None
+
+    if not edge_index_is_tensor:
+        edge_index = tf.convert_to_tensor(edge_index, dtype=tf.int32)
+
+    if num_nodes_is_none:
+        num_nodes = tf.reduce_max(edge_index) + 1
+
+    row, col = edge_index[0], edge_index[1]
+
+    edge_hash = num_nodes * row + col
+
+    if not edge_index_is_tensor:
+        edge_hash = edge_hash.numpy()
+
+    if num_nodes_is_none and not edge_index_is_tensor:
+        num_nodes = num_nodes.numpy()
+
+    return edge_hash, num_nodes
+
+
+def convert_edge_hash_to_edge_index(edge_hash, num_nodes):
+    edge_hash_is_tensor = tf.is_tensor(edge_hash)
+
+    if not edge_hash_is_tensor:
+        edge_hash = tf.convert_to_tensor(edge_hash)
+
+    row = tf.math.floordiv(edge_hash, num_nodes)
+    col = tf.math.floormod(edge_hash, num_nodes)
+
+    edge_index = tf.stack([row, col], axis=0)
+
+    if not edge_hash_is_tensor:
+        edge_index = edge_index.numpy()
+
+    return edge_index
+
+
+def merge_duplicated_edge(edge_index, edge_props=None, merge_modes=None):
+    """
+    weight_merge_mode: "min", "max", "mean", "sum"
+    """
+
+    if edge_props is not None:
+        if type(merge_modes) is not list:
+            raise Exception("type error: merge_modes should be a list of strings")
+        if merge_modes is None:
+            merge_modes = ["sum"] * len(edge_props)
+
+    # if edge_props is not None and merge_modes is None:
+    #     raise Exception("merge_modes is required if edge_props is provided")
+
+    edge_index_is_tensor = tf.is_tensor(edge_index)
+    # edge_props_is_tensor = [tf.is_tensor(edge_prop) for edge_prop in edge_props]
+
+    if not edge_index_is_tensor:
+        edge_index = tf.convert_to_tensor(edge_index, dtype=tf.int32)
+
+    if edge_props is not None:
+        edge_props = [
+            tf.convert_to_tensor(edge_prop) if edge_prop is not None else None
+            for edge_prop in edge_props
+        ]
+
+    edge_hash, hash_num_nodes = convert_edge_index_to_edge_hash(edge_index)
+    unique_edge_hash, unique_index = tf.unique(edge_hash)
+
+    unique_edge_index = convert_edge_hash_to_edge_index(unique_edge_hash, hash_num_nodes)
+
+    if not edge_index_is_tensor:
+        unique_edge_index = unique_edge_index.numpy()
+
+    if edge_props is None:
+        unique_edge_props = None
+    else:
+        unique_edge_props = []
+        for edge_prop, merge_mode in zip(edge_props, merge_modes):
+            if edge_prop is None:
+                unique_edge_prop = None
+            else:
+                if merge_mode == "min":
+                    merge_func = tf.math.unsorted_segment_min
+                elif merge_mode == "max":
+                    merge_func = tf.math.unsorted_segment_max
+                elif merge_mode == "mean":
+                    merge_func = tf.math.unsorted_segment_mean
+                elif merge_mode == "sum":
+                    merge_func = tf.math.unsorted_segment_sum
+                else:
+                    raise Exception("wrong merge mode: {}".format(merge_mode))
+                unique_edge_prop = merge_func(edge_prop, unique_index, tf.shape(unique_edge_hash)[0])
+
+                if not tf.is_tensor(edge_prop):
+                    unique_edge_prop = edge_prop.numpy()
+            unique_edge_props.append(unique_edge_prop)
+
+    return unique_edge_index, unique_edge_props
+
+
+def convert_edge_to_upper(edge_index, edge_props=None, merge_modes=None):
+    """
+
+    :param edge_index:
+    :param edge_props:
+    :param merge_modes: List of merge modes. Merge Modes: "min" | "max" | "mean" | "sum"
+    :return:
+    """
+
+    edge_index_is_tensor = tf.is_tensor(edge_index)
+
+    if not edge_index_is_tensor:
+        edge_index = tf.convert_to_tensor(edge_index, dtype=tf.int32)
+
+    row = tf.math.reduce_min(edge_index, axis=0)
+    col = tf.math.reduce_max(edge_index, axis=0)
+
+    upper_edge_index = tf.stack([row, col], axis=0)
+    upper_edge_index, upper_edge_props = merge_duplicated_edge(upper_edge_index, edge_props, merge_modes)
+
+    if not edge_index_is_tensor:
+        upper_edge_index = upper_edge_index.numpy()
+
+    return upper_edge_index, upper_edge_props
+
+
+# [[1,3,5], [2,1,4]] => [[1,3,5,2,1,4], [2,1,4,1,3,5]]
+def convert_edge_to_directed(edge_index, edge_props=None, merge_modes=None):
+    """
+    Convert edge from undirected format to directed format.
+    For example, [[1,3,5], [2,1,4]] => [[1,3,5,2,1,4], [2,1,4,1,3,5]]
+
+    :param edge_index: Input edge index.
+    :param edge_props: List of edge properties, for example: [edge_weight]
+    :param merge_modes: List of merge modes. Merge Modes: "min" | "max" | "mean" | "sum"
+    :return:
+    """
+
+    edge_index_is_tensor = tf.is_tensor(edge_index)
+
+    if not edge_index_is_tensor:
+        edge_index = tf.convert_to_tensor(edge_index, dtype=tf.int32)
+
+    if edge_props is not None:
+        if merge_modes is None:
+            merge_modes = ["sum"] * len(edge_props)
+
+    upper_edge_index, upper_edge_props = convert_edge_to_upper(edge_index, edge_props, merge_modes)
+    non_self_loop_mask = tf.not_equal(upper_edge_index[0], upper_edge_index[1])
+
+    if tf.reduce_any(non_self_loop_mask):
+        non_self_loop_edge_index = tf.boolean_mask(upper_edge_index, non_self_loop_mask, axis=1)
+        pure_lower_edge_index = tf.stack([
+            non_self_loop_edge_index[1],
+            non_self_loop_edge_index[0]
+        ], axis=0)
+        updated_edge_index = tf.concat([upper_edge_index, pure_lower_edge_index], axis=1)
+
+        if edge_props is None:
+            updated_edge_props = None
+        else:
+            updated_edge_props = []
+            for edge_prop, upper_edge_prop, merge_mode in zip(edge_props, upper_edge_props, merge_modes):
+                if edge_prop is None:
+                    updated_edge_prop = None
+                else:
+                    pure_lower_edge_prop = tf.boolean_mask(upper_edge_prop, non_self_loop_mask)
+                    updated_edge_prop = tf.concat([upper_edge_prop, pure_lower_edge_prop], axis=0)
+                    if not tf.is_tensor(edge_prop):
+                        updated_edge_prop = updated_edge_prop.numpy()
+                updated_edge_props.append(updated_edge_prop)
+    else:
+        updated_edge_index = edge_index
+        updated_edge_props = edge_props
+
+    if not edge_index_is_tensor:
+        updated_edge_index = updated_edge_index.numpy()
+
+    return updated_edge_index, updated_edge_props

@@ -52,8 +52,8 @@ def compute_loss(logits, mask_index, vars):
         labels=tf.one_hot(masked_labels, depth=num_classes)
     )
 
-    kernel_vals = [var for var in vars if "kernel" in var.name]
-    l2_losses = [tf.nn.l2_loss(kernel_var) for kernel_var in kernel_vals]
+    kernel_vars = [var for var in vars if "kernel" in var.name]
+    l2_losses = [tf.nn.l2_loss(kernel_var) for kernel_var in kernel_vars]
 
     return tf.reduce_mean(losses) + tf.add_n(l2_losses) * 5e-4
 
@@ -72,12 +72,9 @@ def evaluate():
 
 optimizer = tf.keras.optimizers.Adam(learning_rate=5e-3)
 
-# tf.tain.Checkpoint can save and restore trackable objects.
-# You can pass trackable objects as keywords arguments as follows:
-# tf.train.Checkpoint(key1=value1, key2=value2, ...)
-checkpoint = tf.train.Checkpoint(model=model, optimizer=optimizer)
 
-for step in range(1, 401):
+@tf_utils.function
+def train_step():
     with tf.GradientTape() as tape:
         logits = forward(graph, training=True)
         loss = compute_loss(logits, train_index, tape.watched_variables())
@@ -86,6 +83,18 @@ for step in range(1, 401):
     grads = tape.gradient(loss, vars)
     optimizer.apply_gradients(zip(grads, vars))
 
+    return loss
+
+
+# tf.tain.Checkpoint can save and restore trackable objects.
+# You can pass trackable objects as keywords arguments as follows:
+# tf.train.Checkpoint(key1=value1, key2=value2, ...)
+checkpoint = tf.train.Checkpoint(model=model, optimizer=optimizer)
+
+for step in range(1, 401):
+
+    loss = train_step()
+
     if step % 20 == 0:
         accuracy = evaluate()
         print("step = {}\tloss = {}\taccuracy = {}".format(step, loss, accuracy))
@@ -93,7 +102,6 @@ for step in range(1, 401):
         # write checkpoints
         checkpoint.save(file_prefix=checkpoint_prefix)
         print("write checkpoint at step {}".format(step))
-
 
 # create new model and restore it from the checkpoint
 restored_model = GATModel()
@@ -123,4 +131,3 @@ print(forward(graph))
 
 print("\ninfer with restored_model:")
 print(forward_by_restored_model(graph))
-
