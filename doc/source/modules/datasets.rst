@@ -66,6 +66,19 @@ PPI
    :members:
 
 
+
+Reddit
+--------------------
+
+.. autoclass:: tf_geometric.datasets.TransductiveRedditDataset
+   :special-members: __init__
+   :members:
+
+.. autoclass:: tf_geometric.datasets.InductiveRedditDataset
+   :special-members: __init__
+   :members:
+
+
 TU
 --------------------
 

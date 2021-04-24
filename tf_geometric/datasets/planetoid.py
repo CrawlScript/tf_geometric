@@ -28,9 +28,9 @@ class PlanetoidDataset(DownloadableDataset):
 
         super().__init__(dataset_name=dataset_name,
                          download_urls=[
+                             "http://cdn.zhuanzhi.ai/github/{}.zip".format(dataset_name),
                              "https://github.com/CrawlScript/gnn_datasets/raw/master/planetoid/{}.zip".format(
-                                 dataset_name),
-                             "http://cdn.zhuanzhi.ai/github/{}.zip".format(dataset_name)
+                                 dataset_name)
                          ],
                          download_file_name="{}.zip".format(dataset_name),
                          cache_name=None,
