@@ -13,7 +13,6 @@ gcn
 
 .. autofunction:: tf_geometric.nn.gcn_cache_normed_edge
 
-.. autofunction:: tf_geometric.nn.compute_cache_key
 
 
 
