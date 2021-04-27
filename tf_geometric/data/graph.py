@@ -63,13 +63,27 @@ class Graph(object):
     def cast_x(cls, x):
         if isinstance(x, list):
             x = np.array(x)
-
         if isinstance(x, np.ndarray) and x.dtype == np.float64:
             x = x.astype(np.float32)
         elif tf.is_tensor(x) and x.dtype == tf.float64:
             x = tf.cast(x, tf.float32)
 
         return x
+
+    # @classmethod
+    # def cast_y(cls, y):
+    #     if y is None:
+    #         return y
+    #
+    #     if isinstance(y, list):
+    #         y = np.array(y)
+    #
+    #     if isinstance(y, np.ndarray) and y.dtype == np.float64:
+    #         y = y.astype(np.float32)
+    #     elif tf.is_tensor(y) and y.dtype == tf.float64:
+    #         y = tf.cast(y, tf.float32)
+    #
+    #     return y
 
     @property
     def num_nodes(self):

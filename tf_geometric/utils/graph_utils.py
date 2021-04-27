@@ -12,12 +12,17 @@ import scipy.sparse
 def convert_edge_index_to_edge_hash(edge_index, num_nodes=None):
     edge_index_is_tensor = tf.is_tensor(edge_index)
     num_nodes_is_none = num_nodes is None
+    num_nodes_is_tensor = tf.is_tensor(num_nodes)
 
-    if not edge_index_is_tensor:
-        edge_index = tf.convert_to_tensor(edge_index, dtype=tf.int32)
+    edge_index = tf.cast(edge_index, tf.int64)
+
+    # if not edge_index_is_tensor or edge_index.dtype != tf.int64:
+    #     edge_index = tf.convert_to_tensor(edge_index, dtype=tf.int64)
 
     if num_nodes_is_none:
         num_nodes = tf.reduce_max(edge_index) + 1
+    else:
+        num_nodes = tf.cast(num_nodes, tf.int64)
 
     row, col = edge_index[0], edge_index[1]
 
@@ -26,8 +31,12 @@ def convert_edge_index_to_edge_hash(edge_index, num_nodes=None):
     if not edge_index_is_tensor:
         edge_hash = edge_hash.numpy()
 
-    if num_nodes_is_none and not edge_index_is_tensor:
-        num_nodes = num_nodes.numpy()
+    if num_nodes_is_none:
+        if not edge_index_is_tensor:
+            num_nodes = num_nodes.numpy()
+    else:
+        if not num_nodes_is_tensor:
+            num_nodes = num_nodes.numpy()
 
     return edge_hash, num_nodes
 
@@ -35,13 +44,17 @@ def convert_edge_index_to_edge_hash(edge_index, num_nodes=None):
 def convert_edge_hash_to_edge_index(edge_hash, num_nodes):
     edge_hash_is_tensor = tf.is_tensor(edge_hash)
 
-    if not edge_hash_is_tensor:
-        edge_hash = tf.convert_to_tensor(edge_hash)
+    # if not edge_hash_is_tensor:
+    #     edge_hash = tf.convert_to_tensor(edge_hash)
+
+    edge_hash = tf.cast(edge_hash, tf.int64)
+    num_nodes = tf.cast(num_nodes, tf.int64)
 
     row = tf.math.floordiv(edge_hash, num_nodes)
     col = tf.math.floormod(edge_hash, num_nodes)
 
     edge_index = tf.stack([row, col], axis=0)
+    edge_index = tf.cast(edge_index, tf.int32)
 
     if not edge_hash_is_tensor:
         edge_index = edge_index.numpy()

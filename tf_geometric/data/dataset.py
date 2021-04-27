@@ -40,10 +40,12 @@ class DownloadableDataset(object):
         self.raw_root_path = os.path.join(self.dataset_root_path, "raw")
         self.processed_root_path = os.path.join(self.dataset_root_path, "processed")
 
-        if download_file_name is None:
-            self.download_file_name = "{}.zip".format(dataset_name)
-
-        self.download_file_path = os.path.join(self.download_root_path, download_file_name)
+        if download_urls is not None:
+            if download_file_name is None:
+                download_file_name = "{}.zip".format(dataset_name)
+            self.download_file_path = os.path.join(self.download_root_path, download_file_name)
+        else:
+            self.download_file_path = None
 
         self.cache_path = None if cache_name is None else os.path.join(self.processed_root_path, cache_name)
 
@@ -75,8 +77,12 @@ class DownloadableDataset(object):
             print("cache file exists: {}, read cache".format(self.cache_path))
             return load_cache(self.cache_path)
 
-        self.download()
-        self.extract_raw()
+        if self.download_urls is not None:
+            self.download()
+            self.extract_raw()
+        else:
+            print("downloading and extraction are ignored due to None download_urls")
+
         processed = self.process()
 
         if self.cache_enabled:

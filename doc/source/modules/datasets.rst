@@ -87,4 +87,11 @@ TU
    :members:
 
 
+OGB
+--------------------
+
+.. autoclass:: tf_geometric.datasets.OGBNodePropPredDataset
+   :special-members: __init__
+   :members:
+
 
