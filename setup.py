@@ -23,7 +23,7 @@ setup(
         "networkx >= 2.1",
         "scipy >= 1.1.0",
         "scikit-learn >= 0.22",
-        "ogb_lite",
+        "ogb_lite >= 0.0.3",
         "tqdm"
     ],
     extras_require={
