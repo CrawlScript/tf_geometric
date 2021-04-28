@@ -1,5 +1,5 @@
 <p align="center">
-<img src="TF_GEOMETRIC_LOGO.svg" style="max-width: 100%; height: 100px;"/>
+<img src="TF_GEOMETRIC_LOGO.svg" style="max-width: 400px; width: 100%;"/>
 </p>
 
 
