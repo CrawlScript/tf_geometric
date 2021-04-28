@@ -1,10 +1,14 @@
-<img src="TF_GEOMETRIC_LOGO.svg" style="max-width: 400px; width: 100%;"/>
-
 # tf_geometric
 
 Efficient and Friendly Graph Neural Network Library for TensorFlow 1.x and 2.x.
 
 Inspired by __rusty1s/pytorch_geometric__, we build a GNN library for TensorFlow.
+
+
+<p align="center">
+<img src="TF_GEOMETRIC_LOGO.svg" style="max-width: 400px; width: 100%;"/>
+</p>
+
 
 ## Homepage and Documentation
 
