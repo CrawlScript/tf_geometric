@@ -14,6 +14,7 @@ Efficient and Friendly Graph Neural Network Library for TensorFlow 1.x and 2.x.
 Inspired by **rusty1s/pytorch_geometric**\ , we build a GNN library for TensorFlow.
 `tf_geometric <https://github.com/CrawlScript/tf_geometric>`_ provides both OOP and Functional API, with which you can make some cool things.
 
+
 * **Github:**\  `https://github.com/CrawlScript/tf_geometric <https://github.com/CrawlScript/tf_geometric>`_
 * **Documentation:**\  `https://tf-geometric.readthedocs.io <https://tf-geometric.readthedocs.io>`_
 * **Paper:**\  `Efficient Graph Deep Learning in TensorFlow with tf_geometric <https://arxiv.org/abs/2101.11552>`_
@@ -22,8 +23,9 @@ Inspired by **rusty1s/pytorch_geometric**\ , we build a GNN library for TensorFl
 .. raw:: html
 
    <p align="center">
-   <img src="TF_GEOMETRIC_LOGO.svg" style="max-width: 400px; width: 100%;"/>
+   <img src="https://raw.githubusercontent.com/CrawlScript/tf_geometric/master/TF_GEOMETRIC_LOGO.svg" style="max-width: 400px; width: 100%;"/>
    </p>
+
 
 
 
