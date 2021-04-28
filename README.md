@@ -1,3 +1,5 @@
+<img src="TF_GEOMETRIC_LOGO.svg" style="max-width: 400px; width: 100%;"/>
+
 # tf_geometric
 
 Efficient and Friendly Graph Neural Network Library for TensorFlow 1.x and 2.x.
