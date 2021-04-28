@@ -3,7 +3,6 @@
 </p>
 
 
-
 # tf_geometric
 
 Efficient and Friendly Graph Neural Network Library for TensorFlow 1.x and 2.x.
