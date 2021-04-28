@@ -23,7 +23,7 @@ Inspired by **rusty1s/pytorch_geometric**\ , we build a GNN library for TensorFl
 .. raw:: html
 
    <p align="center">
-   <img src="https://raw.githubusercontent.com/CrawlScript/tf_geometric/master/TF_GEOMETRIC_LOGO.svg" style="max-width: 400px; width: 100%;"/>
+   <img src="https://raw.githubusercontent.com/CrawlScript/tf_geometric/master/TF_GEOMETRIC_LOGO.png" style="max-width: 400px; width: 100%;"/>
    </p>
 
 
