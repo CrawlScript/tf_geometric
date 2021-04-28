@@ -20,6 +20,13 @@ tf_geometric是一个高效且友好的图神经网络库，同时支持TensorFl
 * **论文:**\  `Efficient Graph Deep Learning in TensorFlow with tf_geometric <https://arxiv.org/abs/2101.11552>`_
 
 
+.. raw:: html
+
+   <p align="center">
+   <img src="TF_GEOMETRIC_LOGO.svg" style="max-width: 400px; width: 100%;"/>
+   </p>
+
+
 
 高效且友好的API
 ----------------------------------------------------------

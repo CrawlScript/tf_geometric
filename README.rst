@@ -1,4 +1,12 @@
 
+
+.. raw:: html
+
+   <p align="center">
+   <img src="TF_GEOMETRIC_LOGO.svg" style="max-width: 400px; width: 100%;"/>
+   </p>
+
+
 tf_geometric
 ============
 

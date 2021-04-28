@@ -19,6 +19,15 @@ Inspired by **rusty1s/pytorch_geometric**\ , we build a GNN library for TensorFl
 * **Paper:**\  `Efficient Graph Deep Learning in TensorFlow with tf_geometric <https://arxiv.org/abs/2101.11552>`_
 
 
+.. raw:: html
+
+   <p align="center">
+   <img src="TF_GEOMETRIC_LOGO.svg" style="max-width: 400px; width: 100%;"/>
+   </p>
+
+
+
+
 
 Efficient and Friendly API
 ----------------------------------------------------------
