@@ -1,12 +1,3 @@
-
-
-.. raw:: html
-
-   <p align="center">
-   <img src="TF_GEOMETRIC_LOGO.png" style="max-width: 400px; width: 100%;"/>
-   </p>
-
-
 tf_geometric
 ============
 
@@ -135,10 +126,10 @@ Requirements:
 
 
 * Operation System: Windows / Linux / Mac OS
-* Python: version >= 3.5
+* Python: version >= 3.5 and version != 3.6
 * Python Packages:
 
-  * tensorflow/tensorflow-gpu: >= 1.14.0 or >= 2.0.0b1
+  * tensorflow/tensorflow-gpu: >= 1.15.0 or >= 2.3.0
   * numpy >= 1.17.4
   * networkx >= 2.1
   * scipy >= 1.1.0
