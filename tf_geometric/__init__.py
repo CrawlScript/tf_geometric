@@ -7,6 +7,7 @@ if tf.__version__[0] == "1":
 
 from . import nn, utils, data, datasets, layers
 from tf_geometric.data.graph import Graph, BatchGraph
+from tf_geometric.data.sparse_adj import SparseAdj
 
 
 

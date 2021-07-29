@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 setup(
     name="tf_geometric",
     python_requires='>3.5.0',
-    version="0.0.54",
+    version="0.0.55-dev",
     author="Jun Hu",
     author_email="hujunxianligong@gmail.com",
     packages=find_packages(
@@ -29,8 +29,8 @@ setup(
     extras_require={
         'tf1-cpu': ["tensorflow >= 1.15.0,<2.0.0"],
         'tf1-gpu': ["tensorflow-gpu >= 1.15.0,<2.0.0"],
-        'tf2-cpu': ["tensorflow >= 2.3.0"],
-        'tf2-gpu': ["tensorflow-gpu >= 2.3.0"]
+        'tf2-cpu': ["tensorflow >= 2.4.0"],
+        'tf2-gpu': ["tensorflow >= 2.4.0"]
     },
     description="""
         Efficient and Friendly Graph Neural Network Library for TensorFlow 1.x and 2.x.

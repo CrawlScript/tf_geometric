@@ -1,7 +1,7 @@
 # coding=utf-8
 
 import tensorflow as tf
-
+from tf_geometric.data.sparse_adj import SparseAdj
 from tf_geometric.nn.conv.gcn import gcn_norm_edge, gcn_mapper
 from tf_geometric.nn.kernel.map_reduce import aggregate_neighbors, sum_updater, sum_reducer, identity_updater
 
@@ -56,20 +56,32 @@ def appnp(x, edge_index, edge_weight, kernels, biases,
         if dense_activation is not None and i < num_dense_layers - 1:
             h = dense_activation(h)
 
-    if training and edge_drop_rate > 0.0:
-        normed_edge_weight = tf.compat.v2.nn.dropout(normed_edge_weight, edge_drop_rate)
+    # new implementation based on SparseAdj
+    sparse_adj = SparseAdj(updated_edge_index, normed_edge_weight, [num_nodes, num_nodes])\
+        .dropout(edge_drop_rate, training=training)
 
     prop_h = h
 
     for i in range(num_iterations):
-        prop_h = aggregate_neighbors(
-            prop_h, updated_edge_index, normed_edge_weight,
-            gcn_mapper,
-            sum_reducer,
-            identity_updater,
-            num_nodes=num_nodes
-        )
+        prop_h = sparse_adj @ prop_h
         prop_h = prop_h * (1.0 - alpha) + h * alpha
+
+
+    # # old implementation
+    # if training and edge_drop_rate > 0.0:
+    #     normed_edge_weight = tf.compat.v2.nn.dropout(normed_edge_weight, edge_drop_rate)
+    #
+    # prop_h = h
+    #
+    # for i in range(num_iterations):
+    #     prop_h = aggregate_neighbors(
+    #         prop_h, updated_edge_index, normed_edge_weight,
+    #         gcn_mapper,
+    #         sum_reducer,
+    #         identity_updater,
+    #         num_nodes=num_nodes
+    #     )
+    #     prop_h = prop_h * (1.0 - alpha) + h * alpha
 
     if activation is not None:
         prop_h = activation(prop_h)

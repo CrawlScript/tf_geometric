@@ -1,9 +1,10 @@
 # coding=utf-8
 import tensorflow as tf
 
-from tf_geometric.nn.kernel.map_reduce import aggregate_neighbors, sum_updater, sum_reducer, identity_updater
-from tf_geometric.nn.kernel.segment import segment_softmax
-from tf_geometric.nn.conv.gcn import gcn_mapper
+# from tf_geometric.nn.kernel.map_reduce import aggregate_neighbors, sum_updater, sum_reducer, identity_updater
+# from tf_geometric.nn.kernel.segment import segment_softmax
+# from tf_geometric.nn.conv.gcn import gcn_mapper
+from tf_geometric.data.sparse_adj import SparseAdj
 from tf_geometric.utils.graph_utils import add_self_loop_edge
 
 
@@ -63,24 +64,42 @@ def gat(x, edge_index,
 
     scale = tf.math.sqrt(tf.cast(tf.shape(Q_)[-1], tf.float32))
     att_score_ = tf.reduce_sum(Q_ * K_, axis=-1) / scale
-    normed_att_score_ = segment_softmax(att_score_, qk_edge_index_[0], num_nodes * num_heads)
 
-    if training and drop_rate > 0.0:
-        normed_att_score_ = tf.compat.v2.nn.dropout(normed_att_score_, drop_rate)
+    # new implementation based on SparseAdj
+    num_nodes_ = num_nodes * num_heads
+    sparse_att_adj = SparseAdj(qk_edge_index_, att_score_, [num_nodes_, num_nodes_])\
+        .softmax(axis=-1)\
+        .dropout(drop_rate, training=training)
 
     if split_value_heads:
         V_ = tf.concat(tf.split(V, num_heads, axis=-1), axis=0)
-        edge_index_ = qk_edge_index_
     else:
         V_ = V
         edge_index_ = tf.tile(edge_index, [1, num_heads])
+        sparse_att_adj = SparseAdj(edge_index_, sparse_att_adj.edge_weight, [num_nodes, num_nodes])
 
-    h_ = aggregate_neighbors(
-        V_, edge_index_, normed_att_score_,
-        gcn_mapper,
-        sum_reducer,
-        identity_updater
-    )
+    h_ = sparse_att_adj @ V_
+
+
+    # old implementation
+    # normed_att_score_ = segment_softmax(att_score_, qk_edge_index_[0], num_nodes * num_heads)
+    #
+    # if training and drop_rate > 0.0:
+    #     normed_att_score_ = tf.compat.v2.nn.dropout(normed_att_score_, drop_rate)
+    #
+    # if split_value_heads:
+    #     V_ = tf.concat(tf.split(V, num_heads, axis=-1), axis=0)
+    #     edge_index_ = qk_edge_index_
+    # else:
+    #     V_ = V
+    #     edge_index_ = tf.tile(edge_index, [1, num_heads])
+    #
+    # h_ = aggregate_neighbors(
+    #     V_, edge_index_, normed_att_score_,
+    #     gcn_mapper,
+    #     sum_reducer,
+    #     identity_updater
+    # )
 
     if split_value_heads:
         h = tf.concat(tf.split(h_, num_heads, axis=0), axis=-1)

@@ -2,6 +2,7 @@
 import tensorflow as tf
 from tf_geometric.nn.kernel.map_reduce import aggregate_neighbors, sum_reducer, identity_updater
 from tf_geometric.utils.graph_utils import add_self_loop_edge
+from tf_geometric.data.sparse_adj import SparseAdj
 
 
 CACHE_KEY_GCN_NORMED_EDGE_TEMPLATE = "gcn_normed_edge_{}_{}"
@@ -120,13 +121,18 @@ def gcn(x, edge_index, edge_weight, kernel, bias=None, activation=None,
 
     h = x @ kernel
 
-    h = aggregate_neighbors(
-        h, updated_edge_index, normed_edge_weight,
-        gcn_mapper,
-        sum_reducer,
-        identity_updater,
-        num_nodes=num_nodes
-    )
+    # new implementation based on SparseAdj
+    sparse_adj = SparseAdj(updated_edge_index, normed_edge_weight, [num_nodes, num_nodes])
+    h = sparse_adj @ h
+
+    # old implementation
+    # h = aggregate_neighbors(
+    #     h, updated_edge_index, normed_edge_weight,
+    #     gcn_mapper,
+    #     sum_reducer,
+    #     identity_updater,
+    #     num_nodes=num_nodes
+    # )
 
     if bias is not None:
         h += bias
