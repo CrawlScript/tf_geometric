@@ -8,6 +8,7 @@ setup(
     author_email="hujunxianligong@gmail.com",
     packages=find_packages(
         exclude=[
+            'benchmarks',
             'data',
             'demo',
             'dist',
