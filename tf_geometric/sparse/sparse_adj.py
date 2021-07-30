@@ -54,13 +54,64 @@ class SparseAdj(object):
                                                                      fill_weight=fill_weight)
         return SparseAdj(updated_edge_index, updated_edge_weight, self.shape)
 
-    def __matmul__(self, h):
+    def _reduce(self, segment_func, axis=-1, keepdims=False):
+
+        # reduce by row
+        if axis == -1 or axis == 1:
+            reduce_axis = 0
+        # reduce by col
+        elif axis == 0 or axis == -2:
+            reduce_axis = 1
+        else:
+            raise Exception("Invalid axis value: {}, axis shoud be -1, -2, 0, or 1".format(axis))
+
+        reduce_index = self.edge_index[reduce_axis]
+        num_reduced = self.shape[reduce_axis]
+
+        reduced_edge_weight = segment_func(self.edge_weight, reduce_index, num_reduced)
+        if keepdims:
+            reduced_edge_weight = tf.expand_dims(reduced_edge_weight, axis=axis)
+        return reduced_edge_weight
+
+    def reduce_sum(self, axis=-1, keepdims=False):
+        return self._reduce(tf.math.unsorted_segment_sum, axis=axis, keepdims=keepdims)
+
+    def reduce_min(self, axis=-1, keepdims=False):
+        return self._reduce(tf.math.unsorted_segment_min, axis=axis, keepdims=keepdims)
+
+    # sparse_adj @ h
+    def matmul(self, h):
         row, col = self.edge_index[0], self.edge_index[1]
         repeated_h = tf.gather(h, col)
         if self.edge_weight is not None:
             repeated_h *= tf.expand_dims(self.edge_weight, axis=-1)
         reduced_h = tf.math.unsorted_segment_sum(repeated_h, row, num_segments=self.shape[0])
         return reduced_h
+
+    # h @ sparse_adj
+    def rmatmul(self, h):
+        # h'
+        transposed_h = tf.transpose(h, [1, 0])
+        # sparse_adj' @ h'
+        transpoed_reduced_h = self.transpose() @ transposed_h
+        # h @ sparse_adj = (sparse_adj' @ h')'
+        reduced_h = tf.transpose(transpoed_reduced_h, [1, 0])
+        return reduced_h
+
+    # self @ diagonal_matrix
+    def matmul_diagonal(self, diagonal):
+        col = self.edge_index[1]
+        updated_edge_weight = self.edge_weight * tf.gather(diagonal, col)
+        return SparseAdj(self.edge_index, updated_edge_weight, self.shape)
+
+    # self @ diagonal_matrix
+    def rmatmul_diagonal(self, diagonal):
+        row = self.edge_index[0]
+        updated_edge_weight = tf.gather(diagonal, row) * self.edge_weight
+        return SparseAdj(self.edge_index, updated_edge_weight, self.shape)
+
+    def __matmul__(self, h):
+        return self.matmul(h)
 
     def transpose(self):
         row, col = self.edge_index[0], self.edge_index[1]
@@ -101,15 +152,15 @@ class SparseAdj(object):
     def __repr__(self):
         return self.__str__()
 
-
 # edge_index = [
 #     [0, 0, 0, 0, 1, 1, 4, 6],
 #     [0, 2, 4, 6, 2, 3, 6, 8]
 # ]
 #
 # adj = SparseAdj(edge_index)
-# h = np.random.randn(9, 20).astype(np.float32)
-#
-# print(adj @ h)
-# print(adj.softmax(axis=-1))
-
+# print("==========")
+# print(adj.reduce_sum(axis=-1, keepdims=True))
+# # h = np.random.randn(9, 20).astype(np.float32)
+# #
+# # print(adj @ h)
+# # print(adj.softmax(axis=-1))

@@ -15,58 +15,29 @@ dataset = "cora"
 
 graph, (train_index, valid_index, test_index) = tfg.datasets.PlanetoidDataset(dataset).load_data()
 
+
 num_steps = 401
 
+
 num_classes = graph.y.max() + 1
-# att_drop_rate = 0.6
-learning_rate = 5e-3
-drop_rate = 0.6
-if dataset == "citeseer":
-    drop_rate = 0.6
-    l2_coef = 2e-3
-elif dataset == "cora":
-    drop_rate = 0.7
-    l2_coef = 1e-3
-elif dataset == "pubmed":
-    drop_rate = 0.0
-    l2_coef = 2e-3
-    # num_steps = 1001
+drop_rate = 0.5
+learning_rate = 1e-2
+# l2_coef = 5e-4
+l2_coef = 1e-3
 
-patience = 20
+if dataset == "pubmed":
+    l2_coef = 3e-3
+    num_steps = 201
 
+model = tfg.layers.APPNP([64, num_classes], alpha=0.1, num_iterations=10,
+                         dense_drop_rate=drop_rate, edge_drop_rate=drop_rate)
 
-# Multi-layer GAT Model
-class GATModel(tf.keras.Model):
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        if dataset != "pubmed":
-            self.gat0 = tfg.layers.GAT(64, activation=tf.nn.relu, num_heads=8, drop_rate=drop_rate, attention_units=8)
-            self.gat1 = tfg.layers.GAT(num_classes, drop_rate=drop_rate, attention_units=1)
-        else:
-            self.gat0 = tfg.layers.GAT(64, activation=tf.nn.relu, num_heads=1, drop_rate=drop_rate, attention_units=1)
-            self.gat1 = tfg.layers.GAT(num_classes, drop_rate=drop_rate, num_heads=8, attention_units=8,
-                                       split_value_heads=False)
-
-        self.dropout = tf.keras.layers.Dropout(drop_rate)
-
-    def call(self, inputs, training=None, mask=None, cache=None):
-        x, edge_index = inputs
-        h = self.dropout(x, training=training)
-        h = self.gat0([h, edge_index], training=training)
-        h = self.dropout(h, training=training)
-        h = self.gat1([h, edge_index], training=training)
-        return h
-
-
-model = GATModel()
 
 
 # @tf_utils.function can speed up functions for TensorFlow 2.x
 @tf_utils.function
 def forward(graph, training=False):
-    return model([graph.x, graph.edge_index], training=training)
+    return model([graph.x, graph.edge_index, graph.edge_weight], training=training)
 
 
 @tf_utils.function
@@ -109,7 +80,7 @@ def evaluate_val():
     return evaluate(valid_index)
 
 
-optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
+optimizer = tf.keras.optimizers.Adam(learning_rate=5e-3)
 
 
 @tf_utils.function

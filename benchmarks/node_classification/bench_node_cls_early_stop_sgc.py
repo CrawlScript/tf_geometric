@@ -15,58 +15,25 @@ dataset = "cora"
 
 graph, (train_index, valid_index, test_index) = tfg.datasets.PlanetoidDataset(dataset).load_data()
 
-num_steps = 401
-
 num_classes = graph.y.max() + 1
-# att_drop_rate = 0.6
-learning_rate = 5e-3
-drop_rate = 0.6
+
+learning_rate = 0.2
+l2_coef = 5e-6
+num_steps = 201
+
 if dataset == "citeseer":
-    drop_rate = 0.6
-    l2_coef = 2e-3
-elif dataset == "cora":
-    drop_rate = 0.7
-    l2_coef = 1e-3
+    l2_coef = 1e-4
 elif dataset == "pubmed":
-    drop_rate = 0.0
-    l2_coef = 2e-3
-    # num_steps = 1001
+    l2_coef = 5e-5
+    num_steps = 61
 
-patience = 20
-
-
-# Multi-layer GAT Model
-class GATModel(tf.keras.Model):
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        if dataset != "pubmed":
-            self.gat0 = tfg.layers.GAT(64, activation=tf.nn.relu, num_heads=8, drop_rate=drop_rate, attention_units=8)
-            self.gat1 = tfg.layers.GAT(num_classes, drop_rate=drop_rate, attention_units=1)
-        else:
-            self.gat0 = tfg.layers.GAT(64, activation=tf.nn.relu, num_heads=1, drop_rate=drop_rate, attention_units=1)
-            self.gat1 = tfg.layers.GAT(num_classes, drop_rate=drop_rate, num_heads=8, attention_units=8,
-                                       split_value_heads=False)
-
-        self.dropout = tf.keras.layers.Dropout(drop_rate)
-
-    def call(self, inputs, training=None, mask=None, cache=None):
-        x, edge_index = inputs
-        h = self.dropout(x, training=training)
-        h = self.gat0([h, edge_index], training=training)
-        h = self.dropout(h, training=training)
-        h = self.gat1([h, edge_index], training=training)
-        return h
-
-
-model = GATModel()
+model = tfg.layers.SGC(num_classes, k=2)
 
 
 # @tf_utils.function can speed up functions for TensorFlow 2.x
 @tf_utils.function
 def forward(graph, training=False):
-    return model([graph.x, graph.edge_index], training=training)
+    return model([graph.x, graph.edge_index, graph.edge_weight], training=training)
 
 
 @tf_utils.function
@@ -147,8 +114,8 @@ for step in range(1, num_steps):
         val_accuracy = val_accuracy.numpy()
         val_loss = val_loss.numpy()
 
-        # if val_accuracy > best_val_accuracy and val_loss < min_val_loss:
         if val_accuracy > best_val_accuracy and val_loss < min_val_loss:
+        # if True:
             final_test_accuracy = test_accuracy
             final_step = step
 
