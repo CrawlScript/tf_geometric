@@ -1,9 +1,8 @@
 # coding=utf-8
 
 import tensorflow as tf
-from tf_geometric.data.sparse_adj import SparseAdj
-from tf_geometric.nn.conv.gcn import gcn_norm_edge, gcn_mapper
-from tf_geometric.nn.kernel.map_reduce import aggregate_neighbors, sum_updater, sum_reducer, identity_updater
+from tf_geometric.sparse.sparse_adj import SparseAdj
+from tf_geometric.nn.conv.gcn import gcn_norm_adj
 
 
 def appnp(x, edge_index, edge_weight, kernels, biases,
@@ -44,7 +43,10 @@ def appnp(x, edge_index, edge_weight, kernels, biases,
     """
 
     num_nodes = tf.shape(x)[0]
-    updated_edge_index, normed_edge_weight = gcn_norm_edge(edge_index, num_nodes, edge_weight, cache=cache)
+    # updated_edge_index, normed_edge_weight = gcn_norm_edge(edge_index, num_nodes, edge_weight, cache=cache)
+    sparse_adj = SparseAdj(edge_index, edge_weight, [num_nodes, num_nodes])
+    normed_sparse_adj = gcn_norm_adj(sparse_adj, cache=cache)\
+        .dropout(edge_drop_rate, training=training)
 
     num_dense_layers = len(kernels)
 
@@ -57,13 +59,13 @@ def appnp(x, edge_index, edge_weight, kernels, biases,
             h = dense_activation(h)
 
     # new implementation based on SparseAdj
-    sparse_adj = SparseAdj(updated_edge_index, normed_edge_weight, [num_nodes, num_nodes])\
-        .dropout(edge_drop_rate, training=training)
+    # sparse_adj = SparseAdj(updated_edge_index, normed_edge_weight, [num_nodes, num_nodes])\
+    #     .dropout(edge_drop_rate, training=training)
 
     prop_h = h
 
     for i in range(num_iterations):
-        prop_h = sparse_adj @ prop_h
+        prop_h = normed_sparse_adj @ prop_h
         prop_h = prop_h * (1.0 - alpha) + h * alpha
 
 

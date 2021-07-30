@@ -15,6 +15,7 @@ __pycache__/
 /demo/models/
 
 benchmarks/**/data/
+benchmarks/**/results.txt
 
 *.swp
 

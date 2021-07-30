@@ -47,6 +47,14 @@ class SparseAdj(object):
         else:
             self.shape = shape
 
+    @property
+    def row(self):
+        return self.edge_index[0]
+
+    @property
+    def col(self):
+        return self.edge_index[1]
+
     def add_self_loop(self, fill_weight=1.0):
         num_nodes = self.shape[0]
         updated_edge_index, updated_edge_weight = add_self_loop_edge(self.edge_index, num_nodes,
@@ -99,13 +107,13 @@ class SparseAdj(object):
         return reduced_h
 
     # self @ diagonal_matrix
-    def matmul_diagonal(self, diagonal):
+    def matmul_diag(self, diagonal):
         col = self.edge_index[1]
         updated_edge_weight = self.edge_weight * tf.gather(diagonal, col)
         return SparseAdj(self.edge_index, updated_edge_weight, self.shape)
 
     # self @ diagonal_matrix
-    def rmatmul_diagonal(self, diagonal):
+    def rmatmul_diag(self, diagonal):
         row = self.edge_index[0]
         updated_edge_weight = tf.gather(diagonal, row) * self.edge_weight
         return SparseAdj(self.edge_index, updated_edge_weight, self.shape)

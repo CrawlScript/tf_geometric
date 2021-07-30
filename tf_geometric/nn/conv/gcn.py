@@ -1,11 +1,11 @@
 # coding=utf-8
 import tensorflow as tf
-from tf_geometric.nn.kernel.map_reduce import aggregate_neighbors, sum_reducer, identity_updater
 from tf_geometric.utils.graph_utils import add_self_loop_edge
-from tf_geometric.data.sparse_adj import SparseAdj
+from tf_geometric.sparse.sparse_adj import SparseAdj
+from tf_geometric.sparse.sparse_ops import sparse_diag_matmul, diag_sparse_matmul
 
-
-CACHE_KEY_GCN_NORMED_EDGE_TEMPLATE = "gcn_normed_edge_{}_{}"
+# new API
+CACHE_KEY_GCN_NORMED_ADJ_TEMPLATE = "gcn_normed_adj_{}_{}"
 
 
 def compute_cache_key(renorm, improved):
@@ -16,16 +16,14 @@ def compute_cache_key(renorm, improved):
     :param improved: Whether use improved GCN or not.
     :return: The corresponding cached key for the given GCN normalization configuration.
     """
-    return CACHE_KEY_GCN_NORMED_EDGE_TEMPLATE.format(renorm, improved)
+    return CACHE_KEY_GCN_NORMED_ADJ_TEMPLATE.format(renorm, improved)
 
 
-def gcn_norm_edge(edge_index, num_nodes, edge_weight=None, renorm=True, improved=False, cache: dict=None):
+def gcn_norm_adj(sparse_adj, renorm=True, improved=False, cache: dict = None):
     """
     Compute normed edge (updated edge_index and normalized edge_weight) for GCN normalization.
 
-    :param edge_index: Tensor, shape: [2, num_edges], edge information.
-    :param num_nodes: Number of nodes.
-    :param edge_weight: Tensor or None, shape: [num_edges]
+    :param sparse_adj: SparseAdj, sparse adjacency matrix.
     :param renorm: Whether use renormalization trick (https://arxiv.org/pdf/1609.02907.pdf).
     :param improved: Whether use improved GCN or not.
     :param cache: A dict for caching the updated edge_index and normalized edge_weight.
@@ -38,16 +36,12 @@ def gcn_norm_edge(edge_index, num_nodes, edge_weight=None, renorm=True, improved
         if cached_data is not None:
             return cached_data
 
-    if edge_weight is None:
-        edge_weight = tf.ones([tf.shape(edge_index)[1]], dtype=tf.float32)
-
     fill_weight = 2.0 if improved else 1.0
 
     if renorm:
-        edge_index, edge_weight = add_self_loop_edge(edge_index, num_nodes, edge_weight=edge_weight, fill_weight=fill_weight)
+        sparse_adj = sparse_adj.add_self_loop(fill_weight=fill_weight)
 
-    row, col = edge_index[0], edge_index[1]
-    deg = tf.math.unsorted_segment_sum(edge_weight, row, num_segments=num_nodes)
+    deg = sparse_adj.reduce_sum(axis=-1)
     deg_inv_sqrt = tf.pow(deg, -0.5)
     deg_inv_sqrt = tf.where(
         tf.math.logical_or(tf.math.is_inf(deg_inv_sqrt), tf.math.is_nan(deg_inv_sqrt)),
@@ -55,18 +49,55 @@ def gcn_norm_edge(edge_index, num_nodes, edge_weight=None, renorm=True, improved
         deg_inv_sqrt
     )
 
-    normed_edge_weight = tf.gather(deg_inv_sqrt, row) * edge_weight * tf.gather(deg_inv_sqrt, col)
+    # (D^(-1/2)A)D^(-1/2)
+    normed_sparse_adj = sparse_diag_matmul(diag_sparse_matmul(deg_inv_sqrt, sparse_adj), deg_inv_sqrt)
 
     if not renorm:
-        edge_index, normed_edge_weight = add_self_loop_edge(edge_index, num_nodes, edge_weight=normed_edge_weight,
-                                                            fill_weight=fill_weight)
+        normed_sparse_adj = normed_sparse_adj.add_self_loop(fill_weight=fill_weight)
 
     if cache is not None:
-        cache[cache_key] = edge_index, normed_edge_weight
+        cache[cache_key] = normed_sparse_adj
 
-    return edge_index, normed_edge_weight
+    return normed_sparse_adj
 
 
+def gcn_cache_normed_adj(graph, renorm=True, improved=False, override=False):
+    """
+    Manually compute the normed edge based on the given GCN normalization configuration (renorm and improved) and put it in graph.cache.
+    If the normed edge already exists in graph.cache and the override parameter is False, this method will do nothing.
+
+    :param graph: tfg.Graph, the input graph.
+    :param renorm: Whether use renormalization trick (https://arxiv.org/pdf/1609.02907.pdf).
+    :param improved: Whether use improved GCN or not.
+    :param override: Whether to override existing cached normed edge.
+    :return: None
+    """
+    if override:
+        cache_key = compute_cache_key(renorm, improved)
+        graph.cache[cache_key] = None
+    sparse_adj = SparseAdj(graph.edge_index, graph.edge_weight, [graph.num_nodes, graph.num_nodes])
+    gcn_norm_adj(sparse_adj, renorm, improved, graph.cache)
+
+
+# old API
+def gcn_norm_edge(edge_index, num_nodes, edge_weight=None, renorm=True, improved=False, cache: dict = None):
+    """
+    Compute normed edge (updated edge_index and normalized edge_weight) for GCN normalization.
+
+    :param edge_index: Tensor, shape: [2, num_edges], edge information.
+    :param num_nodes: Number of nodes.
+    :param edge_weight: Tensor or None, shape: [num_edges]
+    :param renorm: Whether use renormalization trick (https://arxiv.org/pdf/1609.02907.pdf).
+    :param improved: Whether use improved GCN or not.
+    :param cache: A dict for caching the updated edge_index and normalized edge_weight.
+    :return: Normed edge (updated edge_index and normalized edge_weight).
+    """
+    sparse_adj = SparseAdj(edge_index, edge_weight, [num_nodes, num_nodes])
+    normed_sparse_adj = gcn_norm_adj(sparse_adj, renorm=renorm, improved=improved, cache=cache)
+    return normed_sparse_adj.edge_index, normed_sparse_adj.edge_weight
+
+
+# old API
 def gcn_cache_normed_edge(graph, renorm=True, improved=False, override=False):
     """
     Manually compute the normed edge based on the given GCN normalization configuration (renorm and improved) and put it in graph.cache.
@@ -117,22 +148,12 @@ def gcn(x, edge_index, edge_weight, kernel, bias=None, activation=None,
     """
 
     num_nodes = tf.shape(x)[0]
-    updated_edge_index, normed_edge_weight = gcn_norm_edge(edge_index, num_nodes, edge_weight, renorm, improved, cache)
+
+    sparse_adj = SparseAdj(edge_index, edge_weight, [num_nodes, num_nodes])
+    normed_sparse_adj = gcn_norm_adj(sparse_adj, renorm, improved, cache)
 
     h = x @ kernel
-
-    # new implementation based on SparseAdj
-    sparse_adj = SparseAdj(updated_edge_index, normed_edge_weight, [num_nodes, num_nodes])
-    h = sparse_adj @ h
-
-    # old implementation
-    # h = aggregate_neighbors(
-    #     h, updated_edge_index, normed_edge_weight,
-    #     gcn_mapper,
-    #     sum_reducer,
-    #     identity_updater,
-    #     num_nodes=num_nodes
-    # )
+    h = normed_sparse_adj @ h
 
     if bias is not None:
         h += bias
@@ -141,6 +162,3 @@ def gcn(x, edge_index, edge_weight, kernel, bias=None, activation=None,
         h = activation(h)
 
     return h
-
-
-
