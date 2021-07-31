@@ -1,11 +1,14 @@
 # coding=utf-8
 import numpy as np
+np.set_printoptions(precision=4)
 
 accuracy_list = []
 with open("results.txt", "r", encoding="utf-8") as f:
     for line in f:
         accuracy = float(line.strip())
         accuracy_list.append(accuracy)
+
+accuracy_list = np.array(accuracy_list)
 
 accuracy_mean = np.mean(accuracy_list)
 accuracy_std = np.std(accuracy_list)

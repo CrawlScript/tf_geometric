@@ -11,7 +11,7 @@ GCN
 
 .. autoclass:: tf_geometric.layers.GCN
    :special-members: __init__
-   :members: call, cache_normed_edge
+   :members: call, build_cache_for_graph, cache_normed_edge
 
 
 GAT
@@ -27,7 +27,7 @@ APPNP
 
 .. autoclass:: tf_geometric.layers.APPNP
    :special-members: __init__
-   :members: call, cache_normed_edge
+   :members: call, build_cache_for_graph, cache_normed_edge
 
 
 GIN
@@ -43,14 +43,14 @@ SGC
 
 .. autoclass:: tf_geometric.layers.SGC
    :special-members: __init__
-   :members: call
+   :members: call, build_cache_for_graph, cache_normed_edge
 
 TAGCN
 --------------------
 
 .. autoclass:: tf_geometric.layers.TAGCN
    :special-members: __init__
-   :members: call
+   :members: call, build_cache_for_graph, cache_normed_edge
 
 
 GraphSage
@@ -90,7 +90,7 @@ ChebyNet
 --------------------
 .. autoclass:: tf_geometric.layers.ChebyNet
    :special-members: __init__
-   :members: call
+   :members: call, build_cache_for_graph, cache_normed_edge
 
 
 DropEdge

@@ -9,6 +9,10 @@ gcn
 
 .. autofunction:: tf_geometric.nn.gcn
 
+.. autofunction:: tf_geometric.nn.gcn_norm_adj
+
+.. autofunction:: tf_geometric.nn.gcn_build_cache_for_graph
+
 .. autofunction:: tf_geometric.nn.gcn_norm_edge
 
 .. autofunction:: tf_geometric.nn.gcn_cache_normed_edge

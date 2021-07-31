@@ -45,8 +45,8 @@ def encode(graph, training=False):
     return h
 
 
-gcn0.cache_normed_edge(graph)
-gcn0.cache_normed_edge(train_graph)
+gcn0.build_cache_for_graph(graph)
+gcn0.build_cache_for_graph(train_graph)
 
 
 @tf_utils.function

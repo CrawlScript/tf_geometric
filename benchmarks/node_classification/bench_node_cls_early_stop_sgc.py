@@ -28,12 +28,13 @@ elif dataset == "pubmed":
     num_steps = 61
 
 model = tfg.layers.SGC(num_classes, k=2)
+model.build_cache_for_graph(graph)
 
 
 # @tf_utils.function can speed up functions for TensorFlow 2.x
 @tf_utils.function
 def forward(graph, training=False):
-    return model([graph.x, graph.edge_index, graph.edge_weight], training=training)
+    return model([graph.x, graph.edge_index, graph.edge_weight], training=training, cache=graph.cache)
 
 
 @tf_utils.function

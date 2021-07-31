@@ -18,6 +18,7 @@ def tf_func_warn(*args, **kwargs):
         def decorate(func):
             warn_tf1()
             return func
+
         return decorate
 
 

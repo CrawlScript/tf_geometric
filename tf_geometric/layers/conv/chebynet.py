@@ -1,5 +1,6 @@
 # coding=utf-8
 
+import warnings
 import tensorflow as tf
 from tf_geometric.nn.conv.chebynet import chebynet, chebynet_cache_normed_edge
 
@@ -65,7 +66,7 @@ class ChebyNet(tf.keras.Model):
             self.bias = self.add_weight("bias", shape=[self.units],
                                         initializer="zeros", regularizer=self.bias_regularizer)
 
-    def cache_normed_edge(self, graph, override=False):
+    def build_cache_for_graph(self, graph, override=False):
         """
         Manually compute the normed edge based on this layer's GCN normalization configuration (self.renorm and self.improved) and put it in graph.cache.
         If the normed edge already exists in graph.cache and the override parameter is False, this method will do nothing.
@@ -76,6 +77,23 @@ class ChebyNet(tf.keras.Model):
         """
         chebynet_cache_normed_edge(graph, self.normalization_type,
                                    use_dynamic_lambda_max=self.use_dynamic_lambda_max, override=override)
+
+    def cache_normed_edge(self, graph, override=False):
+        """
+        Manually compute the normed edge based on this layer's GCN normalization configuration (self.renorm and self.improved) and put it in graph.cache.
+        If the normed edge already exists in graph.cache and the override parameter is False, this method will do nothing.
+
+        :param graph: tfg.Graph, the input graph.
+        :param override: Whether to override existing cached normed edge.
+        :return: None
+
+        .. deprecated:: 0.0.56
+            Use ``build_cache_for_graph`` instead.
+        """
+        warnings.warn(
+            "'ChebyNet.cache_normed_edge(graph, override)' is deprecated, use 'ChebyNet.build_cache_for_graph(graph, override)' instead",
+            DeprecationWarning)
+        return self.build_cache_for_graph(graph, override=override)
 
     def call(self, inputs, cache=None, training=None, mask=None):
         """

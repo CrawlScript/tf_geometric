@@ -1,7 +1,8 @@
 # coding=utf-8
 
-from tf_geometric.nn.conv.gcn import gcn, gcn_cache_normed_edge
+from tf_geometric.nn.conv.gcn import gcn, gcn_build_cache_for_graph
 import tensorflow as tf
+import warnings
 
 
 class GCN(tf.keras.Model):
@@ -47,7 +48,7 @@ class GCN(tf.keras.Model):
         self.kernel_regularizer = kernel_regularizer
         self.bias_regularizer = bias_regularizer
 
-    def cache_normed_edge(self, graph, override=False):
+    def build_cache_for_graph(self, graph, override=False):
         """
         Manually compute the normed edge based on this layer's GCN normalization configuration (self.renorm and self.improved) and put it in graph.cache.
         If the normed edge already exists in graph.cache and the override parameter is False, this method will do nothing.
@@ -56,7 +57,22 @@ class GCN(tf.keras.Model):
         :param override: Whether to override existing cached normed edge.
         :return: None
         """
-        gcn_cache_normed_edge(graph, self.renorm, self.improved, override=override)
+        gcn_build_cache_for_graph(graph, self.renorm, self.improved, override=override)
+
+    def cache_normed_edge(self, graph, override=False):
+        """
+        Manually compute the normed edge based on this layer's GCN normalization configuration (self.renorm and self.improved) and put it in graph.cache.
+        If the normed edge already exists in graph.cache and the override parameter is False, this method will do nothing.
+
+        :param graph: tfg.Graph, the input graph.
+        :param override: Whether to override existing cached normed edge.
+        :return: None
+
+        .. deprecated:: 0.0.56
+            Use ``build_cache_for_graph`` instead.
+        """
+        warnings.warn("'GCN.cache_normed_edge(graph, override)' is deprecated, use 'GCN.build_cache_for_graph(graph, override)' instead", DeprecationWarning)
+        return self.build_cache_for_graph(graph, override=override)
 
     def call(self, inputs, cache=None, training=None, mask=None):
         """

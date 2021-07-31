@@ -43,7 +43,7 @@ def forward(graph, training=False):
 
 # The following line is only necessary for using GCN with @tf_utils.function
 # For usage without @tf_utils.function, you can commont the following line and GCN layers can automatically manager the cache
-model.tagcn0.cache_normed_edge(graph)
+model.tagcn0.build_cache_for_graph(graph)
 
 
 @tf_utils.function

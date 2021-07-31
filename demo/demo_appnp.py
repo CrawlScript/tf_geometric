@@ -27,7 +27,7 @@ def forward(graph, training=False):
 
 # The following line is only necessary for using APPNP with @tf_utils.function
 # For usage without @tf_utils.function, you can commont the following line and APPNP layers can automatically manager the cache
-model.cache_normed_edge(graph)
+model.build_cache_for_graph(graph)
 
 
 @tf_utils.function

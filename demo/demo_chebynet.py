@@ -19,7 +19,7 @@ fc = tf.keras.Sequential([
     keras.layers.Dense(num_classes)
 ])
 
-model.cache_normed_edge(graph)
+model.build_cache_for_graph(graph)
 
 
 # @tf_utils.function can speed up functions for TensorFlow 2.x

@@ -61,7 +61,7 @@ def gcn_norm_adj(sparse_adj, renorm=True, improved=False, cache: dict = None):
     return normed_sparse_adj
 
 
-def gcn_cache_normed_adj(graph, renorm=True, improved=False, override=False):
+def gcn_build_cache_for_graph(graph, renorm=True, improved=False, override=False):
     """
     Manually compute the normed edge based on the given GCN normalization configuration (renorm and improved) and put it in graph.cache.
     If the normed edge already exists in graph.cache and the override parameter is False, this method will do nothing.
@@ -91,6 +91,9 @@ def gcn_norm_edge(edge_index, num_nodes, edge_weight=None, renorm=True, improved
     :param improved: Whether use improved GCN or not.
     :param cache: A dict for caching the updated edge_index and normalized edge_weight.
     :return: Normed edge (updated edge_index and normalized edge_weight).
+
+    .. deprecated:: 0.0.56
+        Use ``gcn_norm_adj`` instead.
     """
     sparse_adj = SparseAdj(edge_index, edge_weight, [num_nodes, num_nodes])
     normed_sparse_adj = gcn_norm_adj(sparse_adj, renorm=renorm, improved=improved, cache=cache)
@@ -108,6 +111,9 @@ def gcn_cache_normed_edge(graph, renorm=True, improved=False, override=False):
     :param improved: Whether use improved GCN or not.
     :param override: Whether to override existing cached normed edge.
     :return: None
+
+    .. deprecated:: 0.0.56
+        Use ``gcn_build_cache_for_graph`` instead.
     """
     if override:
         cache_key = compute_cache_key(renorm, improved)
@@ -137,12 +143,12 @@ def gcn(x, edge_index, edge_weight, kernel, bias=None, activation=None,
 
         - (1) If you're using OOP APIs tfg.layers.GCN:
 
-              gcn_layer.cache_normed_edge(graph)
+              gcn_layer.build_cache_for_graph(graph)
 
         - (2) If you're using functional API tfg.nn.gcn:
 
-              from tf_geometric.nn.conv.gcn import gcn_cache_normed_edge
-              gcn_cache_normed_edge(graph)
+              from tf_geometric.nn.conv.gcn import gcn_build_cache_for_graph
+              gcn_build_cache_for_graph(graph)
 
     :return: Updated node features (x), shape: [num_nodes, num_output_features]
     """

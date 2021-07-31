@@ -3,7 +3,7 @@
 # nn package contains functional APIs for tf_geometric
 from tf_geometric.nn.kernel.map_reduce import *
 
-from tf_geometric.nn.conv.gcn import gcn, gcn_norm_adj, gcn_cache_normed_adj, gcn_norm_edge, gcn_cache_normed_edge
+from tf_geometric.nn.conv.gcn import gcn, gcn_norm_adj, gcn_build_cache_for_graph, gcn_norm_edge, gcn_cache_normed_edge
 from tf_geometric.nn.conv.gat import gat
 from tf_geometric.nn.conv.chebynet import chebynet, chebynet_norm_edge
 from tf_geometric.nn.conv.sgc import sgc

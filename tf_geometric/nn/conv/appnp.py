@@ -30,12 +30,12 @@ def appnp(x, edge_index, edge_weight, kernels, biases,
 
         - (1) If you're using OOP APIs tfg.layers.GCN:
 
-              gcn_layer.cache_normed_edge(graph)
+              gcn_layer.build_cache_for_graph(graph)
 
         - (2) If you're using functional API tfg.nn.gcn:
 
-              from tf_geometric.nn.conv.gcn import gcn_cache_normed_edge
-              gcn_cache_normed_edge(graph)
+              from tf_geometric.nn.conv.gcn import gcn_build_cache_for_graph
+              gcn_build_cache_for_graph(graph)
 
     :param training: Python boolean indicating whether the layer should behave in
         training mode (adding dropout) or in inference mode (doing nothing).
