@@ -3,6 +3,7 @@ import tensorflow as tf
 import numpy as np
 
 from tf_geometric.utils.graph_utils import convert_edge_to_directed, compute_edge_mask_by_node_index
+from tf_geometric.utils.tf_sparse_utils import sparse_tensor_gather_sub
 from tf_geometric.utils.union_utils import union_len, convert_union_to_numpy
 
 
@@ -193,13 +194,16 @@ class Graph(object):
             if data is not None:
                 data_is_tensor = tf.is_tensor(data)
                 if data_is_tensor:
-                    data = tf.gather(data, sampled_node_index)
+                    if isinstance(data, tf.sparse.SparseTensor):
+                        data = sparse_tensor_gather_sub(data, sampled_node_index)
+                    else:
+                        data = tf.gather(data, sampled_node_index)
                 else:
                     data = convert_union_to_numpy(data)
                     data = data[sampled_node_index]
 
-                if data_is_tensor:
-                    data = tf.convert_to_tensor(data)
+                # if data_is_tensor:
+                #     data = tf.convert_to_tensor(data)
             return data
 
         x = sample_common_data(x)
