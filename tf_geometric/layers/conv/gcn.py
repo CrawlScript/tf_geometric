@@ -20,7 +20,8 @@ class GCN(tf.keras.Model):
             self.bias = self.add_weight("bias", shape=[self.units],
                                         initializer="zeros", regularizer=self.bias_regularizer)
 
-    def __init__(self, units, activation=None, use_bias=True,
+    def __init__(self, units, activation=None,
+                 use_bias=True,
                  renorm=True, improved=False,
                  kernel_regularizer=None, bias_regularizer=None, *args, **kwargs):
         """

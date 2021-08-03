@@ -158,7 +158,12 @@ def gcn(x, edge_index, edge_weight, kernel, bias=None, activation=None,
     sparse_adj = SparseAdj(edge_index, edge_weight, [num_nodes, num_nodes])
     normed_sparse_adj = gcn_norm_adj(sparse_adj, renorm, improved, cache)
 
-    h = x @ kernel
+    # SparseTensor is usually used for one-hot node features (For example, feature-less nodes.)
+    if isinstance(x, tf.sparse.SparseTensor):
+        h = tf.sparse.sparse_dense_matmul(x, kernel)
+    else:
+        h = x @ kernel
+
     h = normed_sparse_adj @ h
 
     if bias is not None:

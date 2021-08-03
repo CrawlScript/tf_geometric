@@ -44,17 +44,30 @@ def gat(x, edge_index,
 
     row, col = edge_index[0], edge_index[1]
 
-    Q = x @ query_kernel + query_bias
+    x_is_sparse = isinstance(x, tf.sparse.SparseTensor)
+
+    if x_is_sparse:
+        Q = tf.sparse.sparse_dense_matmul(x, query_kernel)
+    else:
+        Q = x @ query_kernel
+    Q += query_bias
     if query_activation is not None:
         Q = query_activation(Q)
     Q = tf.gather(Q, row)
 
-    K = x @ key_kernel + key_bias
+    if x_is_sparse:
+        K = tf.sparse.sparse_dense_matmul(x, key_kernel)
+    else:
+        K = x @ key_kernel
+    K += key_bias
     if key_activation is not None:
         K = key_activation(K)
     K = tf.gather(K, col)
 
-    V = x @ kernel
+    if x_is_sparse:
+        V = tf.sparse.sparse_dense_matmul(x, kernel)
+    else:
+        V = x @ kernel
 
     # xxxxx_ denotes the multi-head style stuff
     Q_ = tf.concat(tf.split(Q, num_heads, axis=-1), axis=0)

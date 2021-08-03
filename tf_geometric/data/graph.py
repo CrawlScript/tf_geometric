@@ -29,7 +29,7 @@ class Graph(object):
 
         self.x = Graph.cast_x(x)
         self.edge_index = Graph.cast_edge_index(edge_index)
-        self.y = y
+        self.y = Graph.cast_y(y)
         self.cache = {}
 
         if edge_weight is not None:
@@ -67,8 +67,13 @@ class Graph(object):
             x = x.astype(np.float32)
         elif tf.is_tensor(x) and x.dtype == tf.float64:
             x = tf.cast(x, tf.float32)
-
         return x
+
+    @classmethod
+    def cast_y(cls, y):
+        if isinstance(y, list):
+            y = np.array(y)
+        return y
 
     # @classmethod
     # def cast_y(cls, y):
@@ -300,12 +305,19 @@ class BatchGraph(Graph):
 
         graphs = []
         for i in range(self.num_graphs):
-            x = self.x[num_nodes_before_graph[i]: num_edges_before_graph[i + 1]]
+            if isinstance(self.x, tf.sparse.SparseTensor):
+                x = tf.sparse.slice(
+                    self.x,
+                    [num_nodes_before_graph[i], 0],
+                    [num_nodes_before_graph[i + 1] - num_nodes_before_graph[i], tf.shape(self.x)[-1]]
+                )
+            else:
+                x = self.x[num_nodes_before_graph[i]: num_nodes_before_graph[i + 1]]
 
             if self.y is None:
                 y = None
             else:
-                y = self.y[num_nodes_before_graph[i]: num_edges_before_graph[i + 1]]
+                y = self.y[num_nodes_before_graph[i]: num_nodes_before_graph[i + 1]]
 
             edge_index = self.edge_index[:, num_edges_before_graph[i]:num_edges_before_graph[i + 1]] - \
                          num_nodes_before_graph[i]
@@ -367,14 +379,15 @@ class BatchGraph(Graph):
 
     @classmethod
     def build_x(cls, graphs):
-        if tf.is_tensor(graphs[0].x):
-            return tf.concat([
-                graph.x for graph in graphs
-            ], axis=0)
+        x_list = [graph.x for graph in graphs]
+        first_x = x_list[0]
+        if tf.is_tensor(first_x):
+            if isinstance(first_x, tf.sparse.SparseTensor):
+                return tf.sparse.concat(0, x_list)
+            else:
+                return tf.concat(x_list, axis=0)
         else:
-            return np.concatenate([
-                graph.x for graph in graphs
-            ], axis=0)
+            return np.concatenate(x_list, axis=0)
 
     @classmethod
     def build_edge_index(cls, graphs):
