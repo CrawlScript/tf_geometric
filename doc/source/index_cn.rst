@@ -165,6 +165,12 @@ tf_geometric使用消息传递机制来实现图神经网络：相比于基于�
 
 
 
+稀疏
+::::::::::::::::::::
+
+* `稀疏节点特征 <https://github.com/CrawlScript/tf_geometric/blob/master/demo/demo_sparse_node_features.py>`_
+
+
 
 
 引用

@@ -105,6 +105,7 @@ We recommend you to get started with some demo.
 + [Graph Auto-Encoder (GAE)](demo/demo_gae.py)
 
 
+
 ### Save and Load Models
 
 + [Save and Load Models](demo/demo_save_and_load_model.py)
@@ -115,6 +116,11 @@ We recommend you to get started with some demo.
 
 + [Distributed GCN for Node Classification](demo/demo_distributed_gcn.py)
 + [Distributed MeanPooling for Graph Classification](demo/demo_distributed_mean_pool.py)
+
+
+### Sparse
+
++ [Sparse Node Features](demo/demo_sparse_node_features.py)
 
 
 

@@ -163,6 +163,12 @@ Distributed Training
 * `Distributed MeanPooling for Graph Classification <https://github.com/CrawlScript/tf_geometric/blob/master/demo/demo_distributed_mean_pool.py>`_
 
 
+Sparse
+::::::::::::::::::::
+
+* `Sparse Node Features <https://github.com/CrawlScript/tf_geometric/blob/master/demo/demo_sparse_node_features.py>`_
+
+
 
 Cite
 ----
