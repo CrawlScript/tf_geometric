@@ -20,7 +20,6 @@ x = tf.sparse.eye(num_nodes)
 print("Sparse (One-hot) Node Features: ")
 print(tf.sparse.to_dense(x))
 
-
 # tf.sparse.SparseTensor can be used as node features (x)
 graph = tfg.Graph(x, edge_index).convert_edge_to_directed()
 print("\nConstructed Graph:")
@@ -28,10 +27,9 @@ print(graph)
 
 # create a one-layer GCN model
 model = tfg.layers.GCN(4)
-
+# predict with the GCN model
 logits = model([graph.x, graph.edge_index])
-
-print("\nOutput:")
+print("\nModel Output:")
 print(logits)
 
 # tfg.Graph objects with sparse node features can also be combined into a tfg.BatchGraph object
