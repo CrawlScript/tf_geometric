@@ -5,3 +5,4 @@ from tf_geometric.datasets.planetoid import PlanetoidDataset, CoraDataset, Cites
     SupervisedCoraDataset, SupervisedCiteseerDataset, SupervisedPubmedDataset
 from tf_geometric.datasets.reddit import TransductiveRedditDataset, InductiveRedditDataset
 from tf_geometric.datasets.ogb import OGBNodePropPredDataset
+from tf_geometric.datasets.model_net import ModelNet10, ModelNet40

@@ -23,7 +23,7 @@ def download_file(path, url_or_urls):
 
 def save_cache(obj, path):
     with open(path, "wb") as f:
-        pickle.dump(obj, f)
+        pickle.dump(obj, f, protocol=4)
 
 
 def load_cache(path):
