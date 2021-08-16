@@ -51,7 +51,7 @@ class ModelNet(DownloadableDataset):
                 # rectangle
                 else:
                     triangles.append([items[1], items[2], items[3]])
-                    triangles.append([items[1], items[2], items[4]])
+                    triangles.append([items[1], items[3], items[4]])
 
         x = np.array(node_feature_matrix)
         triangles = np.array(triangles)
