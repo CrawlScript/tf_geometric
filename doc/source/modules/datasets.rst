@@ -58,6 +58,17 @@ SupervisedPubmed
    :members:
 
 
+
+BlogCatalog
+--------------------
+
+.. autoclass:: tf_geometric.datasets.BlogCatalogDataset
+   :special-members: __init__
+   :members:
+
+
+
+
 PPI
 --------------------
 
@@ -95,3 +106,15 @@ OGB
    :members:
 
 
+
+ModelNet
+--------------------
+
+.. autoclass:: tf_geometric.datasets.ModelNet10Dataset
+   :special-members: __init__
+   :members:
+
+
+.. autoclass:: tf_geometric.datasets.ModelNet40Dataset
+   :special-members: __init__
+   :members:

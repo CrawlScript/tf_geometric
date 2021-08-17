@@ -9,7 +9,7 @@ import scipy.sparse as sp
 from tqdm import tqdm
 
 
-class ModelNet(DownloadableDataset):
+class ModelNetDataset(DownloadableDataset):
     def __init__(self, dataset_name, download_urls=None, dataset_root_path=None, num_processes=50):
         super().__init__(dataset_name, download_urls,
                          download_file_name="{}.zip".format(dataset_name),
@@ -115,7 +115,7 @@ class ModelNet(DownloadableDataset):
         return train_graphs, test_graphs, label_names
 
 
-class ModelNet10(ModelNet):
+class ModelNet10Dataset(ModelNetDataset):
     def __init__(self, dataset_root_path=None, num_processes=50):
         super().__init__(
             dataset_name="ModelNet10",
@@ -125,7 +125,7 @@ class ModelNet10(ModelNet):
         )
 
 
-class ModelNet40(ModelNet):
+class ModelNet40Dataset(ModelNetDataset):
     def __init__(self, dataset_root_path=None, num_processes=50):
         super().__init__(
             dataset_name="ModelNet40",
