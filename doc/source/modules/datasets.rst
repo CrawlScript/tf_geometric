@@ -62,7 +62,7 @@ SupervisedPubmed
 BlogCatalog
 --------------------
 
-.. autoclass:: tf_geometric.datasets.BlogCatalogDataset
+.. autoclass:: tf_geometric.datasets.MultiLabelBlogCatalogDataset
    :special-members: __init__
    :members:
 
