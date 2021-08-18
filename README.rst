@@ -119,6 +119,12 @@ Distributed Training
 * `Distributed GCN for Node Classification <demo/demo_distributed_gcn.py>`_
 * `Distributed MeanPooling for Graph Classification <demo/demo_distributed_mean_pool.py>`_
 
+Sparse
+^^^^^^
+
+
+* `Sparse Node Features <demo/demo_sparse_node_features.py>`_
+
 Installation
 ------------
 
