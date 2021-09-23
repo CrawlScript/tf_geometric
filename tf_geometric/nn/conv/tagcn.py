@@ -1,8 +1,7 @@
 # coding=utf-8
 import tensorflow as tf
-
-from tf_geometric.nn.kernel.map_reduce import aggregate_neighbors, sum_reducer, identity_updater
-from tf_geometric.nn.conv.gcn import gcn_norm_edge, gcn_mapper
+from tf_geometric.sparse import SparseAdj
+from tf_geometric.nn.conv.gcn import gcn_norm_adj
 
 
 def tagcn(x, edge_index, edge_weight, k, kernel, bias=None, activation=None, renorm=False, improved=False, cache=None):
@@ -22,17 +21,17 @@ def tagcn(x, edge_index, edge_weight, k, kernel, bias=None, activation=None, ren
     :return: Updated node features (x), shape: [num_nodes, num_output_features]
     """
 
-    xs = [x]
-    updated_edge_index, normed_edge_weight = gcn_norm_edge(edge_index, x.shape[0], edge_weight,
-                                                           renorm, improved, cache)
-    for k in range(k):
-        h = aggregate_neighbors(
-            xs[-1], updated_edge_index, normed_edge_weight,
-            gcn_mapper,
-            sum_reducer,
-            identity_updater
-        )
+    num_nodes = tf.shape(x)[0]
 
+    sparse_adj = SparseAdj(edge_index, edge_weight, [num_nodes, num_nodes])
+    normed_sparse_adj = gcn_norm_adj(sparse_adj, renorm, improved, cache)
+
+    if isinstance(x, tf.sparse.SparseTensor):
+        x = tf.sparse.to_dense(x)
+
+    xs = [x]
+    for _ in range(k):
+        h = normed_sparse_adj @ xs[-1]
         xs.append(h)
 
     h = tf.concat(xs, axis=-1)

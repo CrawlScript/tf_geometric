@@ -1,6 +1,8 @@
 # coding=utf-8
 import os
 # Use GPU0
+from tf_geometric.utils import tf_utils
+
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 import tensorflow as tf
 import tf_geometric as tfg
@@ -25,10 +27,18 @@ graph = tfg.Graph(x, edge_index).convert_edge_to_directed()
 print("\nConstructed Graph:")
 print(graph)
 
-# create a one-layer GCN model
+# create a one-layer GNN model
 model = tfg.layers.GCN(4)
+# model = tfg.layers.SGC(4, k=3)
+# model = tfg.layers.ChebyNet(4, k=4)
+# model = tfg.layers.TAGCN(4, k=4)
+
 # predict with the GCN model
-logits = model([graph.x, graph.edge_index])
+@tf_utils.function
+def forward(graph):
+    return model([graph.x, graph.edge_index])
+
+logits = forward(graph)
 print("\nModel Output:")
 print(logits)
 

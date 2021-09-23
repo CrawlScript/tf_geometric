@@ -27,9 +27,12 @@ def sgc(x, edge_index, edge_weight, k, kernel, bias=None, activation=None, renor
     sparse_adj = SparseAdj(edge_index, edge_weight, [num_nodes, num_nodes])
     normed_sparse_adj = gcn_norm_adj(sparse_adj, renorm, improved, cache)
 
-    # h = x
+    # SparseTensor is usually used for one-hot node features (For example, feature-less nodes.)
+    if isinstance(x, tf.sparse.SparseTensor):
+        h = tf.sparse.sparse_dense_matmul(x, kernel)
+    else:
+        h = x @ kernel
 
-    h = x @ kernel
     for _ in range(k):
         h = normed_sparse_adj @ h
 

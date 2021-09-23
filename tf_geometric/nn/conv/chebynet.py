@@ -1,4 +1,6 @@
 import tensorflow as tf
+from tf_geometric.sparse import SparseAdj
+
 from tf_geometric.nn.conv.gcn import gcn_mapper
 from tf_geometric.utils.graph_utils import remove_self_loop_edge, add_self_loop_edge, get_laplacian, \
     LaplacianMaxEigenvalue
@@ -81,24 +83,48 @@ def chebynet(x, edge_index, edge_weight, k, kernels, bias=None, activation=None,
     num_nodes = tf.shape(x)[0]
     # lambda_max = chebynet_compute_lambda_max(x, edge_index, edge_weight, normalization_type, cache=cache)
 
-    norm_edge_index, norm_edge_weight = chebynet_norm_edge(edge_index, num_nodes, edge_weight, normalization_type,
+    num_edges = tf.shape(edge_index)[1]
+    if edge_weight is None:
+        edge_weight = tf.ones([num_edges], dtype=tf.float32)
+
+    normed_edge_index, normed_edge_weight = chebynet_norm_edge(edge_index, num_nodes, edge_weight, normalization_type,
                                                            use_dynamic_lambda_max=use_dynamic_lambda_max, cache=cache)
+    normed_sparse_adj = SparseAdj(normed_edge_index, normed_edge_weight, [num_nodes, num_nodes])
+
+
 
     T0_x = x
-    T1_x = x
-    out = tf.matmul(T0_x, kernels[0])
+
+    if isinstance(T0_x, tf.sparse.SparseTensor):
+        out = tf.sparse.sparse_dense_matmul(T0_x, kernels[0])
+    else:
+        out = T0_x @ kernels[0]
 
     if k > 1:
-        T1_x = aggregate_neighbors(x, norm_edge_index, norm_edge_weight, gcn_mapper, sum_reducer, identity_updater)
-        out += tf.matmul(T1_x, kernels[1])
+        # T1_x = aggregate_neighbors(x, norm_edge_index, norm_edge_weight, gcn_mapper, sum_reducer, identity_updater)
+        if isinstance(x, tf.sparse.SparseTensor):
+            dense_x = tf.sparse.to_dense(x)
+        else:
+            dense_x = x
 
-    for i in range(2, k):
-        T2_x = aggregate_neighbors(T1_x, norm_edge_index, norm_edge_weight, gcn_mapper, sum_reducer,
-                                   identity_updater)  ##L^T_{k-1}(L^)
-        T2_x = 2.0 * T2_x - T0_x
-        out += tf.matmul(T2_x, kernels[i])
+        T1_x = normed_sparse_adj @ dense_x
+        h = T1_x @ kernels[1]
+        out += h
 
-        T0_x, T1_x = T1_x, T2_x
+    if k > 2:
+
+        if isinstance(T0_x, tf.sparse.SparseTensor):
+            T0_x = tf.sparse.to_dense(T0_x)
+
+        for i in range(2, k):
+            # T2_x = aggregate_neighbors(T1_x, norm_edge_index, norm_edge_weight, gcn_mapper, sum_reducer,
+            #                            identity_updater)  ##L^T_{k-1}(L^)
+
+            T2_x = normed_sparse_adj @ T1_x * 2.0 - T0_x
+            h = T2_x @ kernels[i]
+            out += h
+
+            T0_x, T1_x = T1_x, T2_x
 
     if bias is not None:
         out += bias
