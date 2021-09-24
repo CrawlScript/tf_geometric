@@ -14,8 +14,24 @@ num_classes = graph.y.max() + 1
 drop_rate = 0.5
 learning_rate = 1e-2
 
-model = tfg.layers.APPNP([64, num_classes], alpha=0.1, num_iterations=10,
-                         dense_drop_rate=drop_rate, edge_drop_rate=drop_rate)
+
+# APPNP Model
+class APPNPModel(tf.keras.Model):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.appnp = tfg.layers.APPNP([64, num_classes], alpha=0.1, num_iterations=10,
+                                      dense_drop_rate=drop_rate, edge_drop_rate=drop_rate)
+        self.dropout = tf.keras.layers.Dropout(drop_rate)
+
+    def call(self, inputs, training=None, mask=None, cache=None):
+        x, edge_index, edge_weight = inputs
+        h = self.dropout(x, training=training)
+        h = self.appnp([h, edge_index, edge_weight], training=training, cache=cache)
+        return h
+
+
+model = APPNPModel()
 
 
 # @tf_utils.function can speed up functions for TensorFlow 2.x.
@@ -27,7 +43,7 @@ def forward(graph, training=False):
 
 # The following line is only necessary for using APPNP with @tf_utils.function
 # For usage without @tf_utils.function, you can commont the following line and APPNP layers can automatically manager the cache
-model.build_cache_for_graph(graph)
+model.appnp.build_cache_for_graph(graph)
 
 
 @tf_utils.function

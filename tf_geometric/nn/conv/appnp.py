@@ -56,13 +56,16 @@ def appnp(x, edge_index, edge_weight, kernels, biases,
         if isinstance(h, tf.sparse.SparseTensor):
             h = tf.sparse.sparse_dense_matmul(h, kernel)
         else:
+            h = h @ kernel
+
+        if bias is not None:
+            h += bias
+
+        if i < num_dense_layers - 1:
+            if dense_activation is not None:
+                h = dense_activation(h)
             if training and dense_drop_rate > 0.0:
                 h = tf.compat.v2.nn.dropout(h, dense_drop_rate)
-            h = h @ kernel
-        h += bias
-
-        if dense_activation is not None and i < num_dense_layers - 1:
-            h = dense_activation(h)
 
     # new implementation based on SparseAdj
     # sparse_adj = SparseAdj(updated_edge_index, normed_edge_weight, [num_nodes, num_nodes])\
