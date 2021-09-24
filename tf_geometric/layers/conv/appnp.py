@@ -30,7 +30,7 @@ class APPNP(tf.keras.Model):
 
     def __init__(self, units_list,
                  dense_activation=tf.nn.relu, activation=None,
-                 num_iterations=2, alpha=0.15,
+                 num_iterations=10, alpha=0.1,
                  dense_drop_rate=0.0, edge_drop_rate=0.0,
                  kernel_regularizer=None, bias_regularizer=None, *args, **kwargs):
         """

@@ -32,6 +32,7 @@ model = tfg.layers.GCN(4)
 # model = tfg.layers.SGC(4, k=3)
 # model = tfg.layers.ChebyNet(4, k=4)
 # model = tfg.layers.TAGCN(4, k=4)
+# model = tfg.layers.APPNP([4, 4], tf.nn.relu, num_iterations=10)
 
 # predict with the GCN model
 @tf_utils.function

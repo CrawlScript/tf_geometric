@@ -7,7 +7,7 @@ from tf_geometric.nn.conv.gcn import gcn_norm_adj
 
 def appnp(x, edge_index, edge_weight, kernels, biases,
           dense_activation=tf.nn.relu, activation=None,
-          num_iterations=2, alpha=0.15,
+          num_iterations=10, alpha=0.1,
           dense_drop_rate=0.0, edge_drop_rate=0.0, cache=None, training=False):
 
     """
@@ -52,9 +52,15 @@ def appnp(x, edge_index, edge_weight, kernels, biases,
 
     h = x
     for i, (kernel, bias) in enumerate(zip(kernels, biases)):
-        if training and dense_drop_rate > 0.0:
-            h = tf.compat.v2.nn.dropout(h, dense_drop_rate)
-        h = h @ kernel + bias
+        # SparseTensor is usually used for one-hot node features (For example, feature-less nodes.)
+        if isinstance(h, tf.sparse.SparseTensor):
+            h = tf.sparse.sparse_dense_matmul(h, kernel)
+        else:
+            if training and dense_drop_rate > 0.0:
+                h = tf.compat.v2.nn.dropout(h, dense_drop_rate)
+            h = h @ kernel
+        h += bias
+
         if dense_activation is not None and i < num_dense_layers - 1:
             h = dense_activation(h)
 
