@@ -22,6 +22,6 @@ def convert_union_to_numpy(data, dtype=None):
 
 def union_len(data):
     if tf.is_tensor(data):
-        return data.shape.as_list()[0]
+        return tf.shape(data)[0]
     else:
         return len(data)

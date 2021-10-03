@@ -36,9 +36,10 @@ class Graph(object):
         if edge_weight is not None:
             self.edge_weight = self.cast_edge_weight(edge_weight)
         else:
-            self.edge_weight = np.full([self.num_edges], 1.0, dtype=np.float32)
-            if tf.is_tensor(self.x):
-                self.edge_weight = tf.convert_to_tensor(self.edge_weight)
+            if tf.is_tensor(self.edge_index):
+                self.edge_weight = tf.ones([self.num_edges], dtype=tf.float32)
+            else:
+                self.edge_weight = np.ones([self.num_edges], dtype=np.float32)
 
     @classmethod
     def cast_edge_index(cls, x):
@@ -107,11 +108,22 @@ class Graph(object):
 
         :return: Number of edges
         """
+        if tf.is_tensor(self.edge_index):
+            shape = tf.shape(self.edge_index)
 
-        if len(self.edge_index) == 0:
-            return 0
+            def return_empty_num_edges():
+                return 0
+
+            def return_common_num_edges():
+                return shape[1]
+
+            return tf.cond(shape[0] == 0, return_empty_num_edges, return_common_num_edges)
+
         else:
-            return len(self.edge_index[0])
+            if len(self.edge_index) == 0:
+                return 0
+            else:
+                return len(self.edge_index[0])
 
         # if tf.is_tensor(self.edge_index):
         #     return self.edge_index.shape.as_list()[1]
@@ -288,11 +300,14 @@ class BatchGraph(Graph):
 
     @property
     def num_graphs(self):
-        return tf.reduce_max(self.node_graph_index) + 1
+        if tf.is_tensor(self.node_graph_index):
+            return tf.reduce_max(self.node_graph_index) + 1
+        else:
+            return np.max(self.node_graph_index) + 1
 
     def to_graphs(self):
         # num_nodes_list = tf.math.segment_sum(tf.ones([self.num_nodes]), self.node_graph_index)
-        num_graphs = self.num_edges
+        num_graphs = self.num_graphs
         num_nodes_list = tf.math.unsorted_segment_sum(tf.ones([self.num_nodes]), self.node_graph_index, num_graphs)
 
         num_nodes_before_graph = tf.concat([
@@ -453,5 +468,6 @@ class BatchGraph(Graph):
         :return:
         """
         self.edge_index, [self.edge_weight, self.edge_graph_index] = \
-            convert_edge_to_directed(self.edge_index, [self.edge_weight, self.edge_graph_index], merge_modes=["sum", "max"])
+            convert_edge_to_directed(self.edge_index, [self.edge_weight, self.edge_graph_index],
+                                     merge_modes=["sum", "max"])
         return self
