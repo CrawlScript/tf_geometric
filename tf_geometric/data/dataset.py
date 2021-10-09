@@ -2,8 +2,8 @@
 import os
 
 from tensorflow.python.keras.utils.data_utils import _extract_archive
-
 from tf_geometric.utils.data_utils import download_file, load_cache, save_cache
+from shutil import copy
 
 DEFAULT_DATASETS_ROOT = "data"
 
@@ -35,6 +35,7 @@ class DownloadableDataset(object):
         self.dataset_name = dataset_name
         self.dataset_root_path = get_dataset_root_path(dataset_root_path, dataset_name)
         self.download_urls = download_urls
+        self.download_file_name = download_file_name
 
         self.download_root_path = os.path.join(self.dataset_root_path, "download")
         self.raw_root_path = os.path.join(self.dataset_root_path, "raw")
@@ -65,7 +66,10 @@ class DownloadableDataset(object):
 
     def extract_raw(self):
         if len(os.listdir(self.raw_root_path)) == 0:
-            _extract_archive(self.download_file_path, self.raw_root_path, archive_format="auto")
+            if self.download_file_path.endswith(".npz"):
+                copy(self.download_file_path, os.path.join(self.raw_root_path, self.download_file_name))
+            else:
+                _extract_archive(self.download_file_path, self.raw_root_path, archive_format="auto")
         else:
             print("raw data exists: {}, ignore".format(self.raw_root_path))
 

@@ -7,3 +7,5 @@ from tf_geometric.datasets.blog_catalog import MultiLabelBlogCatalogDataset
 from tf_geometric.datasets.reddit import TransductiveRedditDataset, InductiveRedditDataset
 from tf_geometric.datasets.ogb import OGBNodePropPredDataset
 from tf_geometric.datasets.model_net import ModelNet10Dataset, ModelNet40Dataset
+from tf_geometric.datasets.amazon_electronics import AmazonElectronicsDataset, AmazonComputersDataset, \
+    AmazonPhotoDataset

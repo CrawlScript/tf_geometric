@@ -17,6 +17,7 @@ graph, (train_index, valid_index, test_index) = tfg.datasets.PlanetoidDataset(da
 
 
 num_steps = 401
+patience = 100
 
 
 num_classes = graph.y.max() + 1
@@ -119,6 +120,13 @@ for step in range(1, num_steps):
         val_accuracy = val_accuracy.numpy()
         val_loss = val_loss.numpy()
 
+        if val_accuracy > best_val_accuracy or val_loss < min_val_loss:
+            patience_counter = 0
+        else:
+            patience_counter += 1
+            if patience_counter > patience:
+                break
+
         # if val_accuracy > best_val_accuracy and val_loss < min_val_loss:
         if val_accuracy > best_val_accuracy and val_loss < min_val_loss:
             final_test_accuracy = test_accuracy
@@ -135,6 +143,7 @@ for step in range(1, num_steps):
             "step = {}\tloss = {:.4f}\tval_accuracy = {:.4f}\tval_loss = {:.4f}\t"
             "test_accuracy = {:.4f}\tfinal_test_accuracy = {:.4f}\tfinal_step = {}"
             .format(step, loss, val_accuracy, val_loss, test_accuracy, final_test_accuracy, final_step))
+        print("patience_counter = {}".format(patience_counter))
 
 print("final accuracy: {}\tfinal_step: {}".format(final_test_accuracy, final_step))
 

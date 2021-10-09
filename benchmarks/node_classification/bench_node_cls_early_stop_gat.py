@@ -1,6 +1,8 @@
 # coding=utf-8
 import os
 
+from tf_geometric.datasets import AmazonElectronicsDataset
+
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 from tf_geometric.utils import tf_utils
 import tf_geometric as tfg
@@ -12,15 +14,44 @@ import numpy as np
 dataset = "cora"
 # dataset = "citeseer"
 # dataset = "pubmed"
+# dataset = "amazon-computers"
+# dataset = "amazon-photo"
 
-graph, (train_index, valid_index, test_index) = tfg.datasets.PlanetoidDataset(dataset).load_data()
+if dataset in ["cora", "citeseer", "pubmed"]:
+    graph, (train_index, valid_index, test_index) = tfg.datasets.PlanetoidDataset(dataset).load_data()
+else:
+    graph = AmazonElectronicsDataset(dataset).load_data()
+
+    num_classes = np.max(graph.y) + 1
+
+    train_index_list = []
+    valid_index_list = []
+    test_index_list = []
+
+    for label in range(num_classes):
+        label_index = np.where(graph.y == label)[0]
+        shuffled_label_index = np.random.permutation(label_index)
+        label_train_index = shuffled_label_index[:20]
+        label_valid_index = shuffled_label_index[20:50]
+        label_test_index = shuffled_label_index[50:]
+
+        train_index_list.append(label_train_index)
+        valid_index_list.append(label_valid_index)
+        test_index_list.append(label_test_index)
+
+    train_index = np.concatenate(train_index_list, axis=0)
+    valid_index = np.concatenate(valid_index_list, axis=0)
+    test_index = np.concatenate(test_index_list, axis=0)
 
 num_steps = 401
+patience = 100
 
 num_classes = graph.y.max() + 1
 # att_drop_rate = 0.6
 learning_rate = 5e-3
 drop_rate = 0.6
+l2_coef = 1e-3
+
 if dataset == "citeseer":
     drop_rate = 0.6
     l2_coef = 2e-3
@@ -32,7 +63,7 @@ elif dataset == "pubmed":
     l2_coef = 2e-3
     # num_steps = 1001
 
-patience = 20
+
 
 
 # Multi-layer GAT Model
@@ -147,6 +178,13 @@ for step in range(1, num_steps):
         val_accuracy = val_accuracy.numpy()
         val_loss = val_loss.numpy()
 
+        if val_accuracy > best_val_accuracy or val_loss < min_val_loss:
+            patience_counter = 0
+        else:
+            patience_counter += 1
+            if patience_counter > patience:
+                break
+
         # if val_accuracy > best_val_accuracy and val_loss < min_val_loss:
         if val_accuracy > best_val_accuracy and val_loss < min_val_loss:
             final_test_accuracy = test_accuracy
@@ -163,6 +201,7 @@ for step in range(1, num_steps):
             "step = {}\tloss = {:.4f}\tval_accuracy = {:.4f}\tval_loss = {:.4f}\t"
             "test_accuracy = {:.4f}\tfinal_test_accuracy = {:.4f}\tfinal_step = {}"
             .format(step, loss, val_accuracy, val_loss, test_accuracy, final_test_accuracy, final_step))
+        print("patience_counter = {}".format(patience_counter))
 
 print("final accuracy: {}\tfinal_step: {}".format(final_test_accuracy, final_step))
 
