@@ -118,3 +118,19 @@ ModelNet
 .. autoclass:: tf_geometric.datasets.ModelNet40Dataset
    :special-members: __init__
    :members:
+
+
+
+
+AmazonElectronics
+--------------------
+
+
+.. autoclass:: tf_geometric.datasets.AmazonComputersDataset
+   :special-members: __init__
+   :members:
+
+
+.. autoclass:: tf_geometric.datasets.AmazonPhotoDataset
+   :special-members: __init__
+   :members:
