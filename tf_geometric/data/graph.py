@@ -171,7 +171,7 @@ class Graph(object):
         """
         return self._convert_data_to_tensor(["x", "edge_index", "edge_weight", "y"])
 
-    def convert_edge_to_directed(self):
+    def convert_edge_to_directed(self, merge_mode="sum"):
         """
 
         Each column of edge_index (u, v) represents an directed edge from u to v.
@@ -182,7 +182,7 @@ class Graph(object):
 
         :return:
         """
-        self.edge_index, [self.edge_weight] = convert_edge_to_directed(self.edge_index, [self.edge_weight])
+        self.edge_index, [self.edge_weight] = convert_edge_to_directed(self.edge_index, [self.edge_weight], merge_modes=[merge_mode])
         return self
 
     def sample_new_graph_by_node_index(self, sampled_node_index):
