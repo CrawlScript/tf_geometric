@@ -126,6 +126,11 @@ AmazonElectronics
 --------------------
 
 
+.. autoclass:: tf_geometric.datasets.AmazonElectronicsDataset
+   :special-members: __init__
+   :members:
+
+
 .. autoclass:: tf_geometric.datasets.AmazonComputersDataset
    :special-members: __init__
    :members:
@@ -134,3 +139,24 @@ AmazonElectronics
 .. autoclass:: tf_geometric.datasets.AmazonPhotoDataset
    :special-members: __init__
    :members:
+
+
+
+Coauthor
+--------------------
+
+
+.. autoclass:: tf_geometric.datasets.CoauthorDataset
+   :special-members: __init__
+   :members:
+
+
+.. autoclass:: tf_geometric.datasets.CoauthorCSDataset
+   :special-members: __init__
+   :members:
+
+
+.. autoclass:: tf_geometric.datasets.CoauthorPhysicsDataset
+   :special-members: __init__
+   :members:
+
