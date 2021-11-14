@@ -22,12 +22,13 @@ class SparseMatrix(object):
     # https://stackoverflow.com/questions/40252765/overriding-other-rmul-with-your-classs-mul
     __array_priority__ = 10000
 
-    def __init__(self, edge_index, edge_weight=None, shape=None):
+    def __init__(self, edge_index, edge_weight=None, shape=None, merge=True):
         """
         Sparse Matrix for efficient computation.
         :param edge_index:
         :param edge_weight:
         :param shape: [num_rows, num_cols], shape of the adjacency matrix.
+        :param merge: Whether to merge duplicated edge
         """
 
         self.edge_index = Graph.cast_edge_index(edge_index)
@@ -45,8 +46,9 @@ class SparseMatrix(object):
                 edge_weight = np.ones([num_edges], dtype=np.float32)
             self.edge_weight = edge_weight
 
-        self.edge_index, [self.edge_weight] = merge_duplicated_edge(self.edge_index, [self.edge_weight],
-                                                                    merge_modes=["sum"])
+        if merge:
+            self.edge_index, [self.edge_weight] = merge_duplicated_edge(self.edge_index, [self.edge_weight],
+                                                                        merge_modes=["sum"])
 
         if shape is None:
             if edge_index_is_tensor:
