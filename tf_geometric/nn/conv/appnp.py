@@ -1,7 +1,7 @@
 # coding=utf-8
 
 import tensorflow as tf
-from tf_geometric.sparse.sparse_adj import SparseAdj
+from tf_geometric.sparse.sparse_matrix import SparseMatrix
 from tf_geometric.nn.conv.gcn import gcn_norm_adj
 
 
@@ -44,7 +44,7 @@ def appnp(x, edge_index, edge_weight, kernels, biases,
 
     num_nodes = tf.shape(x)[0]
     # updated_edge_index, normed_edge_weight = gcn_norm_edge(edge_index, num_nodes, edge_weight, cache=cache)
-    sparse_adj = SparseAdj(edge_index, edge_weight, [num_nodes, num_nodes])
+    sparse_adj = SparseMatrix(edge_index, edge_weight, [num_nodes, num_nodes])
     normed_sparse_adj = gcn_norm_adj(sparse_adj, cache=cache)\
         .dropout(edge_drop_rate, training=training)
 

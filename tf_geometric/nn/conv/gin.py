@@ -1,6 +1,6 @@
 # coding=utf-8
 import tensorflow as tf
-from tf_geometric.sparse.sparse_adj import SparseAdj
+from tf_geometric.sparse.sparse_matrix import SparseMatrix
 
 
 def gin_updater(x, reduced_neighbor_msg, eps):
@@ -28,7 +28,7 @@ def gin(x, edge_index, mlp_model, eps=0.0, training=None):
     # h = gin_updater(x, h, eps)
 
     num_nodes = tf.shape(x)[0]
-    sparse_adj = SparseAdj(edge_index, edge_weight=None, shape=[num_nodes, num_nodes])
+    sparse_adj = SparseMatrix(edge_index, edge_weight=None, shape=[num_nodes, num_nodes])
 
     neighbor_h = sparse_adj @ x
     h = x * (1.0 + eps) + neighbor_h

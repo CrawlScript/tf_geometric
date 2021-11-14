@@ -64,7 +64,7 @@ def convert_edge_hash_to_edge_index(edge_hash, num_nodes):
 
 def merge_duplicated_edge(edge_index, edge_props=None, merge_modes=None):
     """
-    weight_merge_mode: "min", "max", "mean", "sum"
+    merge_modes: list of merge_mode ("min", "max", "mean", "sum")
     """
 
     if edge_props is not None:
@@ -82,18 +82,18 @@ def merge_duplicated_edge(edge_index, edge_props=None, merge_modes=None):
     if not edge_index_is_tensor:
         edge_index = tf.convert_to_tensor(edge_index, dtype=tf.int32)
 
-    if edge_props is not None:
-        edge_props = [
-            tf.convert_to_tensor(edge_prop) if edge_prop is not None else None
-            for edge_prop in edge_props
-        ]
+    # if edge_props is not None:
+    #     edge_props = [
+    #         tf.convert_to_tensor(edge_prop) if edge_prop is not None else None
+    #         for edge_prop in edge_props
+    #     ]
 
     edge_hash, hash_num_nodes = convert_edge_index_to_edge_hash(edge_index)
     unique_edge_hash, unique_index = tf.unique(edge_hash)
 
     unique_edge_index = convert_edge_hash_to_edge_index(unique_edge_hash, hash_num_nodes)
 
-    if not edge_index_is_tensor:
+    if tf.executing_eagerly() and not edge_index_is_tensor:
         unique_edge_index = unique_edge_index.numpy()
 
     if edge_props is None:
@@ -101,9 +101,14 @@ def merge_duplicated_edge(edge_index, edge_props=None, merge_modes=None):
     else:
         unique_edge_props = []
         for edge_prop, merge_mode in zip(edge_props, merge_modes):
+
             if edge_prop is None:
                 unique_edge_prop = None
             else:
+
+                edge_prop_is_tensor = tf.is_tensor(edge_prop)
+                edge_prop = tf.convert_to_tensor(edge_prop)
+
                 if merge_mode == "min":
                     merge_func = tf.math.unsorted_segment_min
                 elif merge_mode == "max":
@@ -116,8 +121,9 @@ def merge_duplicated_edge(edge_index, edge_props=None, merge_modes=None):
                     raise Exception("wrong merge mode: {}".format(merge_mode))
                 unique_edge_prop = merge_func(edge_prop, unique_index, tf.shape(unique_edge_hash)[0])
 
-                if not tf.is_tensor(edge_prop):
-                    unique_edge_prop = edge_prop.numpy()
+                if tf.executing_eagerly() and not edge_prop_is_tensor:
+                    unique_edge_prop = unique_edge_prop.numpy()
+
             unique_edge_props.append(unique_edge_prop)
 
     return unique_edge_index, unique_edge_props

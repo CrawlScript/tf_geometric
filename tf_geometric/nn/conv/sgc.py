@@ -1,10 +1,8 @@
 # coding=utf-8
 
-# from tf_geometric.nn.conv.gcn import gcn_norm_edge, gcn_mapper
 import tensorflow as tf
-from tf_geometric.sparse.sparse_adj import SparseAdj
+from tf_geometric.sparse.sparse_matrix import SparseMatrix
 from tf_geometric.nn.conv.gcn import gcn_norm_adj
-from tf_geometric.nn.kernel.map_reduce import aggregate_neighbors, sum_reducer, identity_updater
 
 
 def sgc(x, edge_index, edge_weight, k, kernel, bias=None, activation=None, renorm=True, improved=False, cache=None):
@@ -24,7 +22,7 @@ def sgc(x, edge_index, edge_weight, k, kernel, bias=None, activation=None, renor
     :return: Updated node features (x), shape: [num_nodes, num_features]
     """
     num_nodes = tf.shape(x)[0]
-    sparse_adj = SparseAdj(edge_index, edge_weight, [num_nodes, num_nodes])
+    sparse_adj = SparseMatrix(edge_index, edge_weight, [num_nodes, num_nodes])
     normed_sparse_adj = gcn_norm_adj(sparse_adj, renorm, improved, cache)
 
     # SparseTensor is usually used for one-hot node features (For example, feature-less nodes.)

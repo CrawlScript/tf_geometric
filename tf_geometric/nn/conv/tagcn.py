@@ -1,6 +1,6 @@
 # coding=utf-8
 import tensorflow as tf
-from tf_geometric.sparse import SparseAdj
+from tf_geometric.sparse import SparseMatrix
 from tf_geometric.nn.conv.gcn import gcn_norm_adj
 
 
@@ -23,7 +23,7 @@ def tagcn(x, edge_index, edge_weight, k, kernel, bias=None, activation=None, ren
 
     num_nodes = tf.shape(x)[0]
 
-    sparse_adj = SparseAdj(edge_index, edge_weight, [num_nodes, num_nodes])
+    sparse_adj = SparseMatrix(edge_index, edge_weight, [num_nodes, num_nodes])
     normed_sparse_adj = gcn_norm_adj(sparse_adj, renorm, improved, cache)
 
     if isinstance(x, tf.sparse.SparseTensor):

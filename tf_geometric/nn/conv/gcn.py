@@ -1,7 +1,6 @@
 # coding=utf-8
 import tensorflow as tf
-from tf_geometric.utils.graph_utils import add_self_loop_edge
-from tf_geometric.sparse.sparse_adj import SparseAdj
+from tf_geometric.sparse.sparse_matrix import SparseMatrix
 from tf_geometric.sparse.sparse_ops import sparse_diag_matmul, diag_sparse_matmul
 
 # new API
@@ -75,7 +74,7 @@ def gcn_build_cache_for_graph(graph, renorm=True, improved=False, override=False
     if override:
         cache_key = compute_cache_key(renorm, improved)
         graph.cache[cache_key] = None
-    sparse_adj = SparseAdj(graph.edge_index, graph.edge_weight, [graph.num_nodes, graph.num_nodes])
+    sparse_adj = SparseMatrix(graph.edge_index, graph.edge_weight, [graph.num_nodes, graph.num_nodes])
     gcn_norm_adj(sparse_adj, renorm, improved, graph.cache)
 
 
@@ -95,7 +94,7 @@ def gcn_norm_edge(edge_index, num_nodes, edge_weight=None, renorm=True, improved
     .. deprecated:: 0.0.56
         Use ``gcn_norm_adj`` instead.
     """
-    sparse_adj = SparseAdj(edge_index, edge_weight, [num_nodes, num_nodes])
+    sparse_adj = SparseMatrix(edge_index, edge_weight, [num_nodes, num_nodes])
     normed_sparse_adj = gcn_norm_adj(sparse_adj, renorm=renorm, improved=improved, cache=cache)
     return normed_sparse_adj.edge_index, normed_sparse_adj.edge_weight
 
@@ -155,7 +154,7 @@ def gcn(x, edge_index, edge_weight, kernel, bias=None, activation=None,
 
     num_nodes = tf.shape(x)[0]
 
-    sparse_adj = SparseAdj(edge_index, edge_weight, [num_nodes, num_nodes])
+    sparse_adj = SparseMatrix(edge_index, edge_weight, [num_nodes, num_nodes])
     normed_sparse_adj = gcn_norm_adj(sparse_adj, renorm, improved, cache)
 
     # SparseTensor is usually used for one-hot node features (For example, feature-less nodes.)
