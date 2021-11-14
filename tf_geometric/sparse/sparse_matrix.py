@@ -22,7 +22,7 @@ class SparseMatrix(object):
     # https://stackoverflow.com/questions/40252765/overriding-other-rmul-with-your-classs-mul
     __array_priority__ = 10000
 
-    def __init__(self, edge_index, edge_weight=None, shape=None, merge=True):
+    def __init__(self, edge_index, edge_weight=None, shape=None, merge=False):
         """
         Sparse Matrix for efficient computation.
         :param edge_index:
@@ -66,6 +66,10 @@ class SparseMatrix(object):
     @property
     def col(self):
         return self.edge_index[1]
+
+    def merge_duplicated_edge(self):
+        edge_index, [edge_weight] = merge_duplicated_edge(self.edge_index, [self.edge_weight], merge_modes=["sum"])
+        return SparseMatrix(edge_index, edge_weight, shape=self.shape)
 
     def add_self_loop(self, fill_weight=1.0):
         num_nodes = self.shape[0]
