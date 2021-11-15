@@ -40,7 +40,7 @@ def gcn_norm_adj(sparse_adj, renorm=True, improved=False, cache: dict = None):
     if renorm:
         sparse_adj = sparse_adj.add_self_loop(fill_weight=fill_weight)
 
-    deg = sparse_adj.reduce_sum(axis=-1)
+    deg = sparse_adj.segment_sum(axis=-1)
     deg_inv_sqrt = tf.pow(deg, -0.5)
     deg_inv_sqrt = tf.where(
         tf.math.logical_or(tf.math.is_inf(deg_inv_sqrt), tf.math.is_nan(deg_inv_sqrt)),

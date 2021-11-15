@@ -78,7 +78,7 @@ def gat(x, edge_index,
     # new implementation based on SparseAdj
     num_nodes_ = num_nodes * num_heads
     sparse_att_adj = SparseAdj(qk_edge_index_, att_score_, [num_nodes_, num_nodes_])\
-        .softmax(axis=-1)\
+        .segment_softmax(axis=-1)\
         .dropout(drop_rate, training=training)
 
     if split_value_heads:
