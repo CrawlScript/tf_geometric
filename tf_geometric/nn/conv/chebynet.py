@@ -1,7 +1,7 @@
 # coding=utf-8
 
 import tensorflow as tf
-from tf_geometric.sparse.sparse_matrix import SparseMatrix
+from tf_geometric.sparse.sparse_adj import SparseAdj
 from tf_geometric.utils.graph_utils import remove_self_loop_edge, get_laplacian, LaplacianMaxEigenvalue
 
 
@@ -88,7 +88,7 @@ def chebynet(x, edge_index, edge_weight, k, kernels, bias=None, activation=None,
 
     normed_edge_index, normed_edge_weight = chebynet_norm_edge(edge_index, num_nodes, edge_weight, normalization_type,
                                                            use_dynamic_lambda_max=use_dynamic_lambda_max, cache=cache)
-    normed_sparse_adj = SparseMatrix(normed_edge_index, normed_edge_weight, [num_nodes, num_nodes])
+    normed_sparse_adj = SparseAdj(normed_edge_index, normed_edge_weight, [num_nodes, num_nodes])
 
 
 

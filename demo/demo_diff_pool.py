@@ -84,7 +84,6 @@ class GCNModel(tf.keras.Model):
         return h
 
 
-
 class DiffPoolModel(tf.keras.Model):
 
     def __init__(self, num_clusters_list, num_features_list, num_classes, *args, **kwargs):

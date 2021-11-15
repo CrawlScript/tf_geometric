@@ -1,8 +1,7 @@
 # coding=utf-8
 import tensorflow as tf
-
-from tf_geometric.sparse import SparseMatrix
-from tf_geometric.utils.graph_utils import convert_dense_adj_to_edge, remove_self_loop_edge, add_self_loop_edge
+from tf_geometric.sparse.sparse_adj import SparseAdj
+from tf_geometric.utils.graph_utils import convert_dense_adj_to_edge
 
 
 def cluster_pool(x, edge_index, edge_weight, assign_edge_index, assign_edge_weight, num_clusters, num_nodes=None):
@@ -28,9 +27,9 @@ def cluster_pool(x, edge_index, edge_weight, assign_edge_index, assign_edge_weig
             num_nodes = tf.shape(x)[0]
 
     # compute S'AS
-    S = SparseMatrix(assign_edge_index, assign_edge_weight, shape=[num_nodes, num_clusters])
+    S = SparseAdj(assign_edge_index, assign_edge_weight, shape=[num_nodes, num_clusters])
     ST = S.transpose()
-    A = SparseMatrix(edge_index, edge_weight, shape=[num_nodes, num_nodes]).to_dense()
+    A = SparseAdj(edge_index, edge_weight, shape=[num_nodes, num_nodes]).to_dense()
 
     pooled_adj = ST @ A @ S
 
