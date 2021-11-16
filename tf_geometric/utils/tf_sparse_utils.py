@@ -1,6 +1,7 @@
 # coding=utf-8
 
 import tensorflow as tf
+import tf_sparse as tfs
 
 
 def sparse_tensor_gather_sub(sparse_tensor, sub_index, axis=0):
@@ -21,7 +22,8 @@ def sparse_tensor_gather_sub(sparse_tensor, sub_index, axis=0):
     masked_indices = tf.boolean_mask(sparse_tensor.indices, gather_mask)
 
     reverse_index = tf.cast(tf.fill([tf.reduce_max(sub_index) + 1], -1), tf.int32)
-    reverse_index = tf.tensor_scatter_nd_update(reverse_index, tf.expand_dims(sub_index, axis=-1), tf.range(tf.shape(sub_index)[0]))
+    reverse_index = tf.tensor_scatter_nd_update(reverse_index, tf.expand_dims(sub_index, axis=-1),
+                                                tf.range(tf.shape(sub_index)[0]))
 
     masked_gather_index = masked_indices[:, axis]
     masked_gather_index = tf.gather(reverse_index, masked_gather_index)
@@ -48,3 +50,18 @@ def sparse_tensor_gather_sub(sparse_tensor, sub_index, axis=0):
     new_sparse_tensor = tf.sparse.reorder(new_sparse_tensor)
     return new_sparse_tensor
 
+
+def sparse_gather_sub(x, sub_index, axis=0):
+    is_sparse_matrix = isinstance(x, tfs.SparseMatrix)
+
+    if is_sparse_matrix:
+        sparse_tensor = x.to_sparse_tensor()
+    else:
+        sparse_tensor = x
+
+    output_sparse_tensor = sparse_tensor_gather_sub(sparse_tensor, sub_index, axis)
+
+    if is_sparse_matrix:
+        return x.__class__.from_sparse_tensor(output_sparse_tensor)
+    else:
+        return output_sparse_tensor

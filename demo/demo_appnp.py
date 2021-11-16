@@ -10,6 +10,7 @@ import time
 
 graph, (train_index, valid_index, test_index) = tfg.datasets.CoraDataset().load_data()
 
+
 num_classes = graph.y.max() + 1
 drop_rate = 0.5
 learning_rate = 1e-2

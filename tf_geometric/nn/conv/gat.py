@@ -3,6 +3,7 @@ import tensorflow as tf
 
 from tf_geometric.sparse.sparse_adj import SparseAdj
 from tf_geometric.utils.graph_utils import add_self_loop_edge
+import tf_sparse as tfs
 
 
 # follow Transformer-Style Attention
@@ -34,7 +35,7 @@ def gat(x, edge_index,
     :return: Updated node features (x), shape: [num_nodes, num_output_features]
     """
 
-    num_nodes = tf.shape(x)[0]
+    num_nodes = tfs.shape(x)[0]
 
     # self-attention
     edge_index, edge_weight = add_self_loop_edge(edge_index, num_nodes)
@@ -77,8 +78,8 @@ def gat(x, edge_index,
 
     # new implementation based on SparseAdj
     num_nodes_ = num_nodes * num_heads
-    sparse_att_adj = SparseAdj(qk_edge_index_, att_score_, [num_nodes_, num_nodes_])\
-        .segment_softmax(axis=-1)\
+    sparse_att_adj = SparseAdj(qk_edge_index_, att_score_, [num_nodes_, num_nodes_]) \
+        .segment_softmax(axis=-1) \
         .dropout(drop_rate, training=training)
 
     if split_value_heads:
@@ -89,7 +90,6 @@ def gat(x, edge_index,
         sparse_att_adj = SparseAdj(edge_index_, sparse_att_adj.edge_weight, [num_nodes, num_nodes])
 
     h_ = sparse_att_adj @ V_
-
 
     # old implementation
     # normed_att_score_ = segment_softmax(att_score_, qk_edge_index_[0], num_nodes * num_heads)
@@ -123,10 +123,3 @@ def gat(x, edge_index,
         h = activation(h)
 
     return h
-
-
-
-
-
-
-

@@ -3,6 +3,7 @@
 import tensorflow as tf
 from tf_geometric.sparse.sparse_adj import SparseAdj
 from tf_geometric.nn.conv.gcn import gcn_norm_adj
+import tf_sparse as tfs
 
 
 def appnp(x, edge_index, edge_weight, kernels, biases,
@@ -42,7 +43,7 @@ def appnp(x, edge_index, edge_weight, kernels, biases,
     :return: Updated node features (x), shape: [num_nodes, num_output_features]
     """
 
-    num_nodes = tf.shape(x)[0]
+    num_nodes = tfs.shape(x)[0]
     # updated_edge_index, normed_edge_weight = gcn_norm_edge(edge_index, num_nodes, edge_weight, cache=cache)
     sparse_adj = SparseAdj(edge_index, edge_weight, [num_nodes, num_nodes])
     normed_sparse_adj = gcn_norm_adj(sparse_adj, cache=cache)\

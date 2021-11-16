@@ -27,12 +27,12 @@ class SparseAdj(SparseMatrix):
         return self.value
 
     def add_self_loop(self, fill_weight=1.0):
-        num_nodes = self.shape[0]
+        num_nodes = self._shape[0]
         updated_edge_index, updated_edge_weight = add_self_loop_edge(self.index, num_nodes,
                                                                      edge_weight=self.value,
                                                                      fill_weight=fill_weight)
-        return self.__class__(updated_edge_index, updated_edge_weight, self.shape)
+        return self.__class__(updated_edge_index, updated_edge_weight, self._shape)
 
     def remove_self_loop(self):
         updated_edge_index, updated_edge_weight = remove_self_loop_edge(self.index, edge_weight=self.value)
-        return self.__class__(updated_edge_index, updated_edge_weight, self.shape)
+        return self.__class__(updated_edge_index, updated_edge_weight, self._shape)

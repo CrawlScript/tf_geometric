@@ -1,9 +1,10 @@
 # coding=utf-8
 import tensorflow as tf
 import numpy as np
+import tf_sparse as tfs
 
 from tf_geometric.utils.graph_utils import convert_edge_to_directed, compute_edge_mask_by_node_index
-from tf_geometric.utils.tf_sparse_utils import sparse_tensor_gather_sub
+from tf_geometric.utils.tf_sparse_utils import sparse_gather_sub
 from tf_geometric.utils.union_utils import union_len, convert_union_to_numpy
 
 
@@ -206,8 +207,8 @@ class Graph(object):
             if data is not None:
                 data_is_tensor = tf.is_tensor(data)
                 if data_is_tensor:
-                    if isinstance(data, tf.sparse.SparseTensor):
-                        data = sparse_tensor_gather_sub(data, sampled_node_index)
+                    if isinstance(data, (tf.sparse.SparseTensor, tfs.SparseMatrix)):
+                        data = sparse_gather_sub(data, sampled_node_index)
                     else:
                         data = tf.gather(data, sampled_node_index)
                 else:
@@ -401,7 +402,9 @@ class BatchGraph(Graph):
         x_list = [graph.x for graph in graphs]
         first_x = x_list[0]
         if tf.is_tensor(first_x):
-            if isinstance(first_x, tf.sparse.SparseTensor):
+            if isinstance(first_x, tfs.SparseMatrix):
+                return tfs.concat(x_list, axis=0)
+            elif isinstance(first_x, tf.sparse.SparseTensor):
                 return tf.sparse.concat(0, x_list)
             else:
                 return tf.concat(x_list, axis=0)

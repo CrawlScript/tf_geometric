@@ -1,6 +1,5 @@
 # coding=utf-8
 import os
-
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 from tf_geometric.utils import tf_utils
 import tensorflow as tf

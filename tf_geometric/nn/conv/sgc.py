@@ -3,7 +3,7 @@
 import tensorflow as tf
 from tf_geometric.sparse.sparse_adj import SparseAdj
 from tf_geometric.nn.conv.gcn import gcn_norm_adj
-
+import tf_sparse as tfs
 
 def sgc(x, edge_index, edge_weight, k, kernel, bias=None, activation=None, renorm=True, improved=False, cache=None):
     """
@@ -21,7 +21,7 @@ def sgc(x, edge_index, edge_weight, k, kernel, bias=None, activation=None, renor
     :param cache: A dict for caching A' for GCN. Different graph should not share the same cache dict.
     :return: Updated node features (x), shape: [num_nodes, num_features]
     """
-    num_nodes = tf.shape(x)[0]
+    num_nodes = tfs.shape(x)[0]
     sparse_adj = SparseAdj(edge_index, edge_weight, [num_nodes, num_nodes])
     normed_sparse_adj = gcn_norm_adj(sparse_adj, renorm, improved, cache)
 

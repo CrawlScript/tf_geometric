@@ -1,7 +1,8 @@
 # coding=utf-8
 import tensorflow as tf
 from tf_geometric.sparse.sparse_adj import SparseAdj
-from tf_sparse import sparse_diag_matmul, diag_sparse_matmul
+import tf_sparse as tfs
+
 
 # new API
 CACHE_KEY_GCN_NORMED_ADJ_TEMPLATE = "gcn_normed_adj_{}_{}"
@@ -49,7 +50,7 @@ def gcn_norm_adj(sparse_adj, renorm=True, improved=False, cache: dict = None):
     )
 
     # (D^(-1/2)A)D^(-1/2)
-    normed_sparse_adj = sparse_diag_matmul(diag_sparse_matmul(deg_inv_sqrt, sparse_adj), deg_inv_sqrt)
+    normed_sparse_adj = tfs.sparse_diag_matmul(tfs.diag_sparse_matmul(deg_inv_sqrt, sparse_adj), deg_inv_sqrt)
 
     if not renorm:
         normed_sparse_adj = normed_sparse_adj.add_self_loop(fill_weight=fill_weight)
@@ -152,7 +153,7 @@ def gcn(x, edge_index, edge_weight, kernel, bias=None, activation=None,
     :return: Updated node features (x), shape: [num_nodes, num_output_features]
     """
 
-    num_nodes = tf.shape(x)[0]
+    num_nodes = tfs.shape(x)[0]
 
     sparse_adj = SparseAdj(edge_index, edge_weight, [num_nodes, num_nodes])
     normed_sparse_adj = gcn_norm_adj(sparse_adj, renorm, improved, cache)

@@ -1,7 +1,7 @@
 # coding=utf-8
 import tensorflow as tf
 import numpy as np
-
+import tf_sparse as tfs
 
 def convert_union_to_numpy(data, dtype=None):
     if data is None:
@@ -22,6 +22,6 @@ def convert_union_to_numpy(data, dtype=None):
 
 def union_len(data):
     if tf.is_tensor(data):
-        return tf.shape(data)[0]
+        return tfs.shape(data)[0]
     else:
         return len(data)
