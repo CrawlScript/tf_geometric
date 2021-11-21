@@ -13,6 +13,13 @@
 import os
 import sys
 sys.path.insert(0, os.path.abspath('../../'))
+sys.path.insert(0, os.path.abspath('../../tf_geometric/'))
+sys.path.insert(0, os.path.abspath('../../tf_geometric/data'))
+sys.path.insert(0, os.path.abspath('../../tf_geometric/datasets'))
+sys.path.insert(0, os.path.abspath('../../tf_geometric/layers'))
+sys.path.insert(0, os.path.abspath('../../tf_geometric/nn'))
+sys.path.insert(0, os.path.abspath('../../tf_geometric/sparse'))
+sys.path.insert(0, os.path.abspath('../../tf_geometric/utils'))
 import sphinx_rtd_theme
 
 
