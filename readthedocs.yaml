@@ -4,7 +4,7 @@ build:
    image: latest
 
 python:
-   version: 3.5
+   version: 3.7
    system_packages: true
    install:
       - requirements: doc/requirements.txt
