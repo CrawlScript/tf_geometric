@@ -13,6 +13,7 @@ from .conv.graph_sage import mean_graph_sage, sum_graph_sage, mean_pool_graph_sa
 from .conv.appnp import appnp
 from .conv.gin import gin
 from .conv.le_conv import le_conv
+from .conv.ssgc import ssgc
 
 
 from .sampling.drop_edge import drop_edge

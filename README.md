@@ -85,6 +85,7 @@ We recommend you to get started with some demo.
 + [Deep Graph Infomax (DGI)](demo/demo_dgi.py)
 + [DropEdge: Towards Deep Graph Convolutional Networks on Node Classification (DropEdge)](demo/demo_drop_edge_gcn.py)
 + [Graph Convolutional Networks for Text Classification (TextGCN)](https://github.com/CrawlScript/TensorFlow-TextGCN)
++ [Simple Spectral Graph Convolution (SSGC/S^2GC)](demo/demo_ssgc.py)
 
 
 ### Graph Classification

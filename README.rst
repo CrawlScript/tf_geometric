@@ -85,6 +85,7 @@ Node Classification
 * `Deep Graph Infomax (DGI) <demo/demo_dgi.py>`_
 * `DropEdge: Towards Deep Graph Convolutional Networks on Node Classification (DropEdge) <demo/demo_drop_edge_gcn.py>`_
 * `Graph Convolutional Networks for Text Classification (TextGCN) <https://github.com/CrawlScript/TensorFlow-TextGCN>`_
+* `Simple Spectral Graph Convolution (SSGC/S^2GC) <demo/demo_ssgc.py>`_
 
 Graph Classification
 ^^^^^^^^^^^^^^^^^^^^
@@ -340,30 +341,30 @@ If you use tf_geometric in a scientific publication, we would appreciate citatio
 
 .. code-block:: html
 
-    @inproceedings{DBLP:conf/mm/HuQFWZZX21,
-      author    = {Jun Hu and
-                   Shengsheng Qian and
-                   Quan Fang and
-                   Youze Wang and
-                   Quan Zhao and
-                   Huaiwen Zhang and
-                   Changsheng Xu},
-      editor    = {Heng Tao Shen and
-                   Yueting Zhuang and
-                   John R. Smith and
-                   Yang Yang and
-                   Pablo Cesar and
-                   Florian Metze and
-                   Balakrishnan Prabhakaran},
-      title     = {Efficient Graph Deep Learning in TensorFlow with tf{\_}geometric},
-      booktitle = {{MM} '21: {ACM} Multimedia Conference, Virtual Event, China, October
-                   20 - 24, 2021},
-      pages     = {3775--3778},
-      publisher = {{ACM}},
-      year      = {2021},
-      url       = {https://doi.org/10.1145/3474085.3478322},
-      doi       = {10.1145/3474085.3478322},
-      timestamp = {Wed, 20 Oct 2021 12:40:01 +0200},
-      biburl    = {https://dblp.org/rec/conf/mm/HuQFWZZX21.bib},
-      bibsource = {dblp computer science bibliography, https://dblp.org}
-    }
+   @inproceedings{DBLP:conf/mm/HuQFWZZX21,
+     author    = {Jun Hu and
+                  Shengsheng Qian and
+                  Quan Fang and
+                  Youze Wang and
+                  Quan Zhao and
+                  Huaiwen Zhang and
+                  Changsheng Xu},
+     editor    = {Heng Tao Shen and
+                  Yueting Zhuang and
+                  John R. Smith and
+                  Yang Yang and
+                  Pablo Cesar and
+                  Florian Metze and
+                  Balakrishnan Prabhakaran},
+     title     = {Efficient Graph Deep Learning in TensorFlow with tf{\_}geometric},
+     booktitle = {{MM} '21: {ACM} Multimedia Conference, Virtual Event, China, October
+                  20 - 24, 2021},
+     pages     = {3775--3778},
+     publisher = {{ACM}},
+     year      = {2021},
+     url       = {https://doi.org/10.1145/3474085.3478322},
+     doi       = {10.1145/3474085.3478322},
+     timestamp = {Wed, 20 Oct 2021 12:40:01 +0200},
+     biburl    = {https://dblp.org/rec/conf/mm/HuQFWZZX21.bib},
+     bibsource = {dblp computer science bibliography, https://dblp.org}
+   }

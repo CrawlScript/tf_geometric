@@ -45,6 +45,17 @@ SGC
    :special-members: __init__
    :members: call, build_cache_for_graph, cache_normed_edge
 
+
+
+SSGC
+--------------------
+
+.. autoclass:: tf_geometric.layers.SSGC
+   :special-members: __init__
+   :members: call, build_cache_for_graph, cache_normed_edge
+
+
+
 TAGCN
 --------------------
 

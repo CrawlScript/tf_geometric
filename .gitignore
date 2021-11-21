@@ -3,6 +3,9 @@
 /test/
 /data/
 /demo/data/
+/demo/*/data/
+/test/keras/
+/test/keras/data/
 **/__pycache__/
 **/.idea/
 __pycache__/

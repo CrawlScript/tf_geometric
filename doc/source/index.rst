@@ -125,6 +125,7 @@ Node Classification
 * `Deep Graph Infomax (DGI) <https://github.com/CrawlScript/tf_geometric/blob/master/demo/demo_dgi.py>`_
 * `DropEdge: Towards Deep Graph Convolutional Networks on Node Classification (DropEdge) <https://github.com/CrawlScript/tf_geometric/blob/master/demo/demo_drop_edge_gcn.py>`_
 * `Graph Convolutional Networks for Text Classification (TextGCN) <https://github.com/CrawlScript/TensorFlow-TextGCN>`_
+* `Simple Spectral Graph Convolution (SSGC/S^2GC) <https://github.com/CrawlScript/tf_geometric/blob/master/demo/demo_ssgc.py>`_
 
 
 Graph Classification

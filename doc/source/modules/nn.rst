@@ -45,6 +45,12 @@ sgc
 .. autofunction:: tf_geometric.nn.sgc
 
 
+ssgc
+------------------------------
+
+.. autofunction:: tf_geometric.nn.ssgc
+
+
 tagcn
 -----------------------------------------------------
 

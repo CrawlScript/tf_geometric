@@ -1,7 +1,7 @@
 # coding=utf-8
 import os
 # multi-gpu ids
-os.environ["CUDA_VISIBLE_DEVICES"] = "1,3,4"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
 import tf_geometric as tfg
 from tf_geometric.layers import GCN
 from tensorflow.keras.regularizers import L1L2
