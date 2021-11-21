@@ -22,7 +22,7 @@ setup(
         ]
     ),
     install_requires=[
-        "tf_sparse >= 0.0.7",
+        "tf_sparse >= 0.0.8",
         "numpy >= 1.17.4",
         "networkx >= 2.1",
         "scipy >= 1.1.0",
