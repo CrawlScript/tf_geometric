@@ -36,9 +36,7 @@ setup(
         'tf2-cpu': ["tensorflow >= 2.4.0"],
         'tf2-gpu': ["tensorflow >= 2.4.0"]
     },
-    description="""
-        Efficient and Friendly Graph Neural Network Library for TensorFlow 1.x and 2.x.
-    """,
+    description="Efficient and Friendly Graph Neural Network Library for TensorFlow 1.x and 2.x.",
     license="GNU General Public License v3.0 (See LICENSE)",
     long_description=open("README.rst", "r", encoding="utf-8").read(),
     url="https://github.com/CrawlScript/tf_geometric"
