@@ -10,7 +10,6 @@ import time
 
 graph, (train_index, valid_index, test_index) = tfg.datasets.CoraDataset().load_data()
 
-
 num_classes = graph.y.max() + 1
 drop_rate = 0.5
 learning_rate = 5e-3
@@ -43,8 +42,8 @@ def forward(graph, training=False):
     return model([graph.x, graph.edge_index, graph.edge_weight], training=training, cache=graph.cache)
 
 
-# The following line is only necessary for using APPNP with @tf_utils.function
-# For usage without @tf_utils.function, you can commont the following line and APPNP layers can automatically manager the cache
+# The following line is only necessary for using SSGC with @tf_utils.function
+# For usage without @tf_utils.function, you can commont the following line and SSGC layers can automatically manager the cache
 model.ssgc.build_cache_for_graph(graph)
 
 
