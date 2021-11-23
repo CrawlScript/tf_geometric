@@ -34,7 +34,12 @@ def gcn_norm_adj(sparse_adj, renorm=True, improved=False, cache: dict = None):
         cache_key = compute_cache_key(renorm, improved)
         cached_data = cache.get(cache_key, None)
         if cached_data is not None:
-            return cached_data
+            # return cached_data
+            return SparseAdj(cached_data[0], cached_data[1], cached_data[2])
+        else:
+            if not tf.executing_eagerly():
+                raise Exception("If you want to use cache inside a tf.function, you should manually build the cache before calling the tf.function")
+
 
     fill_weight = 2.0 if improved else 1.0
 
@@ -56,7 +61,9 @@ def gcn_norm_adj(sparse_adj, renorm=True, improved=False, cache: dict = None):
         normed_sparse_adj = normed_sparse_adj.add_self_loop(fill_weight=fill_weight)
 
     if cache is not None:
-        cache[cache_key] = normed_sparse_adj
+        # cache[cache_key] = normed_sparse_adj
+        # tf.function will convert numpy arrays as constants, while tensors may be converted into placeholders
+        cache[cache_key] = normed_sparse_adj.index.numpy(), normed_sparse_adj.value.numpy(), normed_sparse_adj._shape.numpy()
 
     return normed_sparse_adj
 
@@ -75,6 +82,7 @@ def gcn_build_cache_for_graph(graph, renorm=True, improved=False, override=False
     if override:
         cache_key = compute_cache_key(renorm, improved)
         graph.cache[cache_key] = None
+
     sparse_adj = SparseAdj(graph.edge_index, graph.edge_weight, [graph.num_nodes, graph.num_nodes])
     gcn_norm_adj(sparse_adj, renorm, improved, graph.cache)
 
