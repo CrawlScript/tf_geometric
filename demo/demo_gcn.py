@@ -51,9 +51,9 @@ model.gcn0.build_cache_for_graph(graph)
 def compute_loss(logits, mask_index, vars):
     masked_logits = tf.gather(logits, mask_index)
     masked_labels = tf.gather(graph.y, mask_index)
-    losses = tf.nn.softmax_cross_entropy_with_logits(
+    losses = tf.nn.sparse_softmax_cross_entropy_with_logits(
         logits=masked_logits,
-        labels=tf.one_hot(masked_labels, depth=num_classes)
+        labels=masked_labels
     )
 
     kernel_vars = [var for var in vars if "kernel" in var.name]
