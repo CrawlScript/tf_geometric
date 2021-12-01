@@ -137,6 +137,7 @@ Requirements:
 * Python Packages:
 
   * tensorflow/tensorflow-gpu: >= 1.15.0 or >= 2.3.0
+  * tf_sparse
   * numpy >= 1.17.4
   * networkx >= 2.1
   * scipy >= 1.1.0
@@ -368,3 +369,11 @@ If you use tf_geometric in a scientific publication, we would appreciate citatio
      biburl    = {https://dblp.org/rec/conf/mm/HuQFWZZX21.bib},
      bibsource = {dblp computer science bibliography, https://dblp.org}
    }
+
+Related Projects
+----------------
+
+
+* **tf_sparse:** We develop `TensorFlow Sparse (tf_sparse) <https://github.com/CrawlScript/tf_sparse>`_ to implement efficient and elegant 
+  sparse TensorFlow operations for tf_geometric. URL: `https://github.com/CrawlScript/tf_sparse <https://github.com/CrawlScript/tf_sparse>`_.
+* **GRecX:** `GRecX <https://github.com/maenzhier/GRecX>`_ is an efficient and unified benchmark for GNN-based recommendation. URL: `https://github.com/maenzhier/GRecX <https://github.com/maenzhier/GRecX>`_.
