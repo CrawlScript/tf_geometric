@@ -62,12 +62,18 @@ def convert_edge_hash_to_edge_index(edge_hash, num_nodes):
     return edge_index
 
 
-def merge_duplicated_edge(edge_index, edge_props=None, merge_modes=None):
+def merge_duplicated_edge(edge_index, edge_props=[], merge_modes=[]):
     """
     merge_modes: list of merge_mode ("min", "max", "mean", "sum")
     """
 
-    if edge_props is not None:
+    if edge_props is None:
+        edge_props = []
+
+    if merge_modes is None:
+        merge_modes = []
+
+    if len(edge_props) > 0:
         if type(merge_modes) is not list:
             raise Exception("type error: merge_modes should be a list of strings")
         if merge_modes is None:
@@ -129,7 +135,7 @@ def merge_duplicated_edge(edge_index, edge_props=None, merge_modes=None):
     return unique_edge_index, unique_edge_props
 
 
-def convert_edge_to_upper(edge_index, edge_props=None, merge_modes=None):
+def convert_edge_to_upper(edge_index, edge_props=[], merge_modes=[]):
     """
 
     :param edge_index:
@@ -156,7 +162,7 @@ def convert_edge_to_upper(edge_index, edge_props=None, merge_modes=None):
 
 
 # [[1,3,5], [2,1,4]] => [[1,3,5,2,1,4], [2,1,4,1,3,5]]
-def convert_edge_to_directed(edge_index, edge_props=None, merge_modes=None):
+def convert_edge_to_directed(edge_index, edge_props=[], merge_modes=[]):
     """
     Convert edge from undirected format to directed format.
     For example, [[1,3,5], [2,1,4]] => [[1,3,5,2,1,4], [2,1,4,1,3,5]]
@@ -172,7 +178,14 @@ def convert_edge_to_directed(edge_index, edge_props=None, merge_modes=None):
     if not edge_index_is_tensor:
         edge_index = tf.convert_to_tensor(edge_index, dtype=tf.int32)
 
-    if edge_props is not None:
+    if edge_props is None:
+        edge_props = []
+
+    if merge_modes is None:
+        merge_modes = []
+
+
+    if len(edge_props) > 0:
         if merge_modes is None:
             merge_modes = ["sum"] * len(edge_props)
 
