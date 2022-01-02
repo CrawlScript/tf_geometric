@@ -21,7 +21,7 @@ class APPNPModel(tf.keras.Model):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.appnp = tfg.layers.APPNP([64, num_classes], alpha=0.1, num_iterations=10,
+        self.appnp = tfg.layers.APPNP([64, num_classes], alpha=0.1, k=10,
                                       dense_drop_rate=drop_rate, edge_drop_rate=drop_rate)
         self.dropout = tf.keras.layers.Dropout(drop_rate)
 

@@ -30,7 +30,7 @@ class APPNP(tf.keras.Model):
 
     def __init__(self, units_list,
                  dense_activation=tf.nn.relu, activation=None,
-                 num_iterations=10, alpha=0.1,
+                 k=10, alpha=0.1,
                  dense_drop_rate=0.0, last_dense_drop_rate=0.0, edge_drop_rate=0.0,
                  kernel_regularizer=None, bias_regularizer=None, *args, **kwargs):
         """
@@ -39,7 +39,7 @@ class APPNP(tf.keras.Model):
         :param dense_activation: Activation function to use for the dense layers,
             except for the last dense layer, which will not be activated.
         :param activation: Activation function to use for the output.
-        :param num_iterations: Number of propagation power iterations.
+        :param k: Number of propagation power iterations.
         :param alpha: Teleport Probability.
         :param dense_drop_rate: Dropout rate for the output of every dense layer (except the last one).
         :param last_dense_drop_rate: Dropout rate for the output of the last dense layer.
@@ -53,7 +53,7 @@ class APPNP(tf.keras.Model):
         self.units_list = units_list
         self.dense_activation = dense_activation
         self.activation = activation
-        self.num_iterations = num_iterations
+        self.k = k
         self.alpha = alpha
 
         self.dense_drop_rate = dense_drop_rate
@@ -110,7 +110,7 @@ class APPNP(tf.keras.Model):
 
         return appnp(x, edge_index, edge_weight, self.kernels, self.biases,
                      dense_activation=self.dense_activation, activation=self.activation,
-                     num_iterations=self.num_iterations, alpha=self.alpha,
+                     k=self.k, alpha=self.alpha,
                      dense_drop_rate=self.dense_drop_rate,
                      last_dense_drop_rate=self.last_dense_drop_rate,
                      edge_drop_rate=self.edge_drop_rate,

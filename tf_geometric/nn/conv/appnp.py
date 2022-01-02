@@ -8,7 +8,7 @@ import tf_sparse as tfs
 
 def appnp(x, edge_index, edge_weight, kernels, biases,
           dense_activation=tf.nn.relu, activation=None,
-          num_iterations=10, alpha=0.1,
+          k=10, alpha=0.1,
           dense_drop_rate=0.0, last_dense_drop_rate=0.0, edge_drop_rate=0.0,
           cache=None, training=False):
 
@@ -23,7 +23,7 @@ def appnp(x, edge_index, edge_weight, kernels, biases,
     :param dense_activation: Activation function to use for the dense layers,
         except for the last dense layer, which will not be activated.
     :param activation: Activation function to use for the output.
-    :param num_iterations: Number of propagation power iterations.
+    :param k: Number of propagation power iterations.
     :param alpha: Teleport Probability.
     :param dense_drop_rate: Dropout rate for the output of every dense layer (except the last one).
     :param last_dense_drop_rate: Dropout rate for the output of the last dense layer.
@@ -80,7 +80,7 @@ def appnp(x, edge_index, edge_weight, kernels, biases,
 
     output = h
 
-    for i in range(num_iterations):
+    for i in range(k):
         output = normed_sparse_adj @ output
         output = output * (1.0 - alpha) + h * alpha
 

@@ -49,7 +49,6 @@ class SSGC(tf.keras.Model):
         :param dense_activation: Activation function to use for the dense layers,
             except for the last dense layer, which will not be activated.
         :param activation: Activation function to use for the output.
-        :param num_iterations: Number of propagation power iterations.
         :param alpha: Teleport Probability.
         :param dense_drop_rate: Dropout rate for the input of every dense layer.
         :param last_dense_drop_rate: Dropout rate for the output of the last dense layer.

@@ -30,7 +30,7 @@ if dataset == "pubmed":
     l2_coef = 3e-3
     num_steps = 201
 
-model = tfg.layers.APPNP([64, num_classes], alpha=0.1, num_iterations=10,
+model = tfg.layers.APPNP([64, num_classes], alpha=0.1, k=10,
                          dense_drop_rate=drop_rate, edge_drop_rate=drop_rate)
 
 model.build_cache_for_graph(graph)

@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 setup(
     name="tf_geometric",
     python_requires='>3.5.0',
-    version="0.0.79",
+    version="0.0.80",
     author="Jun Hu",
     author_email="hujunxianligong@gmail.com",
     packages=find_packages(
