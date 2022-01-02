@@ -6,12 +6,14 @@ from tf_geometric.nn.conv.gcn import gcn_norm_adj
 import tf_sparse as tfs
 
 
-def ssgc(x, edge_index, edge_weight, k=10, alpha=0.1,
+def ssgc(x, edge_index, edge_weight,
          kernels=None, biases=None,
-         dense_activation=tf.nn.relu, activation=None,
-         edge_drop_rate=0.0,
-         prop_feature_drop_rate=0.0,
+         k=10, alpha=0.1,
+         dense_activation=tf.nn.relu,
+         activation=None,
          dense_drop_rate=0.0,
+         last_dense_drop_rate=0.0,
+         edge_drop_rate=0.0,
          cache=None, training=False):
 
     """
@@ -26,10 +28,11 @@ def ssgc(x, edge_index, edge_weight, k=10, alpha=0.1,
     :param dense_activation: Activation function to use for the dense layers,
         except for the last dense layer, which will not be activated.
     :param activation: Activation function to use for the output.
-    :param num_iterations: Number of propagation power iterations.
+    :param k: Number of propagation power iterations.
     :param alpha: Teleport Probability.
-    :param prop_feature_drop_rate: Dropout rate for the input of every dense layer.
     :param dense_drop_rate: Dropout rate for the output of every dense layer (except the last one).
+    :param last_dense_drop_rate: Dropout rate for the output of the last dense layer.
+        last_dense_drop_rate is usually set to 0.0 for classification tasks.
     :param edge_drop_rate: Dropout rate for the edges/adj used for propagation.
     :param cache: A dict for caching A' for GCN. Different graph should not share the same cache dict.
         To use @tf_utils.function with gcn, you should cache the noremd edge information before the first call of the gcn.
@@ -49,23 +52,15 @@ def ssgc(x, edge_index, edge_weight, k=10, alpha=0.1,
     """
 
     num_nodes = tfs.shape(x)[0]
+
     # updated_edge_index, normed_edge_weight = gcn_norm_edge(edge_index, num_nodes, edge_weight, cache=cache)
     sparse_adj = SparseAdj(edge_index, edge_weight, [num_nodes, num_nodes])
     normed_sparse_adj = gcn_norm_adj(sparse_adj, cache=cache)\
         .dropout(edge_drop_rate, training=training)
 
-    prop_h = x * alpha
-
     h = x
-    for _ in range(k):
-        h = normed_sparse_adj @ h
-        prop_h += (1 - alpha) * h / k
 
-    if training and prop_feature_drop_rate > 0.0:
-        prop_h = tf.compat.v2.nn.dropout(prop_h, prop_feature_drop_rate)
-
-    h = prop_h
-
+    # MLP Encoder
     if kernels is not None:
 
         num_dense_layers = len(kernels)
@@ -85,9 +80,19 @@ def ssgc(x, edge_index, edge_weight, k=10, alpha=0.1,
                     h = dense_activation(h)
                 if training and dense_drop_rate > 0.0:
                     h = tf.compat.v2.nn.dropout(h, dense_drop_rate)
+            else:
+                if training and last_dense_drop_rate > 0.0:
+                    h = tf.compat.v2.nn.dropout(h, last_dense_drop_rate)
+
+    # propagation
+    output = h * alpha
+
+    for _ in range(k):
+        h = normed_sparse_adj @ h
+        output += (1 - alpha) * h / k
 
     if activation is not None:
-        h = activation(h)
+        output = activation(output)
 
-    return h
+    return output
 

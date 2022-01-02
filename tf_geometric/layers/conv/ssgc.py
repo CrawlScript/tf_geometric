@@ -33,9 +33,11 @@ class SSGC(tf.keras.Model):
             # setattr(self, bias_name, bias)
 
     def __init__(self,
-                 k=10, alpha=0.1, units_list=None,
+                 units_list=None, k=10, alpha=0.1,
                  dense_activation=tf.nn.relu, activation=None,
-                 edge_drop_rate=0.0, dense_drop_rate=0.0, prop_feature_drop_rate=0.0,
+                 dense_drop_rate=0.0,
+                 last_dense_drop_rate=0.0,
+                 edge_drop_rate=0.0,
                  kernel_regularizer=None, bias_regularizer=None, *args, **kwargs):
         """
 
@@ -43,12 +45,15 @@ class SSGC(tf.keras.Model):
         Paper URL: https://openreview.net/forum?id=CYO5T-YjWZV
 
         :param units_list: List of Positive integers consisting of dimensionality of the output space of each dense layer.
+        :param k: Number of propagation power iterations.
         :param dense_activation: Activation function to use for the dense layers,
             except for the last dense layer, which will not be activated.
         :param activation: Activation function to use for the output.
         :param num_iterations: Number of propagation power iterations.
         :param alpha: Teleport Probability.
         :param dense_drop_rate: Dropout rate for the input of every dense layer.
+        :param last_dense_drop_rate: Dropout rate for the output of the last dense layer.
+            last_dense_drop_rate is usually set to 0.0 for classification tasks.
         :param edge_drop_rate: Dropout rate for the edges/adj used for propagation.
         :param kernel_regularizer: Regularizer function applied to the `kernel` weights matrices.
         :param bias_regularizer: Regularizer function applied to the bias vectors.
@@ -58,12 +63,13 @@ class SSGC(tf.keras.Model):
         self.k = k
         self.alpha = alpha
         self.activation = activation
-        self.edge_drop_rate = edge_drop_rate
 
         self.units_list = units_list
         self.dense_activation = dense_activation
-        self.prop_feature_drop_rate = prop_feature_drop_rate
+
         self.dense_drop_rate = dense_drop_rate
+        self.last_dense_drop_rate = last_dense_drop_rate
+        self.edge_drop_rate = edge_drop_rate
 
         self.kernel_regularizer = kernel_regularizer
         self.bias_regularizer = bias_regularizer
@@ -95,7 +101,7 @@ class SSGC(tf.keras.Model):
             Use ``build_cache_for_graph`` instead.
         """
         warnings.warn(
-            "'APPNP.cache_normed_edge(graph, override)' is deprecated, use 'APPNP.build_cache_for_graph(graph, override)' instead",
+            "'SSGC.cache_normed_edge(graph, override)' is deprecated, use 'SSGC.build_cache_for_graph(graph, override)' instead",
             DeprecationWarning)
         return self.build_cache_for_graph(graph, override=override)
 
@@ -113,10 +119,11 @@ class SSGC(tf.keras.Model):
             x, edge_index = inputs
             edge_weight = None
 
-        return ssgc(x=x, edge_index=edge_index, edge_weight=edge_weight, k=self.k, alpha=self.alpha,
+        return ssgc(x=x, edge_index=edge_index, edge_weight=edge_weight,
                     kernels=self.kernels, biases=self.biases,
+                    k=self.k, alpha=self.alpha,
                     dense_activation=self.dense_activation, activation=self.activation,
-                    edge_drop_rate=self.edge_drop_rate,
-                    prop_feature_drop_rate=self.prop_feature_drop_rate,
                     dense_drop_rate=self.dense_drop_rate,
+                    last_dense_drop_rate=self.last_dense_drop_rate,
+                    edge_drop_rate=self.edge_drop_rate,
                     cache=cache, training=training)

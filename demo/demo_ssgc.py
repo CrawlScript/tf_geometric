@@ -21,9 +21,9 @@ class SSGCModel(tf.keras.Model):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.ssgc = tfg.layers.SSGC(k=10, alpha=0.1, units_list=[64, num_classes],
-                                    edge_drop_rate=0.0, prop_feature_drop_rate=drop_rate, dense_drop_rate=drop_rate)
-        self.dropout = tf.keras.layers.Dropout(0.0)
+        self.ssgc = tfg.layers.SSGC([64, num_classes], k=10, alpha=0.1,
+                                    dense_drop_rate=drop_rate, edge_drop_rate=drop_rate)
+        self.dropout = tf.keras.layers.Dropout(drop_rate)
 
     def call(self, inputs, training=None, mask=None, cache=None):
         x, edge_index, edge_weight = inputs
