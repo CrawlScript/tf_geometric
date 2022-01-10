@@ -12,7 +12,7 @@ def gat(x, edge_index,
         query_kernel, query_bias, query_activation,
         key_kernel, key_bias, key_activation,
         kernel, bias=None, activation=None, num_heads=1,
-        split_value_heads=True, drop_rate=0.0, training=False):
+        split_value_heads=True, edge_drop_rate=0.0, training=False):
     """
 
     :param x: Tensor, shape: [num_nodes, num_features], node features
@@ -29,7 +29,7 @@ def gat(x, edge_index,
     :param num_heads: Number of attention heads.
     :param split_value_heads: Boolean. If true, split V as value attention heads, and then concatenate them as output.
         Else, num_heads replicas of V are used as value attention heads, and the mean of them are used as output.
-    :param drop_rate: Dropout rate.
+    :param edge_drop_rate: Dropout rate of attention weights.
     :param training: Python boolean indicating whether the layer should behave in
         training mode (adding dropout) or in inference mode (doing nothing).
     :return: Updated node features (x), shape: [num_nodes, num_output_features]
@@ -80,7 +80,7 @@ def gat(x, edge_index,
     num_nodes_ = num_nodes * num_heads
     sparse_att_adj = SparseAdj(qk_edge_index_, att_score_, [num_nodes_, num_nodes_]) \
         .segment_softmax(axis=-1) \
-        .dropout(drop_rate, training=training)
+        .dropout(edge_drop_rate, training=training)
 
     if split_value_heads:
         V_ = tf.concat(tf.split(V, num_heads, axis=-1), axis=0)

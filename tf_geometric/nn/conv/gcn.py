@@ -134,7 +134,7 @@ def gcn_mapper(repeated_x, neighbor_x, edge_weight=None):
 
 
 def gcn(x, edge_index, edge_weight, kernel, bias=None, activation=None,
-        renorm=True, improved=False, cache=None):
+        renorm=True, improved=False, edge_drop_rate=0.0, training=False, cache=None):
     """
     Functional API for Graph Convolutional Networks.
 
@@ -146,6 +146,7 @@ def gcn(x, edge_index, edge_weight, kernel, bias=None, activation=None,
     :param activation: Activation function to use.
     :param renorm: Whether use renormalization trick (https://arxiv.org/pdf/1609.02907.pdf).
     :param improved: Whether use improved GCN or not.
+    :param edge_drop_rate: Dropout rate of the propagation weights.
     :param cache: A dict for caching A' for GCN. Different graph should not share the same cache dict.
         To use @tf_utils.function with gcn, you should cache the noremd edge information before the first call of the gcn.
 
@@ -164,7 +165,8 @@ def gcn(x, edge_index, edge_weight, kernel, bias=None, activation=None,
     num_nodes = tfs.shape(x)[0]
 
     sparse_adj = SparseAdj(edge_index, edge_weight, [num_nodes, num_nodes])
-    normed_sparse_adj = gcn_norm_adj(sparse_adj, renorm, improved, cache)
+    normed_sparse_adj = gcn_norm_adj(sparse_adj, renorm, improved, cache)\
+        .dropout(edge_drop_rate, training=training)
 
     # SparseTensor is usually used for one-hot node features (For example, feature-less nodes.)
     if isinstance(x, tf.sparse.SparseTensor):

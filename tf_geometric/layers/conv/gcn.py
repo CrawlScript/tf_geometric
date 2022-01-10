@@ -23,6 +23,7 @@ class GCN(tf.keras.Model):
     def __init__(self, units, activation=None,
                  use_bias=True,
                  renorm=True, improved=False,
+                 edge_drop_rate=0.0,
                  kernel_regularizer=None, bias_regularizer=None, *args, **kwargs):
         """
 
@@ -31,6 +32,7 @@ class GCN(tf.keras.Model):
         :param use_bias: Boolean, whether the layer uses a bias vector.
         :param renorm: Whether use renormalization trick (https://arxiv.org/pdf/1609.02907.pdf).
         :param improved: Whether use improved GCN or not.
+        :param edge_drop_rate: Dropout rate of the propagation weights.
         :param kernel_regularizer: Regularizer function applied to the `kernel` weights matrix.
         :param bias_regularizer: Regularizer function applied to the bias vector.
         """
@@ -39,6 +41,8 @@ class GCN(tf.keras.Model):
 
         self.activation = activation
         self.use_bias = use_bias
+
+        self.edge_drop_rate = edge_drop_rate
 
         self.kernel = None
         self.bias = None
@@ -90,4 +94,6 @@ class GCN(tf.keras.Model):
             edge_weight = None
 
         return gcn(x, edge_index, edge_weight, self.kernel, self.bias,
-                   activation=self.activation, renorm=self.renorm, improved=self.improved, cache=cache)
+                   activation=self.activation, renorm=self.renorm, improved=self.improved,
+                   edge_drop_rate=self.edge_drop_rate,
+                   training=training, cache=cache)

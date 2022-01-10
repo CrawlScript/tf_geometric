@@ -14,7 +14,7 @@ class GAT(tf.keras.Model):
                  split_value_heads=True,
                  query_activation=tf.nn.relu,
                  key_activation=tf.nn.relu,
-                 drop_rate=0.0,
+                 edge_drop_rate=0.0,
                  kernel_regularizer=None,
                  bias_regularizer=None,
                  *args, **kwargs):
@@ -29,14 +29,14 @@ class GAT(tf.keras.Model):
             Else, num_heads replicas of V are used as value attention heads, and the mean of them are used as output.
         :param query_activation: Activation function for Q in attention.
         :param key_activation: Activation function for K in attention.
-        :param drop_rate: Dropout rate.
+        :param edge_drop_rate: Dropout rate of attention weights.
         :param kernel_regularizer: Regularizer function applied to the `kernel` weights matrix.
         :param bias_regularizer: Regularizer function applied to the bias vector.
         """
         super().__init__(*args, **kwargs)
         self.units = units
         self.attention_units = units if attention_units is None else attention_units
-        self.drop_rate = drop_rate
+        self.edge_drop_rate = edge_drop_rate
 
         self.query_kernel = None
         self.query_bias = None
@@ -92,5 +92,5 @@ class GAT(tf.keras.Model):
                    self.kernel, self.bias, self.activation,
                    num_heads=self.num_heads,
                    split_value_heads=self.split_value_heads,
-                   drop_rate=self.drop_rate,
+                   edge_drop_rate=self.edge_drop_rate,
                    training=training)
