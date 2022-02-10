@@ -2,7 +2,7 @@ tf_sparse >= 0.0.10
 numpy >= 1.17.4
 networkx >= 2.1
 scipy >= 1.1.0
-tensorflow == 2.4.1
+tensorflow == 2.5.3
 scikit-learn >= 0.22
 ogb_lite >= 0.0.3
 tqdm
