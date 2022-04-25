@@ -66,7 +66,7 @@ print(outputs)
 # Batch graph wrap a batch of graphs into a single graph, where each nodes has an unique index and a graph index.
 # The node_graph_index is the index of the corresponding graph for each node in the batch.
 # The edge_graph_index is the index of the corresponding edge for each node in the batch.
-batch_graph = tfg.BatchGraph.from_graphs([graph, graph, graph, graph])
+batch_graph = tfg.BatchGraph.from_graphs([graph, graph, graph, graph, graph])
 
 # We can reversely split a BatchGraph object into Graphs objects
 graphs = batch_graph.to_graphs()
@@ -82,7 +82,7 @@ node_score = tfg.nn.gcn(
     batch_graph.edge_index,
     batch_graph.edge_weight,
     tf.Variable(tf.random.truncated_normal([20, 1])),  # GCN Weight
-    cache=graph.cache  # GCN use caches to avoid re-computing of the normed edge information
+    cache=batch_graph.cache  # GCN use caches to avoid re-computing of the normed edge information
 )
 node_score = tf.reshape(node_score, [-1])
 topk_node_index = tfg.nn.topk_pool(batch_graph.node_graph_index, node_score, ratio=0.6)

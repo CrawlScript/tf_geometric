@@ -12,11 +12,10 @@ from tf_geometric.utils.graph_utils import add_self_loop_edge, remove_self_loop_
 
 class SparseAdj(SparseMatrix):
 
-    def __init__(self, index, value=None, shape=None, merge=False,
-                 edge_weight=None):
-        if value is not None and edge_weight is not None:
-            raise Exception("\"edge_weight\" is an alias for \"value\", and it is deprecated. You should only provide \"value\".")
-        super().__init__(index, value, shape, merge)
+    def __init__(self, index, value=None, shape=None, merge=False, is_diag=False):
+        # if value is not None and edge_weight is not None:
+        #     raise Exception("\"edge_weight\" is an alias for \"value\", and it is deprecated. You should only provide \"value\".")
+        super().__init__(index, value, shape, merge, is_diag=is_diag)
 
     @property
     def edge_index(self):

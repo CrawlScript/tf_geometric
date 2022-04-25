@@ -62,22 +62,16 @@ def convert_edge_hash_to_edge_index(edge_hash, num_nodes):
     return edge_index
 
 
-def merge_duplicated_edge(edge_index, edge_props=[], merge_modes=[]):
+def merge_duplicated_edge(edge_index, edge_props=None, merge_modes=None):
     """
     merge_modes: list of merge_mode ("min", "max", "mean", "sum")
     """
 
-    if edge_props is None:
-        edge_props = []
-
-    if merge_modes is None:
-        merge_modes = []
-
-    if len(edge_props) > 0:
-        if type(merge_modes) is not list:
-            raise Exception("type error: merge_modes should be a list of strings")
+    if edge_props is not None and len(edge_props) > 0:
         if merge_modes is None:
             merge_modes = ["sum"] * len(edge_props)
+        elif type(merge_modes) is not list:
+            raise Exception("type error: merge_modes should be a list of strings")
 
     # if edge_props is not None and merge_modes is None:
     #     raise Exception("merge_modes is required if edge_props is provided")
@@ -87,12 +81,6 @@ def merge_duplicated_edge(edge_index, edge_props=[], merge_modes=[]):
 
     if not edge_index_is_tensor:
         edge_index = tf.convert_to_tensor(edge_index, dtype=tf.int32)
-
-    # if edge_props is not None:
-    #     edge_props = [
-    #         tf.convert_to_tensor(edge_prop) if edge_prop is not None else None
-    #         for edge_prop in edge_props
-    #     ]
 
     edge_hash, hash_num_nodes = convert_edge_index_to_edge_hash(edge_index)
     unique_edge_hash, unique_index = tf.unique(edge_hash)
@@ -135,7 +123,7 @@ def merge_duplicated_edge(edge_index, edge_props=[], merge_modes=[]):
     return unique_edge_index, unique_edge_props
 
 
-def convert_edge_to_upper(edge_index, edge_props=[], merge_modes=[]):
+def convert_edge_to_upper(edge_index, edge_props=None, merge_modes=None):
     """
 
     :param edge_index:
@@ -162,7 +150,7 @@ def convert_edge_to_upper(edge_index, edge_props=[], merge_modes=[]):
 
 
 # [[1,3,5], [2,1,4]] => [[1,3,5,2,1,4], [2,1,4,1,3,5]]
-def convert_edge_to_directed(edge_index, edge_props=[], merge_modes=[]):
+def convert_edge_to_directed(edge_index, edge_props=None, merge_modes=None):
     """
     Convert edge from undirected format to directed format.
     For example, [[1,3,5], [2,1,4]] => [[1,3,5,2,1,4], [2,1,4,1,3,5]]
@@ -178,14 +166,13 @@ def convert_edge_to_directed(edge_index, edge_props=[], merge_modes=[]):
     if not edge_index_is_tensor:
         edge_index = tf.convert_to_tensor(edge_index, dtype=tf.int32)
 
-    if edge_props is None:
-        edge_props = []
+    # if edge_props is None:
+    #     edge_props = []
+    #
+    # if merge_modes is None:
+    #     merge_modes = []
 
-    if merge_modes is None:
-        merge_modes = []
-
-
-    if len(edge_props) > 0:
+    if edge_props is not None and len(edge_props) > 0:
         if merge_modes is None:
             merge_modes = ["sum"] * len(edge_props)
 
@@ -333,9 +320,13 @@ def convert_dense_assign_to_edge(dense_assign, node_graph_index=None, num_nodes=
     return edge_index, edge_weight
 
 
-def convert_edge_to_nx_graph(edge_index, edge_properties=[], convert_to_directed=False):
+def convert_edge_to_nx_graph(edge_index, edge_properties=None, convert_to_directed=False):
     edge_index = convert_union_to_numpy(edge_index, dtype=np.int32)
-    edge_properties = [convert_union_to_numpy(edge_property) for edge_property in edge_properties]
+
+    if edge_properties is None:
+        edge_properties = []
+    else:
+        edge_properties = [convert_union_to_numpy(edge_property) for edge_property in edge_properties]
 
     g = nx.Graph()
     for i in range(edge_index.shape[1]):

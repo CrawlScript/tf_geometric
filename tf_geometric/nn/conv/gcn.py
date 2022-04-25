@@ -53,9 +53,11 @@ def gcn_norm_adj(sparse_adj, renorm=True, improved=False, cache: dict = None):
         tf.zeros_like(deg_inv_sqrt),
         deg_inv_sqrt
     )
+    deg_inv_sqrt = tfs.diags(deg_inv_sqrt)
 
     # (D^(-1/2)A)D^(-1/2)
-    normed_sparse_adj = tfs.sparse_diag_matmul(tfs.diag_sparse_matmul(deg_inv_sqrt, sparse_adj), deg_inv_sqrt)
+    normed_sparse_adj = deg_inv_sqrt @ sparse_adj @ deg_inv_sqrt
+    # normed_sparse_adj = tfs.sparse_diag_matmul(tfs.diag_sparse_matmul(deg_inv_sqrt, sparse_adj), deg_inv_sqrt)
 
     if not renorm:
         normed_sparse_adj = normed_sparse_adj.add_self_loop(fill_weight=fill_weight)
