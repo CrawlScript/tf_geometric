@@ -1,7 +1,9 @@
 # coding=utf-8
 import tensorflow as tf
 
-from tf_geometric.sparse.sparse_adj import SparseAdj
+# from tf_geometric.sparse.sparse_adj import SparseAdj
+from tf_sparse import SparseMatrix
+
 from tf_geometric.utils.graph_utils import add_self_loop_edge
 import tf_sparse as tfs
 
@@ -78,7 +80,7 @@ def gat(x, edge_index,
 
     # new implementation based on SparseAdj
     num_nodes_ = num_nodes * num_heads
-    sparse_att_adj = SparseAdj(qk_edge_index_, att_score_, [num_nodes_, num_nodes_]) \
+    sparse_att_adj = SparseMatrix(qk_edge_index_, att_score_, [num_nodes_, num_nodes_]) \
         .segment_softmax(axis=-1) \
         .dropout(edge_drop_rate, training=training)
 

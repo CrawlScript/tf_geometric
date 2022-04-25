@@ -9,6 +9,6 @@ import tensorflow as tf
 if tf.__version__[0] == "1":
     tf.enable_eager_execution()
 
-from . import nn, utils, data, datasets, layers, sparse
+from . import nn, utils, data, datasets, layers
 from .data.graph import Graph, BatchGraph
-from .sparse.sparse_adj import SparseAdj
+# from .sparse.sparse_adj import SparseAdj
