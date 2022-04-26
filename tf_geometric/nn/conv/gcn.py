@@ -110,7 +110,7 @@ def gcn_norm_edge(edge_index, num_nodes, edge_weight=None, renorm=True, improved
     """
     sparse_adj = SparseMatrix(edge_index, edge_weight, [num_nodes, num_nodes])
     normed_sparse_adj = gcn_norm_adj(sparse_adj, renorm=renorm, improved=improved, cache=cache)
-    return normed_sparse_adj.edge_index, normed_sparse_adj.edge_weight
+    return normed_sparse_adj.index, normed_sparse_adj.value
 
 
 # old API
