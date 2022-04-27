@@ -1,4 +1,7 @@
 # coding=utf-8
+
+import warnings
+
 import tensorflow as tf
 import numpy as np
 import tf_sparse as tfs
@@ -156,6 +159,10 @@ class Graph(object):
     def __repr__(self):
         return self.__str__()
 
+    def adj(self):
+        num_nodes = self.num_nodes
+        return tfs.SparseMatrix(self.edge_index, self.edge_weight, shape=[num_nodes, num_nodes])
+
     def _convert_data_to_tensor(self, keys):
         for key in keys:
             data = getattr(self, key)
@@ -172,6 +179,26 @@ class Graph(object):
         """
         return self._convert_data_to_tensor(["x", "edge_index", "edge_weight", "y"])
 
+    def to_directed(self, merge_mode="sum", inplace=False):
+        """
+
+        Each column of edge_index (u, v) represents an directed edge from u to v.
+        Note that it does not cover the edge from v to u. You should provide (v, u) to cover it.
+        This is not convenient for users.
+        Thus, we allow users to provide edge_index in undirected form and convert it later.
+        That is, we can simply provide (u, v) and convert it to (u, v) and (v, u) with `convert_edge_to_directed` method.
+
+        :return: If inplace is False, return a new graph with directed edges. Else, return the current graph with directed edges.
+        """
+
+        edge_index, [edge_weight] = convert_edge_to_directed(self.edge_index, [self.edge_weight],
+                                                             merge_modes=[merge_mode])
+        if inplace:
+            self.edge_index, self.edge_weight = edge_index, edge_weight
+            return self
+        else:
+            return Graph(self.x, edge_index, y=self.y, edge_weight=edge_weight)
+
     def convert_edge_to_directed(self, merge_mode="sum"):
         """
 
@@ -181,10 +208,17 @@ class Graph(object):
         Thus, we allow users to provide edge_index in undirected form and convert it later.
         That is, we can only provide (u, v) and convert it to (u, v) and (v, u) with `convert_edge_to_directed` method.
 
+        .. deprecated:: 0.0.84
+            Use ``to_directed(inplace=True)`` instead.
+
         :return:
         """
-        self.edge_index, [self.edge_weight] = convert_edge_to_directed(self.edge_index, [self.edge_weight], merge_modes=[merge_mode])
-        return self
+
+        warnings.warn(
+            "'Graph.convert_edge_to_directed(self, merge_mode)' is deprecated, use 'Graph.to_directed(inplace=True)' instead",
+            DeprecationWarning)
+
+        return self.to_directed(merge_mode, inplace=True)
 
     def sample_new_graph_by_node_index(self, sampled_node_index):
         """
@@ -306,10 +340,32 @@ class BatchGraph(Graph):
         else:
             return np.max(self.node_graph_index) + 1
 
+    def reorder(self):
+        node_sort_index = tf.argsort(self.node_graph_index)
+        node_graph_index = tf.gather(self.node_graph_index, node_sort_index)
+        x = tf.gather(self.x, node_sort_index)
+        if self.y is None:
+            y = None
+        else:
+            y = tf.gather(self.y, node_sort_index)
+
+        edge_sort_index = tf.argsort(self.edge_graph_index)
+        edge_graph_index = tf.gather(self.edge_graph_index, edge_sort_index)
+        edge_index = tf.gather(self.edge_index, edge_sort_index, axis=1)
+
+        if self.edge_weight is None:
+            edge_weight = None
+        else:
+            edge_weight = tf.gather(self.edge_weight, edge_sort_index)
+
+        return BatchGraph(x, edge_index, node_graph_index, edge_graph_index, y=y, edge_weight=edge_weight)
+
+
     def to_graphs(self):
+        batch_graph = self.reorder()
         # num_nodes_list = tf.math.segment_sum(tf.ones([self.num_nodes]), self.node_graph_index)
-        num_graphs = self.num_graphs
-        num_nodes_list = tf.math.unsorted_segment_sum(tf.ones([self.num_nodes]), self.node_graph_index, num_graphs)
+        num_graphs = batch_graph.num_graphs
+        num_nodes_list = tf.math.unsorted_segment_sum(tf.ones([batch_graph.num_nodes]), batch_graph.node_graph_index, num_graphs)
 
         num_nodes_before_graph = tf.concat([
             tf.zeros([1]),
@@ -317,35 +373,35 @@ class BatchGraph(Graph):
         ], axis=0).numpy().astype(np.int32).tolist()
 
         # num_edges_list = tf.math.segment_sum(tf.ones([self.num_edges]), self.edge_graph_index)
-        num_edges_list = tf.math.unsorted_segment_sum(tf.ones([self.num_edges]), self.edge_graph_index, num_graphs)
+        num_edges_list = tf.math.unsorted_segment_sum(tf.ones([batch_graph.num_edges]), batch_graph.edge_graph_index, num_graphs)
         num_edges_before_graph = tf.concat([
             tf.zeros([1]),
             tf.math.cumsum(num_edges_list)
         ], axis=0).numpy().astype(np.int32).tolist()
 
         graphs = []
-        for i in range(self.num_graphs):
-            if isinstance(self.x, tf.sparse.SparseTensor):
+        for i in range(batch_graph.num_graphs):
+            if isinstance(batch_graph.x, tf.sparse.SparseTensor):
                 x = tf.sparse.slice(
-                    self.x,
+                    batch_graph.x,
                     [num_nodes_before_graph[i], 0],
-                    [num_nodes_before_graph[i + 1] - num_nodes_before_graph[i], tf.shape(self.x)[-1]]
+                    [num_nodes_before_graph[i + 1] - num_nodes_before_graph[i], tf.shape(batch_graph.x)[-1]]
                 )
             else:
-                x = self.x[num_nodes_before_graph[i]: num_nodes_before_graph[i + 1]]
+                x = batch_graph.x[num_nodes_before_graph[i]: num_nodes_before_graph[i + 1]]
 
-            if self.y is None:
+            if batch_graph.y is None:
                 y = None
             else:
-                y = self.y[num_nodes_before_graph[i]: num_nodes_before_graph[i + 1]]
+                y = batch_graph.y[num_nodes_before_graph[i]: num_nodes_before_graph[i + 1]]
 
-            edge_index = self.edge_index[:, num_edges_before_graph[i]:num_edges_before_graph[i + 1]] - \
+            edge_index = batch_graph.edge_index[:, num_edges_before_graph[i]:num_edges_before_graph[i + 1]] - \
                          num_nodes_before_graph[i]
 
-            if self.edge_weight is None:
+            if batch_graph.edge_weight is None:
                 edge_weight = None
             else:
-                edge_weight = self.edge_weight[num_edges_before_graph[i]:num_edges_before_graph[i + 1]]
+                edge_weight = batch_graph.edge_weight[num_edges_before_graph[i]:num_edges_before_graph[i + 1]]
 
             graph = Graph(x=x, edge_index=edge_index, y=y, edge_weight=edge_weight)
             graphs.append(graph)
@@ -459,7 +515,29 @@ class BatchGraph(Graph):
         return self._convert_data_to_tensor(["x", "edge_index", "edge_weight", "y",
                                              "node_graph_index", "edge_graph_index"])
 
-    def convert_edge_to_directed(self):
+    def to_directed(self, merge_mode="sum", inplace=False):
+        """
+
+        Each column of edge_index (u, v) represents an directed edge from u to v.
+        Note that it does not cover the edge from v to u. You should provide (v, u) to cover it.
+        This is not convenient for users.
+        Thus, we allow users to provide edge_index in undirected form and convert it later.
+        That is, we can simply provide (u, v) and convert it to (u, v) and (v, u) with `convert_edge_to_directed` method.
+
+        :return: If inplace is False, return a new graph with directed edges. Else, return the current graph with directed edges.
+        """
+
+        edge_index, [edge_weight, edge_graph_index] = \
+            convert_edge_to_directed(self.edge_index, [self.edge_weight, self.edge_graph_index],
+                                     merge_modes=[merge_mode, "max"])
+
+        if inplace:
+            self.edge_index, self.edge_weight, self.edge_graph_index = edge_index, edge_weight, edge_graph_index
+            return self
+        else:
+            return BatchGraph(self.x, edge_index, self.node_graph_index, edge_graph_index, y=self.y, edge_weight=edge_weight)
+
+    def convert_edge_to_directed(self, merge_mode="sum"):
         """
 
         Each column of edge_index (u, v) represents an directed edge from u to v.
@@ -468,9 +546,14 @@ class BatchGraph(Graph):
         Thus, we allow users to provide edge_index in undirected form and convert it later.
         That is, we can only provide (u, v) and convert it to (u, v) and (v, u) with `convert_edge_to_directed` method.
 
+        .. deprecated:: 0.0.84
+            Use ``to_directed(inplace=True)`` instead.
+
         :return:
         """
-        self.edge_index, [self.edge_weight, self.edge_graph_index] = \
-            convert_edge_to_directed(self.edge_index, [self.edge_weight, self.edge_graph_index],
-                                     merge_modes=["sum", "max"])
-        return self
+
+        warnings.warn(
+            "'BatchGraph.convert_edge_to_directed(self, merge_mode)' is deprecated, use 'BatchGraph.to_directed(inplace=True)' instead",
+            DeprecationWarning)
+
+        return self.to_directed(merge_mode, inplace=True)

@@ -1,4 +1,4 @@
-tf_sparse >= 0.0.10
+tf_sparse
 numpy >= 1.17.4
 networkx >= 2.1
 scipy >= 1.1.0

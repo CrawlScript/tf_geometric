@@ -26,7 +26,7 @@ undirected_test_neg_edge_index = negative_sampling(
 )
 
 # for training, you should convert undirected edges to directed edges for correct GCN propagation
-train_graph = tfg.Graph(x=graph.x, edge_index=undirected_train_edge_index).convert_edge_to_directed()
+train_graph = tfg.Graph(x=graph.x, edge_index=undirected_train_edge_index).to_directed()
 
 
 embedding_size = 16

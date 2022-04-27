@@ -11,7 +11,7 @@ graph = tfg.Graph(
 
 print("Graph Desc: \n", graph)
 
-graph.convert_edge_to_directed()  # pre-process edges
+graph = graph.to_directed()  # pre-process edges
 print("Processed Graph Desc: \n", graph)
 print("Processed Edge Index:\n", graph.edge_index)
 

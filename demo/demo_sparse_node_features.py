@@ -24,7 +24,7 @@ print("Sparse (One-hot) Node Features: ")
 print(x.to_dense())
 
 # tf.sparse.SparseTensor can be used as node features (x)
-graph = tfg.Graph(x, edge_index).convert_edge_to_directed()
+graph = tfg.Graph(x, edge_index).to_directed()
 print("\nConstructed Graph:")
 print(graph)
 

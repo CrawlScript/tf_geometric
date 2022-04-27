@@ -35,7 +35,7 @@ The following example constructs a graph and applies a Multi-head Graph Attentio
 
    print("Graph Desc: \n", graph)
 
-   graph.convert_edge_to_directed()  # pre-process edges
+   graph = graph.to_directed()  # pre-process edges
    print("Processed Graph Desc: \n", graph)
    print("Processed Edge Index:\n", graph.edge_index)
 
@@ -165,14 +165,12 @@ We provide both OOP and Functional API, with which you can make some cool things
 
    # coding=utf-8
    import os
-
    # Enable GPU 0
    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
    import tf_geometric as tfg
    import tensorflow as tf
    import numpy as np
-   from tf_geometric.utils.graph_utils import convert_edge_to_directed
 
    # ==================================== Graph Data Structure ====================================
    # In tf_geometric, the data of a graph can be represented by either a collections of
@@ -196,75 +194,70 @@ We provide both OOP and Functional API, with which you can make some cool things
    # Edge Weight => (num_edges)
    edge_weight = np.array([0.9, 0.8, 0.1, 0.2]).astype(np.float32)
 
-   # Make the edge_index directed such that we can use it as the input of GCN
-   edge_index, [edge_weight] = convert_edge_to_directed(edge_index, [edge_weight])
-
-
-   # We can convert these numpy array as TensorFlow Tensors and pass them to gnn functions
-   outputs = tfg.nn.gcn(
-       tf.Variable(x),
-       tf.constant(edge_index),
-       tf.constant(edge_weight),
-       tf.Variable(tf.random.truncated_normal([20, 2])) # GCN Weight
-   )
-   print(outputs)
 
    # Usually, we use a graph object to manager these information
    # edge_weight is optional, we can set it to None if you don't need it
-   graph = tfg.Graph(x=x, edge_index=edge_index, edge_weight=edge_weight)
+   # Using 'to_directed' to obtain a graph with directed edges such that we can use it as the input of GCN
+   graph = tfg.Graph(x=x, edge_index=edge_index, edge_weight=edge_weight).to_directed()
 
-   # You can easily convert these numpy arrays as Tensors with the Graph Object API
-   graph.convert_data_to_tensor()
 
-   # Then, we can use them without too many manual conversion
-   outputs = tfg.nn.gcn(
-       graph.x,
-       graph.edge_index,
-       graph.edge_weight,
-       tf.Variable(tf.random.truncated_normal([20, 2])),  # GCN Weight
-       cache=graph.cache  # GCN use caches to avoid re-computing of the normed edge information
-   )
-   print(outputs)
+   # Define a Graph Convolutional Layer (GCN)
+   gcn_layer = tfg.layers.GCN(4, activation=tf.nn.relu)
+   # Perform GCN on the graph
+   h = gcn_layer([graph.x, graph.edge_index, graph.edge_weight])
+   print("Node Representations (GCN on a Graph): \n", h)
+
+   for _ in range(10):
+       # Using Graph.cache can avoid recomputation of GCN's normalized adjacency matrix,
+       # which can dramatically improve the efficiency of GCN.
+       h = gcn_layer([graph.x, graph.edge_index, graph.edge_weight], cache=graph.cache)
 
 
    # For algorithms that deal with batches of graphs, we can pack a batch of graph into a BatchGraph object
    # Batch graph wrap a batch of graphs into a single graph, where each nodes has an unique index and a graph index.
    # The node_graph_index is the index of the corresponding graph for each node in the batch.
    # The edge_graph_index is the index of the corresponding edge for each node in the batch.
-   batch_graph = tfg.BatchGraph.from_graphs([graph, graph, graph, graph])
+   batch_graph = tfg.BatchGraph.from_graphs([graph, graph, graph, graph, graph])
 
    # We can reversely split a BatchGraph object into Graphs objects
    graphs = batch_graph.to_graphs()
 
+   # Define a Graph Convolutional Layer (GCN)
+   batch_gcn_layer = tfg.layers.GCN(4, activation=tf.nn.relu)
+   # Perform GCN on the BatchGraph
+   batch_h = gcn_layer([batch_graph.x, batch_graph.edge_index, batch_graph.edge_weight])
+   print("Node Representations (GCN on a BatchGraph): \n", batch_h)
+
    # Graph Pooling algorithms often rely on such batch data structure
    # Most of them accept a BatchGraph's data as input and output a feature vector for each graph in the batch
-   outputs = tfg.nn.mean_pool(batch_graph.x, batch_graph.node_graph_index, num_graphs=batch_graph.num_graphs)
-   print(outputs)
+   graph_h = tfg.nn.mean_pool(batch_h, batch_graph.node_graph_index, num_graphs=batch_graph.num_graphs)
+   print("Graph Representations (Mean Pooling on a BatchGraph): \n", batch_h)
 
+
+   # Define a Graph Convolutional Layer (GCN) for scoring each node
+   gcn_score_layer = tfg.layers.GCN(1)
    # We provide some advanced graph pooling operations such as topk_pool
-   node_score = tfg.nn.gcn(
-       batch_graph.x,
-       batch_graph.edge_index,
-       batch_graph.edge_weight,
-       tf.Variable(tf.random.truncated_normal([20, 1])),  # GCN Weight
-       cache=graph.cache  # GCN use caches to avoid re-computing of the normed edge information
-   )
+   node_score = gcn_score_layer([batch_graph.x, batch_graph.edge_index, batch_graph.edge_weight])
    node_score = tf.reshape(node_score, [-1])
+   print("Score of Each Node: \n", node_score)
    topk_node_index = tfg.nn.topk_pool(batch_graph.node_graph_index, node_score, ratio=0.6)
-   print(topk_node_index)
+   print("Top-k Node Index (Top-k Pooling): \n", topk_node_index)
 
 
 
 
    # ==================================== Built-in Datasets ====================================
    # all graph data are in numpy format
+
+   # Cora Dataset
+   graph, (train_index, valid_index, test_index) = tfg.datasets.CoraDataset().load_data()
+
+   # PPI Dataset
    train_data, valid_data, test_data = tfg.datasets.PPIDataset().load_data()
 
-   # we can convert them into tensorflow format
-   test_data = [graph.convert_data_to_tensor() for graph in test_data]
-
-
-
+   # TU Datasets
+   # TU Datasets: https://ls11-www.cs.tu-dortmund.de/staff/morris/graphkerneldatasets
+   graph_dicts = tfg.datasets.TUDataset("NCI1").load_data()
 
 
    # ==================================== Basic OOP API ====================================
