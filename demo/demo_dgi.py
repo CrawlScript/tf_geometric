@@ -58,15 +58,18 @@ class Bilinear(tf.keras.Model):
 
 # GCN-based Encoder
 model = GCNNetwork()
+model.gcn.build_cache_for_graph(graph)
 
 # Bilinear Model for DGL loss
 bilinear_model = Bilinear()
 
 
+# @tf.function
 def encode(graph, permutation=False, training=False):
     # permute nodes to create a noisy graph for negative sampling
     if permutation:
-        perm_index = np.random.permutation(graph.x.shape[0])
+        # perm_index = np.random.permutation(graph.x.shape[0])
+        perm_index = tf.random.shuffle(tf.range(0, tf.shape(graph.x)[0]))
         x = tf.gather(graph.x, perm_index)
     else:
         x = graph.x
@@ -74,36 +77,11 @@ def encode(graph, permutation=False, training=False):
     return h
 
 
-# Fast evaluation with sklearn
-def evaluate_with_sklearn():
-    embedded = encode(graph)
-    embeddings = embedded.numpy()
-    train_X, train_Y, test_X, test_Y = embeddings[train_index], graph.y[train_index], embeddings[test_index], graph.y[test_index]
-    cls = LogisticRegression(C=10000, max_iter=500)
-    cls.fit(train_X, train_Y)
-    pred_Y = cls.predict(test_X)
-    micro_f1 = f1_score(test_Y, pred_Y, average="micro")
-    return micro_f1
-
-
-# Following https://github.com/PetarV-/DGI, we train a full-connected layer for evaluation, which is slow
-def evaluate_with_tf_keras():
-    model = tf.keras.Sequential([
-        tf.keras.layers.Dense(num_classes, activation="softmax")
-    ])
-    model.compile(loss=tf.keras.losses.categorical_crossentropy, optimizer=tf.keras.optimizers.Adam(learning_rate=1e-2))
-    embedded = encode(graph)
-    embeddings = embedded.numpy()
-    train_X, train_Y, test_X, test_Y = embeddings[train_index], graph.y[train_index], embeddings[test_index], graph.y[test_index]
-    model.fit(train_X, tf.one_hot(train_Y, depth=num_classes).numpy(), epochs=100, verbose=False)
-    pred_Y = tf.argmax(model(test_X), axis=-1)
-    micro_f1 = f1_score(test_Y, pred_Y, average="micro")
-    return micro_f1
-
-
 optimizer = tf.keras.optimizers.Adam(learning_rate=1e-3)
 
-for step in range(301):
+
+@tf_utils.function
+def train_step():
     with tf.GradientTape() as tape:
         # positive node representations
         pos_h = encode(graph, permutation=False, training=True)
@@ -131,6 +109,41 @@ for step in range(301):
     vars = tape.watched_variables()
     grads = tape.gradient(loss, vars)
     optimizer.apply_gradients(zip(grads, vars))
+
+    return loss
+
+
+# Fast evaluation with sklearn
+def evaluate_with_sklearn():
+    embedded = encode(graph)
+    embeddings = embedded.numpy()
+    train_X, train_Y, test_X, test_Y = embeddings[train_index], graph.y[train_index], embeddings[test_index], graph.y[
+        test_index]
+    cls = LogisticRegression(C=10000, max_iter=500)
+    cls.fit(train_X, train_Y)
+    pred_Y = cls.predict(test_X)
+    micro_f1 = f1_score(test_Y, pred_Y, average="micro")
+    return micro_f1
+
+
+# Following https://github.com/PetarV-/DGI, we train a full-connected layer for evaluation, which is slow
+def evaluate_with_tf_keras():
+    model = tf.keras.Sequential([
+        tf.keras.layers.Dense(num_classes, activation="softmax")
+    ])
+    model.compile(loss=tf.keras.losses.categorical_crossentropy, optimizer=tf.keras.optimizers.Adam(learning_rate=1e-2))
+    embedded = encode(graph)
+    embeddings = embedded.numpy()
+    train_X, train_Y, test_X, test_Y = embeddings[train_index], graph.y[train_index], embeddings[test_index], graph.y[test_index]
+    model.fit(train_X, tf.one_hot(train_Y, depth=num_classes).numpy(), epochs=100, verbose=False)
+    pred_Y = tf.argmax(model(test_X), axis=-1)
+    micro_f1 = f1_score(test_Y, pred_Y, average="micro")
+    return micro_f1
+
+
+for step in range(301):
+
+    loss = train_step()
 
     if step % 50 == 0:
         micro_f1 = evaluate_with_sklearn()
