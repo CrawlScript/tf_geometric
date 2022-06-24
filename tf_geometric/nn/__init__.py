@@ -4,7 +4,7 @@
 
 
 from .kernel.map_reduce import identity_mapper, neighbor_count_mapper, sum_reducer, sum_updater, identity_updater, mean_reducer, max_reducer, aggregate_neighbors
-from .conv.gcn import gcn, gcn_norm_adj, gcn_build_cache_for_graph, gcn_norm_edge, gcn_cache_normed_edge
+from .conv.gcn import gcn, gcn_norm_adj, gcn_build_cache_by_adj, gcn_build_cache_for_graph, gcn_norm_edge, gcn_cache_normed_edge
 from .conv.gat import gat
 from .conv.chebynet import chebynet, chebynet_norm_edge
 from .conv.sgc import sgc
