@@ -2,7 +2,7 @@
 
 import warnings
 import tensorflow as tf
-from tf_geometric.nn.conv.gcn import gcn_build_cache_for_graph
+from tf_geometric.nn.conv.gcn import gcn_build_cache_for_graph, gcn_build_cache_by_adj
 
 from tf_geometric.nn.conv.tagcn import tagcn
 
@@ -56,6 +56,17 @@ class TAGCN(tf.keras.Model):
         if self.use_bias:
             self.bias = self.add_weight("bias", shape=[self.units],
                                         initializer="zeros", regularizer=self.bias_regularizer)
+
+    def build_cache_by_adj(self, sparse_adj, override=False, cache=None):
+        """
+        Manually compute the normed edge based on this layer's GCN normalization configuration (self.renorm and self.improved) and put it in graph.cache.
+        If the normed edge already exists in graph.cache and the override parameter is False, this method will do nothing.
+
+        :param graph: tfg.Graph, the input graph.
+        :param override: Whether to override existing cached normed edge.
+        :return: None
+        """
+        return gcn_build_cache_by_adj(sparse_adj, self.renorm, self.improved, override=override, cache=cache)
 
     def build_cache_for_graph(self, graph, override=False):
         """

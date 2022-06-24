@@ -73,6 +73,28 @@ def gcn_norm_adj(sparse_adj, renorm=True, improved=False, cache: dict = None):
     return normed_sparse_adj
 
 
+def gcn_build_cache_by_adj(sparse_adj: SparseMatrix, renorm=True, improved=False, override=False, cache=None):
+    """
+    Manually compute the normed edge based on the given GCN normalization configuration (renorm and improved) and put it in graph.cache.
+    If the normed edge already exists in graph.cache and the override parameter is False, this method will do nothing.
+
+    :param sparse_adj: sparse_adj.
+    :param renorm: Whether use renormalization trick (https://arxiv.org/pdf/1609.02907.pdf).
+    :param improved: Whether use improved GCN or not.
+    :param override: Whether to override existing cached normed edge.
+    :return: cache
+    """
+
+    if cache is None:
+        cache = {}
+    elif override:
+        cache_key = compute_cache_key(renorm, improved)
+        cache[cache_key] = None
+
+    gcn_norm_adj(sparse_adj, renorm, improved, cache)
+    return cache
+
+
 def gcn_build_cache_for_graph(graph, renorm=True, improved=False, override=False):
     """
     Manually compute the normed edge based on the given GCN normalization configuration (renorm and improved) and put it in graph.cache.
@@ -84,12 +106,15 @@ def gcn_build_cache_for_graph(graph, renorm=True, improved=False, override=False
     :param override: Whether to override existing cached normed edge.
     :return: None
     """
-    if override:
-        cache_key = compute_cache_key(renorm, improved)
-        graph.cache[cache_key] = None
+    graph.cache = gcn_build_cache_by_adj(graph.adj(), renorm=renorm, improved=improved, override=override, cache=graph.cache)
+    return graph.cache
 
-    sparse_adj = SparseMatrix(graph.edge_index, graph.edge_weight, [graph.num_nodes, graph.num_nodes])
-    gcn_norm_adj(sparse_adj, renorm, improved, graph.cache)
+    # if override:
+    #     cache_key = compute_cache_key(renorm, improved)
+    #     graph.cache[cache_key] = None
+    #
+    # sparse_adj = SparseMatrix(graph.edge_index, graph.edge_weight, [graph.num_nodes, graph.num_nodes])
+    # gcn_norm_adj(sparse_adj, renorm, improved, graph.cache)
 
 
 # old API
