@@ -101,7 +101,7 @@ ChebyNet
 --------------------
 .. autoclass:: tf_geometric.layers.ChebyNet
    :special-members: __init__
-   :members: call, build_cache_by_adj, build_cache_for_graph, cache_normed_edge
+   :members: call, build_cache_for_graph, cache_normed_edge
 
 
 DropEdge

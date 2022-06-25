@@ -86,7 +86,7 @@ class SSGC(tf.keras.Model):
         :param override: Whether to override existing cached normed edge.
         :return: None
         """
-        return gcn_build_cache_by_adj(sparse_adj, self.renorm, self.improved, override=override, cache=cache)
+        return gcn_build_cache_by_adj(sparse_adj, override=override, cache=cache)
 
     def build_cache_for_graph(self, graph, override=False):
         """
