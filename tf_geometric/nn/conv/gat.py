@@ -89,7 +89,7 @@ def gat(x, edge_index,
     else:
         V_ = V
         edge_index_ = tf.tile(edge_index, [1, num_heads])
-        sparse_att_adj = SparseAdj(edge_index_, sparse_att_adj.edge_weight, [num_nodes, num_nodes])
+        sparse_att_adj = SparseMatrix(edge_index_, sparse_att_adj.value, [num_nodes, num_nodes])
 
     h_ = sparse_att_adj @ V_
 
