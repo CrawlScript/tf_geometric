@@ -11,3 +11,4 @@ from tf_geometric.datasets.csr_npz import CSRNPZDataset
 from tf_geometric.datasets.amazon_electronics import AmazonElectronicsDataset, AmazonComputersDataset, \
     AmazonPhotoDataset
 from tf_geometric.datasets.coauthor import CoauthorDataset, CoauthorCSDataset, CoauthorPhysicsDataset
+from tf_geometric.datasets.abnormal import FDAmazonDataset, FDYelpChiDataset
