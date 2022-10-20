@@ -1,5 +1,5 @@
 # coding=utf-8
-
+import types
 import warnings
 
 import tensorflow as tf
@@ -32,7 +32,7 @@ class Graph(object):
         :param edge_weight: Tensor/NDArray/None, shape: [num_edges]
         """
 
-        self.x = Graph.cast_x(x)
+        self._x = Graph.cast_x(x)
         self.edge_index = Graph.cast_edge_index(edge_index)
         self.y = Graph.cast_y(y)
         self.cache = {}
@@ -95,6 +95,13 @@ class Graph(object):
     #         y = tf.cast(y, tf.float32)
     #
     #     return y
+
+    @property
+    def x(self):
+        if isinstance(self._x, types.FunctionType):
+            return self._x()
+        else:
+            return self._x
 
     @property
     def num_nodes(self):
