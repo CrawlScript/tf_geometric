@@ -11,6 +11,10 @@ from tf_geometric.utils.tf_sparse_utils import sparse_gather_sub
 from tf_geometric.utils.union_utils import union_len, convert_union_to_numpy
 
 
+def _get_shape(data):
+    return None if data is None else data.shape
+
+
 class Graph(object):
     """
     A Graph object wrappers all the data of a graph,
@@ -150,14 +154,14 @@ class Graph(object):
         """
         return self.x.shape[-1]
 
-    def get_shape(self, data):
-        return None if data is None else data.shape
+    # def get_shape(self, data):
+    #     return None if data is None else data.shape
 
     def get_shape_desc(self):
         return "Graph Shape: x => {}\tedge_index => {}\ty => {}".format(
-            self.get_shape(self.x),
-            self.get_shape(self.edge_index),
-            self.get_shape(self.y)
+            _get_shape(self.x),
+            _get_shape(self.edge_index),
+            _get_shape(self.y)
         )
 
     def __str__(self):
@@ -564,3 +568,62 @@ class BatchGraph(Graph):
             DeprecationWarning)
 
         return self.to_directed(merge_mode, inplace=True)
+
+
+class HeteroGraph(object):
+
+    def __init__(self, x_dict=None, edge_index_dict=None, y_dict=None, edge_weight_dict=None):
+        if x_dict is None:
+            x_dict = {}
+
+        if edge_index_dict is None:
+            edge_index_dict = {}
+
+        if y_dict is None:
+            y_dict = {}
+
+        if edge_weight_dict is None:
+            edge_weight_dict = {}
+
+        self.x_dict = {node_type: Graph.cast_x(x) for node_type, x in x_dict.items()}
+        self.edge_index_dict = {edge_type: Graph.cast_edge_index(edge_index)
+                                for edge_type, edge_index in edge_index_dict.items()}
+        self.y_dict = {y_type: Graph.cast_y(y) for y_type, y in y_dict.items()}
+        self.edge_weight_dict = {edge_type: Graph.cast_edge_weight(edge_weight)
+                                 for edge_type, edge_weight in edge_weight_dict}
+
+    def num_nodes(self, node_type=None):
+        if node_type is not None:
+            return tfs.shape(self.x_dict[node_type])[0]
+        else:
+            return {node_type: self.num_nodes(node_type=node_type) for node_type in self.x_dict}
+
+    def num_edges(self, edge_type=None):
+        if edge_type is not None:
+            return tf.shape(self.edge_index_dict[edge_type])[1]
+        else:
+            return {edge_type: self.num_edges(edge_type) for edge_type in self.edge_index_dict}
+
+    def get_shape_desc(self):
+
+        x_shape_desc_dict = {
+            node_type: _get_shape(x) for node_type, x in self.x_dict.items()
+        }
+
+        edge_index_shape_desc_dict = {
+            edge_type: _get_shape(edge_index) for edge_type, edge_index in self.edge_index_dict.items()
+        }
+
+        y_shape_desc_dict = {
+            y_type: _get_shape(y) for y_type, y in self.y_dict.items()
+        }
+
+        return "HeteroGraph Shape: \n\tx => {}\n\tedge_index => {}\n\ty => {}".format(
+            x_shape_desc_dict, edge_index_shape_desc_dict, y_shape_desc_dict
+        )
+
+    def __str__(self):
+        return self.get_shape_desc()
+
+    def __repr__(self):
+        return self.__str__()
