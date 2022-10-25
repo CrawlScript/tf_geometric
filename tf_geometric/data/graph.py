@@ -570,7 +570,7 @@ class BatchGraph(Graph):
         return self.to_directed(merge_mode, inplace=True)
 
 
-class HeteroGraph(object):
+class HeteroDictGraph(object):
 
     def __init__(self, x_dict=None, edge_index_dict=None, y_dict=None, edge_weight_dict=None):
         if x_dict is None:
@@ -591,6 +591,8 @@ class HeteroGraph(object):
         self.y_dict = {y_type: Graph.cast_y(y) for y_type, y in y_dict.items()}
         self.edge_weight_dict = {edge_type: Graph.cast_edge_weight(edge_weight)
                                  for edge_type, edge_weight in edge_weight_dict}
+
+        self.cache = {}
 
     def num_nodes(self, node_type=None):
         if node_type is not None:
@@ -621,6 +623,32 @@ class HeteroGraph(object):
         return "HeteroGraph Shape: \n\tx => {}\n\tedge_index => {}\n\ty => {}".format(
             x_shape_desc_dict, edge_index_shape_desc_dict, y_shape_desc_dict
         )
+
+    def add_reversed_edges(self, reverse_prefix="r.", inplace=False):
+        """
+        """
+        new_edge_index_dict = {**self.edge_index_dict}
+        new_edge_weight_dict = {**self.edge_weight_dict}
+
+        for edge_type, edge_index in self.edge_index_dict.items():
+            edge_weight = self.edge_weight_dict[edge_type] if edge_type in self.edge_weight_dict else None
+            reversed_edge_type = (edge_type[2], "{}{}".format(reverse_prefix, edge_type[1]), edge_type[0])
+
+            if tf.is_tensor(edge_index):
+                reversed_edge_index = tf.stack([edge_index[1], edge_index[0]], axis=0)
+            else:
+                reversed_edge_index = np.stack([edge_index[1], edge_index[0]], axis=0)
+
+            new_edge_index_dict[reversed_edge_type] = reversed_edge_index
+            if edge_weight is not None:
+                new_edge_weight_dict[reversed_edge_type] = edge_weight
+
+        if inplace:
+            self.edge_index_dict, self.edge_weight_dict = new_edge_index_dict, new_edge_weight_dict
+            return self
+        else:
+            return HeteroDictGraph(self.x_dict, new_edge_index_dict, y_dict=self.y_dict,
+                                   edge_weight_dict=new_edge_weight_dict)
 
     def __str__(self):
         return self.get_shape_desc()
