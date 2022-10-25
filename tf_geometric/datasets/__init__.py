@@ -13,3 +13,5 @@ from tf_geometric.datasets.amazon_electronics import AmazonElectronicsDataset, A
 from tf_geometric.datasets.coauthor import CoauthorDataset, CoauthorCSDataset, CoauthorPhysicsDataset
 from tf_geometric.datasets.abnormal import FDAmazonDataset, FDYelpChiDataset
 from tf_geometric.datasets.hgb import HGBDataset, HGBACMDataset, HGBDBLPDataset, HGBFreebaseDataset, HGBIMDBDataset
+from tf_geometric.datasets.nars_academic import NARSACMDataset
+

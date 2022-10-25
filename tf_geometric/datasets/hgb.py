@@ -12,15 +12,16 @@ class HGBDataset(DownloadableDataset):
     def __init__(self, dataset_name, dataset_root_path=None):
         """
 
-        :param dataset_name: "acm" | "dblp" | "freebase" | "imdb"
+        :param dataset_name: "hgb_acm" | "hgb_dblp" | "hgb_freebase" | "hgb_imdb"
         :param dataset_root_path:
         """
+        self.sub_dataset_name = dataset_name.split("_")[1]
 
         super().__init__(dataset_name=dataset_name,
                          download_urls=[
-                             "https://github.com/CrawlScript/gnn_datasets/raw/master/hgb/{}.zip".format(dataset_name)
+                             "https://github.com/CrawlScript/gnn_datasets/raw/master/hgb/{}.zip".format(self.sub_dataset_name)
                          ],
-                         download_file_name="{}.zip".format(dataset_name),
+                         download_file_name="{}.zip".format(self.sub_dataset_name),
                          cache_name=None,
                          dataset_root_path=dataset_root_path,
                          )
@@ -32,9 +33,9 @@ class HGBDataset(DownloadableDataset):
         # node_types = {0: 'paper', 1, 'author', ...}
         # edge_types = {0: ('paper', 'cite', 'paper'), ...}
 
-        data_dir = os.path.join(self.raw_root_path, self.dataset_name)
+        data_dir = os.path.join(self.raw_root_path, self.sub_dataset_name)
 
-        if self.dataset_name in ['acm', 'dblp', 'imdb']:
+        if self.sub_dataset_name in ['acm', 'dblp', 'imdb']:
 
             # with open(self.raw_paths[0], 'r') as f:  # `info.dat`
             with open(os.path.join(data_dir, "info.dat"), 'r') as f:  # `info.dat`
@@ -49,7 +50,7 @@ class HGBDataset(DownloadableDataset):
                 rel = rel if rel != dst and rel[1:] != dst else 'to'
                 e_types[key] = (src, rel, dst)
             num_classes = len(info['label.dat']['node type']['0'])
-        elif self.dataset_name in ['freebase']:
+        elif self.sub_dataset_name in ['freebase']:
             # with open(self.raw_paths[0], 'r') as f:  # `info.dat`
             with open(os.path.join(data_dir, "info.dat"), 'r') as f:  # `info.dat`
                 info = f.read().split('\n')
@@ -144,7 +145,7 @@ class HGBDataset(DownloadableDataset):
 
                 num_nodes = x_dict[n_type].shape[0]# if n_type in x_dict else num_nodes_dict[n_type]
 
-                if self.dataset_name in ['imdb']:  # multi-label
+                if self.sub_dataset_name in ['imdb']:  # multi-label
                     y_dict[n_type] = np.zeros([num_nodes, num_classes], dtype=np.int64)
                 else:
                     y_dict[n_type] = np.full([num_nodes], -1, dtype=np.int64)
@@ -206,19 +207,19 @@ class HGBDataset(DownloadableDataset):
 
 class HGBACMDataset(HGBDataset):
     def __init__(self, dataset_root_path=None):
-        super().__init__("acm", dataset_root_path)
+        super().__init__("hgb_acm", dataset_root_path)
 
 
 class HGBDBLPDataset(HGBDataset):
     def __init__(self, dataset_root_path=None):
-        super().__init__("dblp", dataset_root_path)
+        super().__init__("hgb_dblp", dataset_root_path)
 
 
 class HGBFreebaseDataset(HGBDataset):
     def __init__(self, dataset_root_path=None):
-        super().__init__("freebase", dataset_root_path)
+        super().__init__("hgb_freebase", dataset_root_path)
 
 
 class HGBIMDBDataset(HGBDataset):
     def __init__(self, dataset_root_path=None):
-        super().__init__("imdb", dataset_root_path)
+        super().__init__("hgb_imdb", dataset_root_path)

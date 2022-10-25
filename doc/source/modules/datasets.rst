@@ -160,3 +160,61 @@ Coauthor
    :special-members: __init__
    :members:
 
+
+
+
+Fraud Detection
+--------------------
+
+
+.. autoclass:: tf_geometric.datasets.FDAmazonDataset
+   :special-members: __init__
+   :members:
+
+
+.. autoclass:: tf_geometric.datasets.FDYelpChiDataset
+   :special-members: __init__
+   :members:
+
+
+
+
+HGB
+--------------------
+
+
+.. autoclass:: tf_geometric.datasets.HGBDataset
+   :special-members: __init__
+   :members:
+
+
+.. autoclass:: tf_geometric.datasets.HGBACMDataset
+   :special-members: __init__
+   :members:
+
+
+.. autoclass:: tf_geometric.datasets.HGBDBLPDataset
+   :special-members: __init__
+   :members:
+
+
+.. autoclass:: tf_geometric.datasets.HGBFreebaseDataset
+   :special-members: __init__
+   :members:
+
+.. autoclass:: tf_geometric.datasets.HGBIMDBDataset
+   :special-members: __init__
+   :members:
+
+
+
+
+NARS Academic
+--------------------
+
+
+.. autoclass:: tf_geometric.datasets.NARSACMDataset
+   :special-members: __init__
+   :members:
+
+
