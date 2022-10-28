@@ -1,4 +1,5 @@
 # coding=utf-8
+import tf_sparse as tfs
 
 from tf_geometric.nn.conv.gcn import gcn, gcn_build_cache_for_graph, gcn_build_cache_by_adj
 import tensorflow as tf
@@ -14,14 +15,17 @@ class GCN(tf.keras.Model):
         x_shape = input_shapes[0]
         num_features = x_shape[-1]
 
-        self.kernel = self.add_weight("kernel", shape=[num_features, self.units],
-                                      initializer="glorot_uniform", regularizer=self.kernel_regularizer)
+        if self.use_kernel:
+            self.kernel = self.add_weight("kernel", shape=[num_features, self.units],
+                                          initializer="glorot_uniform", regularizer=self.kernel_regularizer)
         if self.use_bias:
-            self.bias = self.add_weight("bias", shape=[self.units],
+            self.bias = self.add_weight("bias", shape=[self.units if self.use_kernel else num_features],
                                         initializer="zeros", regularizer=self.bias_regularizer)
 
     def __init__(self, units, activation=None,
+                 use_kernel=True,
                  use_bias=True,
+                 norm="both", add_self_loop=True, sym=True,
                  renorm=True, improved=False,
                  edge_drop_rate=0.0,
                  kernel_regularizer=None, bias_regularizer=None, *args, **kwargs):
@@ -40,6 +44,7 @@ class GCN(tf.keras.Model):
         self.units = units
 
         self.activation = activation
+        self.use_kernel = use_kernel
         self.use_bias = use_bias
 
         self.edge_drop_rate = edge_drop_rate
@@ -47,6 +52,9 @@ class GCN(tf.keras.Model):
         self.kernel = None
         self.bias = None
 
+        self.norm = norm
+        self.add_self_loop = add_self_loop
+        self.sym = sym
         self.renorm = renorm
         self.improved = improved
 
@@ -62,7 +70,9 @@ class GCN(tf.keras.Model):
         :param override: Whether to override existing cached normed edge.
         :return: None
         """
-        return gcn_build_cache_by_adj(sparse_adj, self.renorm, self.improved, override=override, cache=cache)
+        return gcn_build_cache_by_adj(sparse_adj,
+                                      self.norm, self.add_self_loop, self.sym,
+                                      self.renorm, self.improved, override=override, cache=cache)
 
     def build_cache_for_graph(self, graph, override=False):
         """
@@ -73,7 +83,9 @@ class GCN(tf.keras.Model):
         :param override: Whether to override existing cached normed edge.
         :return: None
         """
-        gcn_build_cache_for_graph(graph, self.renorm, self.improved, override=override)
+        gcn_build_cache_for_graph(graph,
+                                  self.norm, self.add_self_loop, self.sym,
+                                  self.renorm, self.improved, override=override)
 
     def cache_normed_edge(self, graph, override=False):
         """
@@ -98,13 +110,20 @@ class GCN(tf.keras.Model):
         :return: Updated node features (x), shape: [num_nodes, units]
         """
 
-        if len(inputs) == 3:
+        if isinstance(inputs[1], tfs.SparseMatrix):
+            x, sparse_adj = inputs
+        elif len(inputs) == 3:
             x, edge_index, edge_weight = inputs
-        else:
+            num_nodes = tfs.shape(x)[0]
+            sparse_adj = tfs.SparseMatrix(edge_index, value=edge_weight, shape=[num_nodes, num_nodes])
+        elif len(inputs) == 2:
             x, edge_index = inputs
-            edge_weight = None
+            num_nodes = tfs.shape(x)[0]
+            sparse_adj = tfs.SparseMatrix(edge_index, shape=[num_nodes, num_nodes])
 
-        return gcn(x, edge_index, edge_weight, self.kernel, self.bias,
-                   activation=self.activation, renorm=self.renorm, improved=self.improved,
+        return gcn(x, sparse_adj, self.kernel, self.bias,
+                   activation=self.activation,
+                   norm=self.norm, add_self_loop=self.add_self_loop, sym=self.sym,
+                   renorm=self.renorm, improved=self.improved,
                    edge_drop_rate=self.edge_drop_rate,
                    training=training, cache=cache)

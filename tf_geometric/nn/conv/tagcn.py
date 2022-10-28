@@ -27,7 +27,7 @@ def tagcn(x, edge_index, edge_weight, k, kernel, bias=None, activation=None, ren
     num_nodes = tfs.shape(x)[0]
 
     sparse_adj = SparseMatrix(edge_index, edge_weight, [num_nodes, num_nodes])
-    normed_sparse_adj = gcn_norm_adj(sparse_adj, renorm, improved, cache)
+    normed_sparse_adj = gcn_norm_adj(sparse_adj, renorm=renorm, improved=improved, cache=cache)
 
     if isinstance(x, tf.sparse.SparseTensor):
         x = tf.sparse.to_dense(x)

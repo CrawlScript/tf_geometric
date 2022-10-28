@@ -6,10 +6,10 @@ from tf_sparse import SparseMatrix
 
 
 # new API
-CACHE_KEY_GCN_NORMED_ADJ_TEMPLATE = "gcn_normed_adj_{}_{}"
+CACHE_KEY_GCN_NORMED_ADJ_TEMPLATE = "gcn_normed_adj_{}_{}_{}_{}_{}"
 
 
-def compute_cache_key(renorm, improved):
+def compute_cache_key(norm, add_self_loop, sym, renorm, improved):
     """
     Compute the cached key based on GCN normalization configurations: renorm and improved
 
@@ -17,13 +17,23 @@ def compute_cache_key(renorm, improved):
     :param improved: Whether use improved GCN or not.
     :return: The corresponding cached key for the given GCN normalization configuration.
     """
-    return CACHE_KEY_GCN_NORMED_ADJ_TEMPLATE.format(renorm, improved)
+    return CACHE_KEY_GCN_NORMED_ADJ_TEMPLATE.format(norm, add_self_loop, sym, renorm, improved)
 
 
-def gcn_norm_adj(sparse_adj, renorm=True, improved=False, cache: dict = None):
+def _remove_inf_and_nan(x):
+    x = tf.where(
+        tf.math.logical_or(tf.math.is_inf(x), tf.math.is_nan(x)),
+        tf.zeros_like(x),
+        x
+    )
+    return x
+
+
+def gcn_norm_adj(sparse_adj, norm="both", add_self_loop=True, sym=True, renorm=True, improved=False, cache: dict = None):
     """
     Compute normed edge (updated edge_index and normalized edge_weight) for GCN normalization.
 
+    :param norm: normalization mode.
     :param sparse_adj: SparseMatrix, sparse adjacency matrix.
     :param renorm: Whether use renormalization trick (https://arxiv.org/pdf/1609.02907.pdf).
     :param improved: Whether use improved GCN or not.
@@ -32,7 +42,7 @@ def gcn_norm_adj(sparse_adj, renorm=True, improved=False, cache: dict = None):
     """
 
     if cache is not None:
-        cache_key = compute_cache_key(renorm, improved)
+        cache_key = compute_cache_key(norm, add_self_loop, sym, renorm, improved)
         cached_data = cache.get(cache_key, None)
         if cached_data is not None:
             # return cached_data
@@ -44,26 +54,56 @@ def gcn_norm_adj(sparse_adj, renorm=True, improved=False, cache: dict = None):
 
     fill_weight = 2.0 if improved else 1.0
 
-    if renorm:
+    if add_self_loop and norm != "both":
         sparse_adj = sparse_adj.add_diag(fill_weight)
-        # sparse_adj = sparse_adj.add_self_loop(fill_weight=fill_weight)
 
-    deg = sparse_adj.segment_sum(axis=-1)
-    deg_inv_sqrt = tf.pow(deg, -0.5)
-    deg_inv_sqrt = tf.where(
-        tf.math.logical_or(tf.math.is_inf(deg_inv_sqrt), tf.math.is_nan(deg_inv_sqrt)),
-        tf.zeros_like(deg_inv_sqrt),
-        deg_inv_sqrt
-    )
-    deg_inv_sqrt = tfs.diags(deg_inv_sqrt)
+    if norm == "both":
+        if add_self_loop and renorm:
+            sparse_adj = sparse_adj.add_diag(fill_weight)
+            # sparse_adj = sparse_adj.add_self_loop(fill_weight=fill_weight)
 
-    # (D^(-1/2)A)D^(-1/2)
-    normed_sparse_adj = deg_inv_sqrt @ sparse_adj @ deg_inv_sqrt
-    # normed_sparse_adj = tfs.sparse_diag_matmul(tfs.diag_sparse_matmul(deg_inv_sqrt, sparse_adj), deg_inv_sqrt)
+        row_deg = sparse_adj.segment_sum(axis=-1)
+        row_deg_inv_sqrt = tf.pow(row_deg, -0.5)
+        row_deg_inv_sqrt = _remove_inf_and_nan(row_deg_inv_sqrt)
+        row_deg_inv_sqrt = tfs.diags(row_deg_inv_sqrt)
 
-    if not renorm:
-        normed_sparse_adj = normed_sparse_adj.add_diag(fill_weight)
-        # normed_sparse_adj = normed_sparse_adj.add_self_loop(fill_weight=fill_weight)
+        if sym:
+            col_deg_inv_sqrt = row_deg_inv_sqrt
+        else:
+            col_deg = sparse_adj.segment_sum(axis=0)
+            col_deg_inv_sqrt = tf.pow(col_deg, -0.5)
+            col_deg_inv_sqrt = _remove_inf_and_nan(col_deg_inv_sqrt)
+            col_deg_inv_sqrt = tfs.diags(col_deg_inv_sqrt)
+
+        # (D^(-1/2)A)D^(-1/2)
+        normed_sparse_adj = row_deg_inv_sqrt @ sparse_adj @ col_deg_inv_sqrt
+        # normed_sparse_adj = tfs.sparse_diag_matmul(tfs.diag_sparse_matmul(deg_inv_sqrt, sparse_adj), deg_inv_sqrt)
+
+        if add_self_loop and not renorm:
+            normed_sparse_adj = normed_sparse_adj.add_diag(fill_weight)
+            # normed_sparse_adj = normed_sparse_adj.add_self_loop(fill_weight=fill_weight)
+
+    elif norm == "left":
+        row_deg = sparse_adj.segment_sum(axis=-1)
+        row_deg_inv = tf.pow(row_deg, -1)
+        row_deg_inv = _remove_inf_and_nan(row_deg_inv)
+        row_deg_inv = tfs.diags(row_deg_inv)
+
+        # D^(-1)A
+        normed_sparse_adj = row_deg_inv @ sparse_adj
+
+    elif norm == "right":
+        col_deg = sparse_adj.segment_sum(axis=-1)
+        col_deg_inv = tf.pow(col_deg, -1)
+        col_deg_inv = _remove_inf_and_nan(col_deg_inv)
+        col_deg_inv = tfs.diags(col_deg_inv)
+
+        # D^(-1)A
+        normed_sparse_adj = sparse_adj @ col_deg_inv
+
+    else:
+        raise Exception("wrong GCN norm type: {}".format(norm))
+
 
     if cache is not None:
         # cache[cache_key] = normed_sparse_adj
@@ -73,7 +113,7 @@ def gcn_norm_adj(sparse_adj, renorm=True, improved=False, cache: dict = None):
     return normed_sparse_adj
 
 
-def gcn_build_cache_by_adj(sparse_adj: SparseMatrix, renorm=True, improved=False, override=False, cache=None):
+def gcn_build_cache_by_adj(sparse_adj: SparseMatrix, norm="both", add_self_loop=True, sym=True, renorm=True, improved=False, override=False, cache=None):
     """
     Manually compute the normed edge based on the given GCN normalization configuration (renorm and improved) and put it in graph.cache.
     If the normed edge already exists in graph.cache and the override parameter is False, this method will do nothing.
@@ -88,14 +128,14 @@ def gcn_build_cache_by_adj(sparse_adj: SparseMatrix, renorm=True, improved=False
     if cache is None:
         cache = {}
     elif override:
-        cache_key = compute_cache_key(renorm, improved)
+        cache_key = compute_cache_key(norm, add_self_loop, sym, renorm, improved)
         cache[cache_key] = None
 
-    gcn_norm_adj(sparse_adj, renorm, improved, cache)
+    gcn_norm_adj(sparse_adj, norm, add_self_loop, sym, renorm, improved, cache)
     return cache
 
 
-def gcn_build_cache_for_graph(graph, renorm=True, improved=False, override=False):
+def gcn_build_cache_for_graph(graph, norm="both", add_self_loop=True, sym=True, renorm=True, improved=False, override=False):
     """
     Manually compute the normed edge based on the given GCN normalization configuration (renorm and improved) and put it in graph.cache.
     If the normed edge already exists in graph.cache and the override parameter is False, this method will do nothing.
@@ -106,7 +146,9 @@ def gcn_build_cache_for_graph(graph, renorm=True, improved=False, override=False
     :param override: Whether to override existing cached normed edge.
     :return: None
     """
-    graph.cache = gcn_build_cache_by_adj(graph.adj(), renorm=renorm, improved=improved, override=override, cache=graph.cache)
+    graph.cache = gcn_build_cache_by_adj(graph.adj(),
+                                         norm=norm, add_self_loop=add_self_loop, sym=sym,
+                                         renorm=renorm, improved=improved, override=override, cache=graph.cache)
     return graph.cache
 
     # if override:
@@ -163,14 +205,14 @@ def gcn_mapper(repeated_x, neighbor_x, edge_weight=None):
     return neighbor_x * tf.expand_dims(edge_weight, 1)
 
 
-def gcn(x, edge_index, edge_weight, kernel, bias=None, activation=None,
+def gcn(x, sparse_adj: SparseMatrix, kernel, bias=None, activation=None,
+        norm="both", add_self_loop=True, sym=True,
         renorm=True, improved=False, edge_drop_rate=0.0, training=False, cache=None):
     """
     Functional API for Graph Convolutional Networks.
 
     :param x: Tensor, shape: [num_nodes, num_features], node features
-    :param edge_index: Tensor, shape: [2, num_edges], edge information
-    :param edge_weight: Tensor or None, shape: [num_edges]
+    :param sparse_adj: tf_sparse.SparseMatrix, Adjacency Matrix
     :param kernel: Tensor, shape: [num_features, num_output_features], weight
     :param bias: Tensor, shape: [num_output_features], bias
     :param activation: Activation function to use.
@@ -192,17 +234,21 @@ def gcn(x, edge_index, edge_weight, kernel, bias=None, activation=None,
     :return: Updated node features (x), shape: [num_nodes, num_output_features]
     """
 
-    num_nodes = tfs.shape(x)[0]
-
-    sparse_adj = SparseMatrix(edge_index, edge_weight, [num_nodes, num_nodes])
-    normed_sparse_adj = gcn_norm_adj(sparse_adj, renorm, improved, cache)\
-        .dropout(edge_drop_rate, training=training)
+    # num_nodes = tfs.shape(x)[0
+    # sparse_adj = SparseMatrix(edge_index, edge_weight, [num_nodes, num_nodes])
+    normed_sparse_adj = gcn_norm_adj(sparse_adj, norm=norm, add_self_loop=add_self_loop, sym=sym, renorm=renorm,
+                                     improved=improved, cache=cache)
+    normed_sparse_adj = normed_sparse_adj.dropout(edge_drop_rate, training=training)
 
     # SparseTensor is usually used for one-hot node features (For example, feature-less nodes.)
-    if isinstance(x, tf.sparse.SparseTensor):
-        h = tf.sparse.sparse_dense_matmul(x, kernel)
+
+    if kernel is None:
+        h = x
     else:
-        h = x @ kernel
+        if isinstance(x, tf.sparse.SparseTensor):
+            h = tf.sparse.sparse_dense_matmul(x, kernel)
+        else:
+            h = x @ kernel
 
     h = normed_sparse_adj @ h
 

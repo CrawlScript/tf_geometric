@@ -70,7 +70,7 @@ class SGC(tf.keras.Model):
         :param override: Whether to override existing cached normed edge.
         :return: None
         """
-        gcn_build_cache_for_graph(graph, self.renorm, self.improved, override=override)
+        gcn_build_cache_for_graph(graph, renorm=self.renorm, improved=self.improved, override=override)
 
     def cache_normed_edge(self, graph, override=False):
         """

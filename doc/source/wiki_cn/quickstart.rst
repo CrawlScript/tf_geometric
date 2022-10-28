@@ -215,7 +215,7 @@ tf_geometric使用消息传递机制来实现图神经网络：相比于基于�
 
    gcn_w = tf.Variable(tf.random.truncated_normal([test_data[0].num_features, 20]))
    for graph in test_data:
-       outputs = tfg.nn.gcn(graph.x, edge_index, edge_weight, gcn_w, activation=tf.nn.relu)
+       outputs = tfg.nn.gcn(graph.x, graph.adj(), gcn_w, activation=tf.nn.relu)
        print(outputs)
 
 
