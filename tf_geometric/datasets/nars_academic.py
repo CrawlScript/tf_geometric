@@ -68,6 +68,8 @@ class _NARSAcademicDataset(DownloadableDataset):
         #     ('paper', 'pf', 'field'): (p_vs_l.row, p_vs_l.col)
         # })
 
+
+
         edge_index_dict = {
             ('paper', 'pa', 'author'): np.stack([p_vs_a.row, p_vs_a.col], axis=0).astype(np.int64),
             ('paper', 'pf', 'field'): np.stack([p_vs_l.row, p_vs_l.col], axis=0).astype(np.int64)
@@ -75,8 +77,14 @@ class _NARSAcademicDataset(DownloadableDataset):
 
         # features = torch.FloatTensor(p_vs_t.toarray())
         # features = p_vs_t.toarray().astype(np.float64)
+
+        num_authors = p_vs_a.col.max() + 1
+        num_fields = p_vs_l.col.max() + 1
+
         x_dict = {
-            "paper": p_vs_t.toarray().astype(np.float64)
+            "paper": p_vs_t.toarray().astype(np.float64),
+            "author": np.zeros([num_authors, 1], dtype=np.float32),
+            "field": np.zeros([num_fields, 1], dtype=np.float32),
         }
 
         pc_p, pc_c = p_vs_c.nonzero()
@@ -89,7 +97,7 @@ class _NARSAcademicDataset(DownloadableDataset):
 
         y_dict = {"paper": labels}
 
-        num_classes = 3
+        # num_classes = 3
 
         float_mask = np.zeros(len(pc_p))
         for conf_id in conf_ids:
@@ -102,7 +110,10 @@ class _NARSAcademicDataset(DownloadableDataset):
         # hg.nodes["paper"].data["feat"] = features
 
         hetero_graph = HeteroDictGraph(x_dict=x_dict, edge_index_dict=edge_index_dict, y_dict=y_dict)
-        return hetero_graph, (train_index, valid_index, test_index)
+
+        target_node_type = "paper"
+
+        return hetero_graph, target_node_type, (train_index, valid_index, test_index)
 
         # return hg, labels, num_classes, train_idx, val_idx, test_idx
 

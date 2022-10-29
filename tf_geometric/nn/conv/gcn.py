@@ -29,12 +29,18 @@ def _remove_inf_and_nan(x):
     return x
 
 
-def gcn_norm_adj(sparse_adj, norm="both", add_self_loop=True, sym=True, renorm=True, improved=False, cache: dict = None):
+def gcn_norm_adj(sparse_adj: SparseMatrix, norm="both", add_self_loop=True, sym=True, renorm=True, improved=False, cache: dict = None):
     """
     Compute normed edge (updated edge_index and normalized edge_weight) for GCN normalization.
 
-    :param norm: normalization mode.
-    :param sparse_adj: SparseMatrix, sparse adjacency matrix.
+    :param sparse_adj: tf_sparse.SparseMatrix, sparse adjacency matrix.
+    :param norm: normalization mode both|left|right:
+        - both: (D^(-1/2)A)D^(-1/2);
+        - left: D^(-1/2)A; 
+        - right: AD^(-1/2);
+    :param add_self_loop: Whether add self-loop to adj during normalization.
+    :param sym: Optional, only used when norm=="both". Setting sym=True indicates that the input
+        sparse_adj is symmetric.
     :param renorm: Whether use renormalization trick (https://arxiv.org/pdf/1609.02907.pdf).
     :param improved: Whether use improved GCN or not.
     :param cache: A dict for caching the updated edge_index and normalized edge_weight.
@@ -55,8 +61,11 @@ def gcn_norm_adj(sparse_adj, norm="both", add_self_loop=True, sym=True, renorm=T
     fill_weight = 2.0 if improved else 1.0
 
     if add_self_loop and norm != "both":
+        if sparse_adj.shape[0] != sparse_adj.shape[1]:
+            raise Exception("cannot set add_self_loop=True for GCN when sparse_adj.shape[0] != sparse_adj.shape[1]")
         sparse_adj = sparse_adj.add_diag(fill_weight)
 
+    # (D^(-1/2)A)D^(-1/2)
     if norm == "both":
         if add_self_loop and renorm:
             sparse_adj = sparse_adj.add_diag(fill_weight)
@@ -83,6 +92,7 @@ def gcn_norm_adj(sparse_adj, norm="both", add_self_loop=True, sym=True, renorm=T
             normed_sparse_adj = normed_sparse_adj.add_diag(fill_weight)
             # normed_sparse_adj = normed_sparse_adj.add_self_loop(fill_weight=fill_weight)
 
+    # D^(-1/2)A
     elif norm == "left":
         row_deg = sparse_adj.segment_sum(axis=-1)
         row_deg_inv = tf.pow(row_deg, -1)
@@ -92,13 +102,14 @@ def gcn_norm_adj(sparse_adj, norm="both", add_self_loop=True, sym=True, renorm=T
         # D^(-1)A
         normed_sparse_adj = row_deg_inv @ sparse_adj
 
+    # AD^(-1/2)
     elif norm == "right":
         col_deg = sparse_adj.segment_sum(axis=-1)
         col_deg_inv = tf.pow(col_deg, -1)
         col_deg_inv = _remove_inf_and_nan(col_deg_inv)
         col_deg_inv = tfs.diags(col_deg_inv)
 
-        # D^(-1)A
+        # AD^(-1/2)
         normed_sparse_adj = sparse_adj @ col_deg_inv
 
     else:

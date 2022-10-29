@@ -34,6 +34,13 @@ class GCN(tf.keras.Model):
         :param units: Positive integer, dimensionality of the output space.
         :param activation: Activation function to use.
         :param use_bias: Boolean, whether the layer uses a bias vector.
+        :param norm: normalization mode both|left|right:
+            - both: (D^(-1/2)A)D^(-1/2);
+            - left: D^(-1/2)A; 
+            - right: AD^(-1/2);
+        :param add_self_loop: Whether add self-loop to adj during normalization.
+        :param sym: Optional, only used when norm=="both". Setting sym=True indicates that the input
+            sparse_adj is symmetric.
         :param renorm: Whether use renormalization trick (https://arxiv.org/pdf/1609.02907.pdf).
         :param improved: Whether use improved GCN or not.
         :param edge_drop_rate: Dropout rate of the propagation weights.
