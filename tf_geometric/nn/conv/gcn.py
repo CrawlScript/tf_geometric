@@ -60,7 +60,7 @@ def gcn_norm_adj(sparse_adj: SparseMatrix, norm="both", add_self_loop=True, sym=
 
     fill_weight = 2.0 if improved else 1.0
 
-    if add_self_loop and norm != "both":
+    if add_self_loop:
         if sparse_adj.shape[0] != sparse_adj.shape[1]:
             raise Exception("cannot set add_self_loop=True for GCN when sparse_adj.shape[0] != sparse_adj.shape[1]")
         sparse_adj = sparse_adj.add_diag(fill_weight)

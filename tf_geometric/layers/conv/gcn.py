@@ -112,7 +112,8 @@ class GCN(tf.keras.Model):
     def call(self, inputs, cache=None, training=None, mask=None):
         """
 
-        :param inputs: List of graph info: [x, edge_index, edge_weight]
+        :param inputs: List of graph info: [x, sparse_adj], [x, edge_index], 
+            or [x, edge_index, edge_weight]
         :param cache: A dict for caching A' for GCN. Different graph should not share the same cache dict.
         :return: Updated node features (x), shape: [num_nodes, units]
         """
