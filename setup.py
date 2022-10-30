@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 setup(
     name="tf_geometric",
     python_requires='>3.5.0',
-    version="0.0.99",
+    version="0.1.0",
     author="Jun Hu",
     author_email="hujunxianligong@gmail.com",
     packages=find_packages(
@@ -22,7 +22,7 @@ setup(
         ]
     ),
     install_requires=[
-        "tf_sparse >= 0.0.14",
+        "tf_sparse >= 0.0.17",
         "numpy >= 1.17.4",
         "networkx >= 2.1",
         "scipy >= 1.1.0",

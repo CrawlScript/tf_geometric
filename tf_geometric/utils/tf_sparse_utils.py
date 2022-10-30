@@ -2,7 +2,7 @@
 
 import tensorflow as tf
 import tf_sparse as tfs
-
+import numpy as np
 
 def sparse_tensor_gather_sub(sparse_tensor, sub_index, axis=0):
     gather_index = sparse_tensor.indices[:, axis]
@@ -65,3 +65,25 @@ def sparse_gather_sub(x, sub_index, axis=0):
         return x.__class__.from_sparse_tensor(output_sparse_tensor)
     else:
         return output_sparse_tensor
+
+
+def compute_num_or_size_splits(num_h_features, num_splits):
+
+    if num_splits is None or num_splits == 1:
+        num_or_size_splits = None
+    elif num_h_features % num_splits == 0:
+        num_or_size_splits = num_splits
+    else:
+        split_size = np.ceil(num_h_features / num_splits).astype(np.int64)
+
+        num_pre_splits = np.floor(num_h_features / split_size).astype(np.int64)
+        last_split_size = num_h_features % split_size
+
+        num_or_size_splits = [split_size] * num_pre_splits + ([last_split_size] if last_split_size > 0 else [])
+
+        if len(num_or_size_splits) != num_splits:
+            raise Exception(
+                "cannot split H of shape [None, {}] into {} matrices, please provide a valid num_splits"
+                .format(num_h_features, num_splits))
+
+    return num_or_size_splits

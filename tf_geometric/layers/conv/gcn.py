@@ -4,6 +4,9 @@ import tf_sparse as tfs
 from tf_geometric.nn.conv.gcn import gcn, gcn_build_cache_for_graph, gcn_build_cache_by_adj
 import tensorflow as tf
 import warnings
+import numpy as np
+
+from tf_geometric.utils.tf_sparse_utils import compute_num_or_size_splits
 
 
 class GCN(tf.keras.Model):
@@ -14,6 +17,10 @@ class GCN(tf.keras.Model):
     def build(self, input_shapes):
         x_shape = input_shapes[0]
         num_features = x_shape[-1]
+
+        if self.num_splits is not None:
+            num_h_features = self.units if self.use_kernel else num_features
+            self.num_or_size_splits = compute_num_or_size_splits(num_h_features, self.num_splits)
 
         if self.use_kernel:
             self.kernel = self.add_weight("kernel", shape=[num_features, self.units],
@@ -28,6 +35,8 @@ class GCN(tf.keras.Model):
                  norm="both", add_self_loop=True, sym=True,
                  renorm=True, improved=False,
                  edge_drop_rate=0.0,
+                 num_splits=None,
+                 num_or_size_splits=None,
                  kernel_regularizer=None, bias_regularizer=None, *args, **kwargs):
         """
 
@@ -44,6 +53,8 @@ class GCN(tf.keras.Model):
         :param renorm: Whether use renormalization trick (https://arxiv.org/pdf/1609.02907.pdf).
         :param improved: Whether use improved GCN or not.
         :param edge_drop_rate: Dropout rate of the propagation weights.
+        :param num_or_size_splits: Split (XW) to compute A(XW) for large graphs (Not affecting the output).
+            See the num_or_size_splits param of the tf.split API.
         :param kernel_regularizer: Regularizer function applied to the `kernel` weights matrix.
         :param bias_regularizer: Regularizer function applied to the bias vector.
         """
@@ -67,6 +78,12 @@ class GCN(tf.keras.Model):
 
         self.kernel_regularizer = kernel_regularizer
         self.bias_regularizer = bias_regularizer
+
+        if num_splits is not None and num_or_size_splits is not None:
+            raise Exception("cannot provide both num_splits and num_or_size_splits for GCN")
+
+        self.num_splits = num_splits
+        self.num_or_size_splits = num_or_size_splits
 
     def build_cache_by_adj(self, sparse_adj, override=False, cache=None):
         """
@@ -134,4 +151,5 @@ class GCN(tf.keras.Model):
                    norm=self.norm, add_self_loop=self.add_self_loop, sym=self.sym,
                    renorm=self.renorm, improved=self.improved,
                    edge_drop_rate=self.edge_drop_rate,
+                   num_or_size_splits=self.num_or_size_splits,
                    training=training, cache=cache)

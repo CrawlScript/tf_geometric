@@ -29,7 +29,8 @@ def _remove_inf_and_nan(x):
     return x
 
 
-def gcn_norm_adj(sparse_adj: SparseMatrix, norm="both", add_self_loop=True, sym=True, renorm=True, improved=False, cache: dict = None):
+def gcn_norm_adj(sparse_adj: SparseMatrix, norm="both", add_self_loop=True, sym=True,
+                 renorm=True, improved=False, cache: dict = None):
     """
     Compute normed edge (updated edge_index and normalized edge_weight) for GCN normalization.
 
@@ -223,7 +224,9 @@ def gcn_mapper(repeated_x, neighbor_x, edge_weight=None):
 
 def gcn(x, sparse_adj: SparseMatrix, kernel, bias=None, activation=None,
         norm="both", add_self_loop=True, sym=True,
-        renorm=True, improved=False, edge_drop_rate=0.0, training=False, cache=None):
+        renorm=True, improved=False, edge_drop_rate=0.0,
+        num_or_size_splits=None,
+        training=False, cache=None):
     """
     Functional API for Graph Convolutional Networks.
 
@@ -235,6 +238,8 @@ def gcn(x, sparse_adj: SparseMatrix, kernel, bias=None, activation=None,
     :param renorm: Whether use renormalization trick (https://arxiv.org/pdf/1609.02907.pdf).
     :param improved: Whether use improved GCN or not.
     :param edge_drop_rate: Dropout rate of the propagation weights.
+    :param num_or_size_splits: Split (XW) to compute A(XW) for large graphs (Not affecting the output).
+        See the num_or_size_splits param of the tf.split API.
     :param cache: A dict for caching A' for GCN. Different graph should not share the same cache dict.
         To use @tf_utils.function with gcn, you should cache the noremd edge information before the first call of the gcn.
 
@@ -266,7 +271,15 @@ def gcn(x, sparse_adj: SparseMatrix, kernel, bias=None, activation=None,
         else:
             h = x @ kernel
 
-    h = normed_sparse_adj @ h
+    # if num_or_size_splits is None or 1:
+    #     directly compute A(XW), equivalent to:
+    #     h = normed_sparse_adj @ h
+    # else, split (XW) to compute A(XW) for large graphs:
+    #     this does not affect the output, which is also:
+    #     h = normed_sparse_adj @ h
+    h = normed_sparse_adj.matmul(h, num_or_size_splits=num_or_size_splits)
+
+    # h = normed_sparse_adj @ h
 
     if bias is not None:
         h += bias

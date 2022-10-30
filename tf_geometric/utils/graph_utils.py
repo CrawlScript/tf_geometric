@@ -143,7 +143,7 @@ def convert_edge_to_upper(edge_index, edge_props=None, merge_modes=None):
     upper_edge_index = tf.stack([row, col], axis=0)
     upper_edge_index, upper_edge_props = merge_duplicated_edge(upper_edge_index, edge_props, merge_modes)
 
-    if not edge_index_is_tensor:
+    if tf.executing_eagerly() and not edge_index_is_tensor:
         upper_edge_index = upper_edge_index.numpy()
 
     return upper_edge_index, upper_edge_props
@@ -197,14 +197,14 @@ def convert_edge_to_directed(edge_index, edge_props=None, merge_modes=None):
                 else:
                     pure_lower_edge_prop = tf.boolean_mask(upper_edge_prop, non_self_loop_mask)
                     updated_edge_prop = tf.concat([upper_edge_prop, pure_lower_edge_prop], axis=0)
-                    if not tf.is_tensor(edge_prop):
+                    if tf.executing_eagerly() and not tf.is_tensor(edge_prop):
                         updated_edge_prop = updated_edge_prop.numpy()
                 updated_edge_props.append(updated_edge_prop)
     else:
         updated_edge_index = edge_index
         updated_edge_props = edge_props
 
-    if not edge_index_is_tensor:
+    if tf.executing_eagerly() and not edge_index_is_tensor:
         updated_edge_index = updated_edge_index.numpy()
 
     return updated_edge_index, updated_edge_props
@@ -258,10 +258,10 @@ def remove_self_loop_edge(edge_index, edge_weight=None):
     if edge_weight is not None:
         edge_weight = tf.boolean_mask(edge_weight, mask, axis=0)
 
-    if not edge_index_is_tensor:
+    if tf.executing_eagerly() and not edge_index_is_tensor:
         edge_index = edge_index.numpy()
 
-    if edge_weight is not None and not edge_weight_is_tensor:
+    if tf.executing_eagerly() and edge_weight is not None and not edge_weight_is_tensor:
         edge_weight = edge_weight.numpy()
 
     return edge_index, edge_weight
