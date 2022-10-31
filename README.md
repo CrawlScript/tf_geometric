@@ -78,7 +78,7 @@ We recommend you to get started with some demo.
 + [Graph Convolutional Network (GCN)](demo/demo_gcn.py)
 + [Multi-head Graph Attention Network (GAT)](demo/demo_gat.py)
 + [Approximate Personalized Propagation of Neural Predictions (APPNP)](demo/demo_appnp.py)
-+ [Inductive Representation Learning on Large Graphs (GraphSAGE)](demo/demo_graph_sage.py)
++ [Inductive Representation Learning on Large Graphs (GraphSAGE)](demo/demo_graph_sage_func.py)
 + [Convolutional Neural Networks on Graphs with Fast Localized Spectral Filtering (ChebyNet)](demo/demo_chebynet.py)
 + [Simple Graph Convolution (SGC)](demo/demo_sgc.py)
 + [Topology Adaptive Graph Convolutional Network (TAGCN)](demo/demo_tagcn.py)

@@ -4,6 +4,7 @@ import tensorflow as tf
 import tf_sparse as tfs
 import numpy as np
 
+
 def sparse_tensor_gather_sub(sparse_tensor, sub_index, axis=0):
     gather_index = sparse_tensor.indices[:, axis]
     if axis in [0, -2]:
