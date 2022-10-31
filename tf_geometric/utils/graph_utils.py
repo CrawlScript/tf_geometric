@@ -8,6 +8,8 @@ from tf_geometric.utils.union_utils import convert_union_to_numpy
 from scipy.sparse.linalg import eigs, eigsh
 import scipy.sparse
 
+from tf_sparse import SparseMatrix
+
 
 def convert_edge_index_to_edge_hash(edge_index, num_nodes=None):
     edge_index_is_tensor = tf.is_tensor(edge_index)
@@ -626,15 +628,23 @@ def to_scipy_sparse_matrix(edge_index, edge_weight=None, num_nodes=None):
 
 
 class RandomNeighborSampler(object):
-    def __init__(self, edge_index, edge_weight=None):
-        self.edge_index = convert_union_to_numpy(edge_index, np.int32)
-        if edge_weight is not None:
-            self.edge_weight = convert_union_to_numpy(edge_weight)
-        else:
-            self.edge_weight = np.ones([self.edge_index.shape[1]], dtype=np.float32)
+    def __init__(self, adj: SparseMatrix):
+        # self.edge_index = convert_union_to_numpy(edge_index, np.int32)
+        # if edge_weight is not None:
+        #     self.edge_weight = convert_union_to_numpy(edge_weight)
+        # else:
+        #     self.edge_weight = np.ones([self.edge_index.shape[1]], dtype=np.float32)
+
+        self.adj = adj
+        self.num_nodes = convert_union_to_numpy(adj.shape[0])
+
+        edge_index = convert_union_to_numpy(adj.index)
+        edge_weight = convert_union_to_numpy(adj.value)
+
+
         self.raw_neighbor_dict = {}
 
-        for (a, b), weight in zip(self.edge_index.T, self.edge_weight):
+        for (a, b), weight in zip(edge_index.T, edge_weight):
 
             if a not in self.raw_neighbor_dict:
                 neighbors = [[],  []]
@@ -674,7 +684,7 @@ class RandomNeighborSampler(object):
             central_node_index = self.source_index
             virtual_central_node_index = central_node_index
         else:
-            source_central_mapping = -np.ones_like(self.source_index)
+            source_central_mapping = -np.ones([self.num_nodes])
             virtual_central_node_index = np.arange(0, len(central_node_index))
             source_central_mapping[central_node_index] = virtual_central_node_index
 

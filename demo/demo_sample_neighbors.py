@@ -6,19 +6,20 @@ from tf_geometric.datasets import CoraDataset
 import time
 import numpy as np
 import tf_geometric as tfg
+import tf_sparse as tfs
 
 edge_index = [
     [0, 0, 1, 1, 1, 2, 2, 3, 4, 5, 5, 5, 5],
     [1, 2, 3, 4, 5, 0, 4, 1, 2, 0, 2, 3, 4]
 ]
 
-neighbor_sampler = RandomNeighborSampler(edge_index)
+neighbor_sampler = RandomNeighborSampler(tfs.SparseMatrix(edge_index, shape=[6, 6]))
 sampled_edge_index, sampled_edge_weight  = neighbor_sampler.sample(k=5, central_node_index=None, padding=False)
 print(sampled_edge_index, sampled_edge_weight)
 
 
 graph, (train_index, valid_index, test_index) = CoraDataset().load_data()
-neighbor_sampler = RandomNeighborSampler(graph.edge_index)
+neighbor_sampler = RandomNeighborSampler(graph.adj())
 
 for _ in range(100):
     start = time.time()
