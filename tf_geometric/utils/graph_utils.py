@@ -635,7 +635,6 @@ class RandomNeighborSampler(object):
         # else:
         #     self.edge_weight = np.ones([self.edge_index.shape[1]], dtype=np.float32)
 
-        self.adj = adj
         self.num_row_nodes = convert_union_to_numpy(adj.shape[0])
         self.num_col_nodes = convert_union_to_numpy(adj.shape[1])
 
@@ -643,22 +642,22 @@ class RandomNeighborSampler(object):
         edge_weight = convert_union_to_numpy(adj.value)
 
 
-        self.raw_neighbor_dict = {}
+        raw_neighbor_dict = {}
 
         for (a, b), weight in zip(edge_index.T, edge_weight):
 
-            if a not in self.raw_neighbor_dict:
+            if a not in raw_neighbor_dict:
                 neighbors = [[],  []]
-                self.raw_neighbor_dict[a] = neighbors
+                raw_neighbor_dict[a] = neighbors
             else:
-                neighbors = self.raw_neighbor_dict[a]
+                neighbors = raw_neighbor_dict[a]
             neighbors[0].append(b)
             neighbors[1].append(weight)
             # neighbors.append((b, weight))
 
         self.neighbor_dict = {
             source: [np.array(neighbors[0]), np.array(neighbors[1])]
-            for source, neighbors in self.raw_neighbor_dict.items()
+            for source, neighbors in raw_neighbor_dict.items()
         }
 
         self.num_sources = len(self.neighbor_dict)
