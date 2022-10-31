@@ -636,7 +636,8 @@ class RandomNeighborSampler(object):
         #     self.edge_weight = np.ones([self.edge_index.shape[1]], dtype=np.float32)
 
         self.adj = adj
-        self.num_nodes = convert_union_to_numpy(adj.shape[0])
+        self.num_row_nodes = convert_union_to_numpy(adj.shape[0])
+        self.num_col_nodes = convert_union_to_numpy(adj.shape[1])
 
         edge_index = convert_union_to_numpy(adj.index)
         edge_weight = convert_union_to_numpy(adj.value)
@@ -664,7 +665,8 @@ class RandomNeighborSampler(object):
         self.source_index = sorted(self.neighbor_dict.keys())
         self.num_neighbors_dict = {node_index: len(neighbors[0]) for node_index, neighbors in self.neighbor_dict.items()}
 
-    def sample(self, k=None, ratio=None, central_node_index=None, padding=False):
+
+    def sample(self, k=None, ratio=None, sampled_node_index=None, padding=False):
         # if k is None and ratio is None:
         #     raise Exception("you should provide either k or ratio")
         # elif k is not None and ratio is not None:
@@ -678,68 +680,90 @@ class RandomNeighborSampler(object):
         else:
             sample_all = False
 
-        central_node_index_is_none = central_node_index is None
 
-        if central_node_index_is_none:
-            central_node_index = self.source_index
-            virtual_central_node_index = central_node_index
+        if sampled_node_index is None:
+            use_virtual_node_index = False
+
+            sampled_row_index = self.source_index
+            row_virtual_index = sampled_row_index
+
         else:
-            source_central_mapping = -np.ones([self.num_nodes])
-            virtual_central_node_index = np.arange(0, len(central_node_index))
-            source_central_mapping[central_node_index] = virtual_central_node_index
+            use_virtual_node_index = True
+            if isinstance(sampled_node_index, tuple):
+                sampled_row_index, sampled_col_index = sampled_node_index
+            else:
+                sampled_row_index = sampled_node_index
+                sampled_col_index = sampled_node_index
+
+            row_virtual_mapping = -np.ones([self.num_row_nodes])
+            row_virtual_index = np.arange(0, len(sampled_row_index))
+            row_virtual_mapping[sampled_row_index] = row_virtual_index
+
+            if isinstance(sampled_node_index, tuple):
+                col_virtual_mapping = -np.ones([self.num_col_nodes])
+                col_virtual_index = np.arange(0, len(sampled_col_index))
+                col_virtual_mapping[sampled_col_index] = col_virtual_index
+            else:
+                col_virtual_index = row_virtual_index
+                col_virtual_mapping = row_virtual_mapping
+
 
         # num_central_nodes = len(central_node_index)
 
-        sampled_edge_index_list = []
-        sampled_edge_weight_list = []
+        sampled_virtual_edge_index_list = []
+        sampled_virtual_edge_weight_list = []
 
-        for virtual_i, central in zip(virtual_central_node_index, central_node_index):
-            if central not in self.neighbor_dict:
+        for row_virtual_i, row_i in zip(row_virtual_index, sampled_row_index):
+            if row_i not in self.neighbor_dict:
                 continue
 
-            neighbor_index, neighbor_weight = self.neighbor_dict[central]
+            neighbor_index, neighbor_weight = self.neighbor_dict[row_i]
 
-            if not central_node_index_is_none:
-                neighbor_index = source_central_mapping[neighbor_index]
-                mask = neighbor_index >= 0
-                neighbor_index = neighbor_index[mask]
+            if sampled_node_index is not None:
+                virtual_neighbor_index = col_virtual_mapping[neighbor_index]
+                mask = virtual_neighbor_index >= 0
+                virtual_neighbor_index = virtual_neighbor_index[mask]
 
-                if len(neighbor_index) == 0:
+                if len(virtual_neighbor_index) == 0:
                     continue
 
-                neighbor_weight = neighbor_weight[mask]
+                virtual_neighbor_weight = neighbor_weight[mask]
+            else:
+                virtual_neighbor_index = neighbor_index
+                virtual_neighbor_weight = neighbor_weight
 
 
             if sample_all or (ratio is None and not padding and k >= len(neighbor_index)):
-                sampled_neighbor_index, sampled_neighbor_weight = neighbor_index, neighbor_weight
+                sampled_virtual_neighbor_index = virtual_neighbor_index
+                sampled_virtual_neighbor_weight = virtual_neighbor_weight
 
             else:
                 if ratio is None:
                     num_sampled_neighbors = k
-                    replace = padding and k >= len(neighbor_index)
+                    replace = padding and k >= len(virtual_neighbor_index)
                 else:
-                    num_sampled_neighbors = np.ceil(len(neighbor_index) * ratio).astype(np.int32)
+                    num_sampled_neighbors = np.ceil(len(virtual_neighbor_index) * ratio).astype(np.int32)
                     replace = False
 
-                range_index = np.arange(0, len(neighbor_index))
+                range_index = np.arange(0, len(virtual_neighbor_index))
                 sampled_index = np.random.choice(range_index, num_sampled_neighbors, replace=replace)
 
                 # print(neighbor_index)
 
-                sampled_neighbor_index = neighbor_index[sampled_index]
-                sampled_neighbor_weight = neighbor_weight[sampled_index]
+                sampled_virtual_neighbor_index = virtual_neighbor_index[sampled_index]
+                sampled_virtual_neighbor_weight = virtual_neighbor_weight[sampled_index]
 
-            sampled_edge_index = np.stack([np.full(sampled_neighbor_index.shape, fill_value=virtual_i), sampled_neighbor_index], axis=0)
+            sampled_virtual_edge_index = np.stack([np.full(sampled_virtual_neighbor_index.shape, fill_value=row_virtual_i), sampled_virtual_neighbor_index], axis=0)
 
-            sampled_edge_index_list.append(sampled_edge_index)
-            sampled_edge_weight_list.append(sampled_neighbor_weight)
+            sampled_virtual_edge_index_list.append(sampled_virtual_edge_index)
+            sampled_virtual_edge_weight_list.append(sampled_virtual_neighbor_weight)
 
-        if len(sampled_edge_index_list) > 0:
-            sampled_edge_index = np.concatenate(sampled_edge_index_list, axis=1)
-            sampled_edge_weight = np.concatenate(sampled_edge_weight_list, axis=0)
+        if len(sampled_virtual_edge_index_list) > 0:
+            sampled_virtual_edge_index = np.concatenate(sampled_virtual_edge_index_list, axis=1)
+            sampled_virtual_edge_weight = np.concatenate(sampled_virtual_edge_weight_list, axis=0)
         else:
-            sampled_edge_index = None
-            sampled_edge_weight = None
+            sampled_virtual_edge_index = None
+            sampled_virtual_edge_weight = None
 
                 # sampled_neighbor_index = np.random.choice(len(neighbors), num_sampled_neighbors, replace=replace)
                 # sampled_neighbors = [neighbors[i] for i in sampled_neighbor_index]
@@ -751,7 +775,7 @@ class RandomNeighborSampler(object):
         # sampled_edge_index = np.array(sampled_edge_index).T
         # sampled_edge_weight = np.array(sampled_edge_weight)
 
-        return sampled_edge_index, sampled_edge_weight
+        return sampled_virtual_edge_index, sampled_virtual_edge_weight
 
         # sampled_node_index = np.unique(np.reshape(sampled_edge_index, [-1]))
         # central_node_index_set = {i for i in central_node_index}
