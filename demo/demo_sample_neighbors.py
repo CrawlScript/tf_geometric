@@ -14,10 +14,11 @@ edge_index = [
 ]
 
 neighbor_sampler = RandomNeighborSampler(edge_index)
-sampled_virtual_edge_index, sampled_virtual_edge_weight = neighbor_sampler.sample(k=5, sampled_node_index=([2, 4], [2, 6, 7, 8, 9, 10]), padding=False)
+sampled_virtual_edge_index, sampled_virtual_edge_weight = neighbor_sampler.sample(k=5, sampled_node_index=([4, 2], [2, 6, 7, 8, 9, 10]), padding=False)
 print(sampled_virtual_edge_index)
 print(sampled_virtual_edge_weight)
 
+asdfasdf
 
 graph, (train_index, valid_index, test_index) = CoraDataset().load_data()
 neighbor_sampler = RandomNeighborSampler(graph.edge_index)

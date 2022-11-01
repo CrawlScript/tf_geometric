@@ -126,12 +126,13 @@ class GCN(tf.keras.Model):
         warnings.warn("'GCN.cache_normed_edge(graph, override)' is deprecated, use 'GCN.build_cache_for_graph(graph, override)' instead", DeprecationWarning)
         return self.build_cache_for_graph(graph, override=override)
 
-    def call(self, inputs, cache=None, training=None, mask=None):
+    def call(self, inputs, cache=None, split=True, training=None, mask=None):
         """
 
         :param inputs: List of graph info: [x, sparse_adj], [x, edge_index], 
             or [x, edge_index, edge_weight]
         :param cache: A dict for caching A' for GCN. Different graph should not share the same cache dict.
+        :param split: bool, whether split (XW) to compute A(XW) if self.num_splits is not None
         :return: Updated node features (x), shape: [num_nodes, units]
         """
 
@@ -151,5 +152,5 @@ class GCN(tf.keras.Model):
                    norm=self.norm, add_self_loop=self.add_self_loop, sym=self.sym,
                    renorm=self.renorm, improved=self.improved,
                    edge_drop_rate=self.edge_drop_rate,
-                   num_or_size_splits=self.num_or_size_splits,
+                   num_or_size_splits=self.num_or_size_splits if split else None,
                    training=training, cache=cache)

@@ -696,12 +696,12 @@ class RandomNeighborSampler(object):
                 sampled_row_index = sampled_node_index
                 sampled_col_index = sampled_node_index
 
-            row_virtual_mapping = -np.ones([self.num_row_nodes])
+            row_virtual_mapping = -np.ones([self.num_row_nodes], dtype=np.int64)
             row_virtual_index = np.arange(0, len(sampled_row_index))
             row_virtual_mapping[sampled_row_index] = row_virtual_index
 
             if isinstance(sampled_node_index, tuple):
-                col_virtual_mapping = -np.ones([self.num_col_nodes])
+                col_virtual_mapping = -np.ones([self.num_col_nodes], dtype=np.int64)
                 col_virtual_index = np.arange(0, len(sampled_col_index))
                 col_virtual_mapping[sampled_col_index] = col_virtual_index
             else:
