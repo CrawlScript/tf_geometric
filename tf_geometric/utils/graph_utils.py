@@ -685,8 +685,8 @@ class RandomNeighborSampler(object):
             sampled_row_index = self.source_index
             row_virtual_index = sampled_row_index
 
-            num_sampled_rows = self.num_row_nodes
-            num_sampled_cols = self.num_col_nodes
+            # num_sampled_rows = self.num_row_nodes
+            # num_sampled_cols = self.num_col_nodes
 
         else:
             # use_virtual_node_index = True
@@ -708,8 +708,8 @@ class RandomNeighborSampler(object):
                 col_virtual_index = row_virtual_index
                 col_virtual_mapping = row_virtual_mapping
 
-            num_sampled_rows = len(sampled_row_index)
-            num_sampled_cols = len(sampled_col_index)
+            # num_sampled_rows = len(sampled_row_index)
+            # num_sampled_cols = len(sampled_col_index)
 
 
         # num_central_nodes = len(central_node_index)
@@ -737,7 +737,7 @@ class RandomNeighborSampler(object):
                 virtual_neighbor_weight = neighbor_weight
 
 
-            if sample_all or (ratio is None and not padding and k >= len(neighbor_index)):
+            if sample_all or (ratio is None and not padding and k >= len(virtual_neighbor_index)):
                 sampled_virtual_neighbor_index = virtual_neighbor_index
                 sampled_virtual_neighbor_weight = virtual_neighbor_weight
 
