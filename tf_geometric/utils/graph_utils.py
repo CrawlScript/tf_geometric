@@ -628,18 +628,17 @@ def to_scipy_sparse_matrix(edge_index, edge_weight=None, num_nodes=None):
 
 
 class RandomNeighborSampler(object):
-    def __init__(self, adj: SparseMatrix):
-        # self.edge_index = convert_union_to_numpy(edge_index, np.int32)
-        # if edge_weight is not None:
-        #     self.edge_weight = convert_union_to_numpy(edge_weight)
-        # else:
-        #     self.edge_weight = np.ones([self.edge_index.shape[1]], dtype=np.float32)
+    def __init__(self, edge_index, edge_weight=None):
 
-        self.num_row_nodes = convert_union_to_numpy(adj.shape[0])
-        self.num_col_nodes = convert_union_to_numpy(adj.shape[1])
+        edge_index = convert_union_to_numpy(edge_index, np.int32)
+        if edge_weight is not None:
+            edge_weight = convert_union_to_numpy(edge_weight)
+        else:
+            edge_weight = np.ones([edge_index.shape[1]], dtype=np.float32)
 
-        edge_index = convert_union_to_numpy(adj.index)
-        edge_weight = convert_union_to_numpy(adj.value)
+
+        self.num_row_nodes = convert_union_to_numpy(edge_index[0].max() + 1)
+        self.num_col_nodes = convert_union_to_numpy(edge_index[1].max() + 1)
 
 
         raw_neighbor_dict = {}
@@ -681,13 +680,16 @@ class RandomNeighborSampler(object):
 
 
         if sampled_node_index is None:
-            use_virtual_node_index = False
+            # use_virtual_node_index = False
 
             sampled_row_index = self.source_index
             row_virtual_index = sampled_row_index
 
+            num_sampled_rows = self.num_row_nodes
+            num_sampled_cols = self.num_col_nodes
+
         else:
-            use_virtual_node_index = True
+            # use_virtual_node_index = True
             if isinstance(sampled_node_index, tuple):
                 sampled_row_index, sampled_col_index = sampled_node_index
             else:
@@ -705,6 +707,9 @@ class RandomNeighborSampler(object):
             else:
                 col_virtual_index = row_virtual_index
                 col_virtual_mapping = row_virtual_mapping
+
+            num_sampled_rows = len(sampled_row_index)
+            num_sampled_cols = len(sampled_col_index)
 
 
         # num_central_nodes = len(central_node_index)
@@ -764,6 +769,8 @@ class RandomNeighborSampler(object):
             sampled_virtual_edge_index = None
             sampled_virtual_edge_weight = None
 
+        return sampled_virtual_edge_index, sampled_virtual_edge_weight
+
                 # sampled_neighbor_index = np.random.choice(len(neighbors), num_sampled_neighbors, replace=replace)
                 # sampled_neighbors = [neighbors[i] for i in sampled_neighbor_index]
 
@@ -774,7 +781,12 @@ class RandomNeighborSampler(object):
         # sampled_edge_index = np.array(sampled_edge_index).T
         # sampled_edge_weight = np.array(sampled_edge_weight)
 
-        return sampled_virtual_edge_index, sampled_virtual_edge_weight
+        # sampled_virtual_adj = SparseMatrix(
+        #     sampled_virtual_edge_index, 
+        #     value=sampled_virtual_edge_weight,
+        #     shape=[num_sampled_rows, num_sampled_cols])
+
+        # return sampled_virtual_adj
 
         # sampled_node_index = np.unique(np.reshape(sampled_edge_index, [-1]))
         # central_node_index_set = {i for i in central_node_index}

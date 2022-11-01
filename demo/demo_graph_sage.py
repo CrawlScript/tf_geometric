@@ -14,7 +14,7 @@ train_graphs, valid_graphs, test_graphs = PPIDataset().load_data()
 
 # traverse all graphs
 for graph in train_graphs + valid_graphs + test_graphs:
-    neighbor_sampler = RandomNeighborSampler(graph.adj())
+    neighbor_sampler = RandomNeighborSampler(graph.edge_index)
     graph.cache["sampler"] = neighbor_sampler
 
 num_classes = train_graphs[0].y.shape[1]

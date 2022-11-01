@@ -1,6 +1,5 @@
 # coding=utf-8
 import os
-
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 import tf_geometric as tfg
 from tf_geometric.datasets.ppi import PPIDataset
@@ -59,11 +58,11 @@ def sample_edge_index_list(graph):
 
 
 @tf.function(
-    input_signature=[
-        tf.TensorSpec(shape=[None, num_features], dtype=tf.float32),
-        [tf.TensorSpec(shape=[2, None], dtype=tf.int32) for _ in graph_sages],
+    input_signature=(
+        train_graphs[0].tensor_spec_x,
+        tuple([tfg.Graph.tensor_spec_edge_index for _ in graph_sages]),
         tf.TensorSpec(shape=[], dtype=tf.bool)
-    ]
+    )
 )
 def forward(x, sampled_edge_index_list, training=False):
     h = x
@@ -76,7 +75,7 @@ def forward(x, sampled_edge_index_list, training=False):
 def compute_loss(logits, y, vars):
     losses = tf.nn.sigmoid_cross_entropy_with_logits(
         logits=logits,
-        labels=y
+        labels=tf.cast(y, tf.float32)
     )
 
     kernel_vars = [var for var in vars if "kernel" in var.name]
@@ -95,12 +94,13 @@ def calc_f1(y_true, y_pred):
 optimizer = tf.keras.optimizers.Adam(learning_rate=1e-2)
 
 
+
 @tf.function(
-    input_signature=[
-        tf.TensorSpec(shape=[None, num_features], dtype=tf.float32),
-        [tf.TensorSpec(shape=[2, None], dtype=tf.int32) for _ in graph_sages],
-        tf.TensorSpec(shape=[None, num_classes], dtype=tf.float32)
-    ]
+    input_signature=(
+        train_graphs[0].tensor_spec_x,
+        tuple([tfg.Graph.tensor_spec_edge_index for _ in graph_sages]),
+        train_graphs[0].tensor_spec_y
+    )
 )
 def train_step(x, sampled_edge_index_list, y):
     with tf.GradientTape() as tape:
@@ -137,6 +137,7 @@ def create_generator():
         for graph in train_graphs:
 
             sampled_edge_index_list = sample_edge_index_list(graph)
+
             x = tf.convert_to_tensor(graph.x)
             sampled_edge_index_list = tuple(
                 [tf.convert_to_tensor(edge_index) for edge_index in sampled_edge_index_list])
@@ -148,9 +149,9 @@ def create_generator():
 dataset = tf.data.Dataset.from_generator(
     create_generator,
     output_signature=(
-        tf.TensorSpec(shape=[None, num_features], dtype=tf.float32),
-        tuple([tf.TensorSpec(shape=[2, None], dtype=tf.int32) for _ in graph_sages]),
-        tf.TensorSpec(shape=[None, num_classes], dtype=tf.float32)
+        train_graphs[0].tensor_spec_x,
+        tuple([tfg.Graph.tensor_spec_edge_index for _ in graph_sages]),
+        train_graphs[0].tensor_spec_y
     )
 ).prefetch(20)
 

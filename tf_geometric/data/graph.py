@@ -16,6 +16,10 @@ def _get_shape(data):
 
 
 class Graph(object):
+
+    tensor_spec_edge_index = tf.TensorSpec(shape=[2, None], dtype=tf.int32)
+    tensor_spec_edge_weight = tf.TensorSpec(shape=[None], dtype=tf.float32)
+
     """
     A Graph object wrappers all the data of a graph,
     including node features, edge info (index and weight) and graph label
@@ -84,6 +88,35 @@ class Graph(object):
         if isinstance(y, list):
             y = np.array(y)
         return y
+
+    
+    @property
+    def tensor_spec_x(self):
+        return tf.TensorSpec(
+            shape=[None, self.x.shape[-1]],
+            dtype=tf.float32
+        )
+
+    @property
+    def tensor_spec_y(self):
+        if tf.is_tensor(self.y):
+            dtype = self.y.dtype
+        elif self.y.dtype == np.float32:
+            dtype = tf.float32
+        elif self.y.dtype == np.float64:
+            dtype = tf.float64
+        elif self.y.dtype == np.int32:
+            dtype = tf.int32
+        elif self.y.dtype == np.int64:
+            dtype = tf.int64
+        else:
+            dtype = self.y.dtype
+
+        return tf.TensorSpec(
+            shape=[None] + list(self.y.shape)[1:],
+            dtype=dtype
+        )
+
 
     # @classmethod
     # def cast_y(cls, y):
@@ -174,21 +207,28 @@ class Graph(object):
         num_nodes = self.num_nodes
         return tfs.SparseMatrix(self.edge_index, self.edge_weight, shape=[num_nodes, num_nodes])
 
-    def _convert_data_to_tensor(self, keys):
+    def _inplace_convert_data_to_tensor(self, keys):
         for key in keys:
             data = getattr(self, key)
 
-            if data is not None and not tf.is_tensor(data):
+            if data is not None and not tf.is_tensor(data) and not isinstance(data, types.FunctionType):
                 setattr(self, key, tf.convert_to_tensor(data))
+
         return self
 
-    def convert_data_to_tensor(self):
+    def convert_data_to_tensor(self, inplace=False):
         """
         Convert all graph data into Tensors. All corresponding properties will be replaces by their Tensor versions.
 
         :return: The Graph object itself.
         """
-        return self._convert_data_to_tensor(["x", "edge_index", "edge_weight", "y"])
+        if inplace:
+            graph = self
+        else:
+            graph = Graph(self._x, self.edge_index, y=self.y, edge_weight=self.edge_weight)
+
+        graph._inplace_convert_data_to_tensor(["_x", "edge_index", "edge_weight", "y"])
+        return graph
 
     def to_directed(self, merge_mode="sum", inplace=False):
         """
@@ -517,14 +557,22 @@ class BatchGraph(Graph):
                 graph.y for graph in graphs
             ], axis=0)
 
-    def convert_data_to_tensor(self):
+    def convert_data_to_tensor(self, inplace=False):
         """
         Convert all graph data into Tensors. All corresponding properties will be replaces by their Tensor versions.
 
         :return: The Graph object itself.
         """
-        return self._convert_data_to_tensor(["x", "edge_index", "edge_weight", "y",
-                                             "node_graph_index", "edge_graph_index"])
+        if inplace:
+            graph = self
+        else:
+            graph = BatchGraph(
+                self._x, self.edge_index, 
+                self.node_graph_index, self.edge_graph_index,
+                y=self.y, edge_weight=self.edge_weight, graphs=self.graphs
+                )
+        return graph._inplace_convert_data_to_tensor(["_x", "edge_index", "edge_weight", "y",
+                                                    "node_graph_index", "edge_graph_index"])
 
     def to_directed(self, merge_mode="sum", inplace=False):
         """
