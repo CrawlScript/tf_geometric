@@ -801,6 +801,86 @@ class RandomNeighborSampler(object):
         #     return sampled_edge
 
 
+class UniformNeighborSampler(object):
+    def __init__(self, edge_index, edge_weight=None):
+
+
+        edge_index = tf.convert_to_tensor(edge_index, dtype=tf.int32)
+
+        num_edges = tf.shape(edge_index)[1]
+
+        if edge_weight is not None:
+            edge_weight = tf.convert_to_tensor(edge_weight, dtype=tf.float32)
+        else:
+            edge_weight = tf.ones([num_edges], dtype=tf.float32)
+
+        self.edge_index = edge_index
+        self.edge_weight = edge_weight
+        self.num_edges = num_edges
+
+        self.num_row_nodes = tf.reduce_max(edge_index[0])+ 1
+        self.num_col_nodes = tf.reduce_max(edge_index[1]) + 1
+
+    def _create_virtual_mapping(self, sampled_index, num_nodes):
+        virtual_mapping = -tf.ones([num_nodes], dtype=tf.int32)
+        virtual_index = tf.range(0, tf.shape(sampled_index)[0])
+        virtual_mapping = tf.tensor_scatter_nd_update(
+            virtual_mapping, 
+            tf.expand_dims(sampled_index, axis=-1), 
+            virtual_index
+        )
+        return virtual_mapping
+
+    def sample(self, prob, sampled_node_index=None):
+        # if k is None and ratio is None:
+        #     raise Exception("you should provide either k or ratio")
+        # elif k is not None and ratio is not None:
+        #     raise Exception("you should provide either k or ratio, not both of them")
+
+
+        if sampled_node_index is None:
+            random_score = tf.random.uniform([self.num_edges], 0.0, 1.0, dtype=tf.float32)
+            sample_mask = random_score <= prob
+            sampled_edge_index = tf.boolean_mask(self.edge_index, sample_mask, axis=1)
+            sampled_edge_weight = tf.boolean_mask(self.edge_weight, sample_mask)
+            return sampled_edge_index, sampled_edge_weight
+        else:
+            # use_virtual_node_index = True
+            if isinstance(sampled_node_index, tuple):
+                sampled_row_index, sampled_col_index = sampled_node_index
+            else:
+                sampled_row_index = sampled_node_index
+                sampled_col_index = sampled_node_index
+
+            row_virtual_mapping = self._create_virtual_mapping(sampled_row_index, self.num_row_nodes)
+
+            if isinstance(sampled_node_index, tuple):
+                col_virtual_mapping = self._create_virtual_mapping(sampled_col_index, self.num_col_nodes)
+            else:
+                col_virtual_mapping = row_virtual_mapping
+
+            
+            row, col = self.edge_index[0], self.edge_index[1]
+            virtual_row_ = tf.gather(row_virtual_mapping, row)
+            virtual_col_ = tf.gather(col_virtual_mapping, col)
+            virtual_mask = tf.math.logical_and(
+                virtual_row_>=0,
+                virtual_col_>=0
+            )
+            virtual_row = tf.boolean_mask(virtual_row_, virtual_mask)
+            virtual_col = tf.boolean_mask(virtual_col_, virtual_mask)
+            virtual_edge_index = tf.stack([virtual_row, virtual_col], axis=0)
+            virtual_edge_weight = tf.boolean_mask(self.edge_weight, virtual_mask)
+
+            num_virtual_edges = tf.shape(virtual_edge_index)[1]
+            random_score = tf.random.uniform([num_virtual_edges], 0.0, 1.0, dtype=tf.float32)
+            sample_mask = random_score <= prob
+            sampled_virtual_edge_index = tf.boolean_mask(virtual_edge_index, sample_mask, axis=1)
+            sampled_virtual_edge_weight = tf.boolean_mask(virtual_edge_weight, sample_mask)
+            return sampled_virtual_edge_index, sampled_virtual_edge_weight
+
+
+
 class LaplacianMaxEigenvalue(object):
     def __init__(self, edge_index, num_nodes, edge_weight, is_undirected=True):
         self.num_nodes = num_nodes
