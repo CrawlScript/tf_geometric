@@ -69,7 +69,7 @@ class Graph(object):
             edge_weight = np.array(edge_weight).astype(np.float32)
         elif isinstance(edge_weight, np.ndarray):
             edge_weight = edge_weight.astype(np.float32)
-        elif tf.is_tensor(edge_weight):
+        elif tf.is_tensor(edge_weight) and not isinstance(edge_weight, (tf.Variable, tfs.SparseMatrix, tf.SparseTensor)):
             edge_weight = tf.cast(edge_weight, tf.float32)
         return edge_weight
 
@@ -79,7 +79,7 @@ class Graph(object):
             x = np.array(x)
         if isinstance(x, np.ndarray) and x.dtype == np.float64:
             x = x.astype(np.float32)
-        elif tf.is_tensor(x) and x.dtype == tf.float64:
+        elif tf.is_tensor(x) and not isinstance(x, (tf.Variable, tfs.SparseMatrix, tf.SparseTensor)) and x.dtype == tf.float64:
             x = tf.cast(x, tf.float32)
         return x
 
