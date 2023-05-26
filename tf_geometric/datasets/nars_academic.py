@@ -5,7 +5,7 @@ from collections import defaultdict
 import numpy as np
 from scipy.io import loadmat
 
-from tf_geometric.data.graph import HeteroDictGraph
+from tf_geometric.data.graph import HeteroGraph
 from tf_geometric.data.dataset import DownloadableDataset
 
 
@@ -109,7 +109,7 @@ class _NARSAcademicDataset(DownloadableDataset):
 
         # hg.nodes["paper"].data["feat"] = features
 
-        hetero_graph = HeteroDictGraph(x_dict=x_dict, edge_index_dict=edge_index_dict, y_dict=y_dict)
+        hetero_graph = HeteroGraph(x_dict=x_dict, edge_index_dict=edge_index_dict, y_dict=y_dict)
 
         target_node_type = "paper"
 

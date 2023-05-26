@@ -22,9 +22,9 @@ def mean_graph_sage(x, edge_index, edge_weight,
     :param bias: Tensor, shape: [num_output_features], bias
     :param activation: Activation function to use.
     :param normalize: If set to :obj:`True`, output features
-                will be :math:`\ell_2`-normalized, *i.e.*,
-                :math:`\frac{\mathbf{x}^{\prime}_i}
-                {\| \mathbf{x}^{\prime}_i \|_2}`.
+                will be :math:`\\ell_2`-normalized, *i.e.*,
+                :math:`\\frac{\\mathbf{x}^{\\prime}_i}
+                {\\| \\mathbf{x}^{\\prime}_i \\|_2}`.
                 (default: :obj:`False`)
     :return: Updated node features (x), shape: [num_nodes, num_output_features]
     """
@@ -77,9 +77,9 @@ def sum_graph_sage(x, edge_index, edge_weight,
     :param bias: Tensor, shape: [num_output_features], bias
     :param activation: Activation function to use.
     :param normalize: If set to :obj:`True`, output features
-                will be :math:`\ell_2`-normalized, *i.e.*,
-                :math:`\frac{\mathbf{x}^{\prime}_i}
-                {\| \mathbf{x}^{\prime}_i \|_2}`.
+                will be :math:`\\ell_2`-normalized, *i.e.*,
+                :math:`\\frac{\\mathbf{x}^{\\prime}_i}
+                {\\| \\mathbf{x}^{\\prime}_i \\|_2}`.
                 (default: :obj:`False`)
     :return: Updated node features (x), shape: [num_nodes, num_output_features]
     """
@@ -126,9 +126,9 @@ def gcn_graph_sage(x, edge_index, edge_weight, kernel, bias=None, activation=Non
         :param bias: Tensor, shape: [num_output_features], bias
         :param activation: Activation function to use.
         :param normalize: If set to :obj:`True`, output features
-                will be :math:`\ell_2`-normalized, *i.e.*,
-                :math:`\frac{\mathbf{x}^{\prime}_i}
-                {\| \mathbf{x}^{\prime}_i \|_2}`.
+                will be :math:`\\ell_2`-normalized, *i.e.*,
+                :math:`\\frac{\\mathbf{x}^{\\prime}_i}
+                {\\| \\mathbf{x}^{\\prime}_i \\|_2}`.
                 (default: :obj:`False`)
         :param cache: A dict for caching A' for GCN. Different graph should not share the same cache dict.
         :return: Updated node features (x), shape: [num_nodes, num_output_features]
@@ -177,9 +177,9 @@ def mean_pool_graph_sage(x, edge_index, edge_weight,
     :param bias: Tensor, shape: [num_output_features], bias.
     :param activation: Activation function to use.
     :param normalize: If set to :obj:`True`, output features
-                will be :math:`\ell_2`-normalized, *i.e.*,
-                :math:`\frac{\mathbf{x}^{\prime}_i}
-                {\| \mathbf{x}^{\prime}_i \|_2}`.
+                will be :math:`\\ell_2`-normalized, *i.e.*,
+                :math:`\\frac{\\mathbf{x}^{\\prime}_i}
+                {\\| \\mathbf{x}^{\\prime}_i \\|_2}`.
                 (default: :obj:`False`)
     :return: Updated node features (x), shape: [num_nodes, num_output_features]
     """
@@ -241,9 +241,9 @@ def max_pool_graph_sage(x, edge_index, edge_weight,
             :param bias: Tensor, shape: [num_output_features], bias.
             :param activation: Activation function to use.
             :param normalize: If set to :obj:`True`, output features
-                        will be :math:`\ell_2`-normalized, *i.e.*,
-                        :math:`\frac{\mathbf{x}^{\prime}_i}
-                        {\| \mathbf{x}^{\prime}_i \|_2}`.
+                        will be :math:`\\ell_2`-normalized, *i.e.*,
+                        :math:`\\frac{\\mathbf{x}^{\\prime}_i}
+                        {\\| \\mathbf{x}^{\\prime}_i \\|_2}`.
                         (default: :obj:`False`)
             :return: Updated node features (x), shape: [num_nodes, num_output_features]
             """
@@ -301,9 +301,9 @@ def lstm_graph_sage(x, edge_index, lstm, self_kernel, neighbor_kernel,
     :param bias: Tensor, shape: [num_output_features], bias.
     :param activation: Activation function to use.
     :param normalize: If set to :obj:`True`, output features
-                will be :math:`\ell_2`-normalized, *i.e.*,
-                :math:`\frac{\mathbf{x}^{\prime}_i}
-                {\| \mathbf{x}^{\prime}_i \|_2}`.
+                will be :math:`\\ell_2`-normalized, *i.e.*,
+                :math:`\\frac{\\mathbf{x}^{\\prime}_i}
+                {\\| \\mathbf{x}^{\\prime}_i \\|_2}`.
                 (default: :obj:`False`)
     :return: Updated node features (x), shape: [num_nodes, num_output_features]
     """

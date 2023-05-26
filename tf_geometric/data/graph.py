@@ -1,5 +1,7 @@
 # coding=utf-8
+from itertools import chain
 import types
+from typing import List
 import warnings
 
 import tensorflow as tf
@@ -618,7 +620,7 @@ class BatchGraph(Graph):
         return self.to_directed(merge_mode, inplace=True)
 
 
-class HeteroDictGraph(object):
+class HeteroGraph(object):
 
     def __init__(self, x_dict=None, edge_index_dict=None, y_dict=None, edge_weight_dict=None):
         if x_dict is None:
@@ -633,35 +635,46 @@ class HeteroDictGraph(object):
         if edge_weight_dict is None:
             edge_weight_dict = {}
 
-        self.x_dict = {node_type: Graph.cast_x(x) for node_type, x in x_dict.items()}
-        self.edge_index_dict = {edge_type: Graph.cast_edge_index(edge_index)
-                                for edge_type, edge_index in edge_index_dict.items()}
+        self.x_dict = {ntype: Graph.cast_x(x) for ntype, x in x_dict.items()}
+        self.edge_index_dict = {etype: Graph.cast_edge_index(edge_index)
+                                for etype, edge_index in edge_index_dict.items()}
         self.y_dict = {y_type: Graph.cast_y(y) for y_type, y in y_dict.items()}
-        self.edge_weight_dict = {edge_type: Graph.cast_edge_weight(edge_weight)
-                                 for edge_type, edge_weight in edge_weight_dict}
+        self.edge_weight_dict = {etype: Graph.cast_edge_weight(edge_weight)
+                                 for etype, edge_weight in edge_weight_dict}
 
         self.cache = {}
 
-    def num_nodes(self, node_type=None):
-        if node_type is not None:
-            return tfs.shape(self.x_dict[node_type])[0]
-        else:
-            return {node_type: self.num_nodes(node_type=node_type) for node_type in self.x_dict}
+    
+    @property
+    def ntypes(self):
+        return sorted(list(self.x_dict.keys()))
 
-    def num_edges(self, edge_type=None):
-        if edge_type is not None:
-            return tf.shape(self.edge_index_dict[edge_type])[1]
+
+    @property
+    def etypes(self):
+        return sorted(list(self.edge_index_dict.keys()))
+
+
+    def num_nodes(self, ntype=None):
+        if ntype is not None:
+            return tfs.shape(self.x_dict[ntype])[0]
         else:
-            return {edge_type: self.num_edges(edge_type) for edge_type in self.edge_index_dict}
+            return {ntype: self.num_nodes(ntype=ntype) for ntype in self.x_dict}
+
+    def num_edges(self, etype=None):
+        if etype is not None:
+            return tf.shape(self.edge_index_dict[etype])[1]
+        else:
+            return {etype: self.num_edges(etype) for etype in self.edge_index_dict}
 
     def get_shape_desc(self):
 
         x_shape_desc_dict = {
-            node_type: _get_shape(x) for node_type, x in self.x_dict.items()
+            ntype: _get_shape(x) for ntype, x in self.x_dict.items()
         }
 
         edge_index_shape_desc_dict = {
-            edge_type: _get_shape(edge_index) for edge_type, edge_index in self.edge_index_dict.items()
+            etype: _get_shape(edge_index) for etype, edge_index in self.edge_index_dict.items()
         }
 
         y_shape_desc_dict = {
@@ -678,28 +691,363 @@ class HeteroDictGraph(object):
         new_edge_index_dict = {**self.edge_index_dict}
         new_edge_weight_dict = {**self.edge_weight_dict}
 
-        for edge_type, edge_index in self.edge_index_dict.items():
-            edge_weight = self.edge_weight_dict[edge_type] if edge_type in self.edge_weight_dict else None
-            reversed_edge_type = (edge_type[2], "{}{}".format(reverse_prefix, edge_type[1]), edge_type[0])
+        for etype, edge_index in self.edge_index_dict.items():
+            edge_weight = self.edge_weight_dict[etype] if etype in self.edge_weight_dict else None
+            reversed_etype = (etype[2], "{}{}".format(reverse_prefix, etype[1]), etype[0])
 
             if tf.is_tensor(edge_index):
                 reversed_edge_index = tf.stack([edge_index[1], edge_index[0]], axis=0)
             else:
                 reversed_edge_index = np.stack([edge_index[1], edge_index[0]], axis=0)
 
-            new_edge_index_dict[reversed_edge_type] = reversed_edge_index
+            new_edge_index_dict[reversed_etype] = reversed_edge_index
             if edge_weight is not None:
-                new_edge_weight_dict[reversed_edge_type] = edge_weight
+                new_edge_weight_dict[reversed_etype] = edge_weight
 
         if inplace:
             self.edge_index_dict, self.edge_weight_dict = new_edge_index_dict, new_edge_weight_dict
             return self
         else:
-            return HeteroDictGraph(self.x_dict, new_edge_index_dict, y_dict=self.y_dict,
+            return HeteroGraph(self.x_dict, new_edge_index_dict, y_dict=self.y_dict,
                                    edge_weight_dict=new_edge_weight_dict)
 
+    
+    def _inplace_convert_data_to_tensor(self, keys):
+        for key in keys:
+            data = getattr(self, key)
+
+            if isinstance(data, dict):
+                data = {k: tf.convert_to_tensor(v) if (v is not None and not tf.is_tensor(v) and not isinstance(v, types.FunctionType)) else v 
+                        for k, v in data.items()}
+                setattr(self, key, data)
+            else:
+                if data is not None and not tf.is_tensor(data) and not isinstance(data, types.FunctionType):
+                    setattr(self, key, tf.convert_to_tensor(data))
+
+        return self
+
+    
     def __str__(self):
         return self.get_shape_desc()
 
     def __repr__(self):
         return self.__str__()
+
+
+
+
+
+
+class HeteroBatchGraph(HeteroGraph):
+
+    def __init__(self, x_dict=None, edge_index_dict=None, node_graph_index_dict=None, edge_graph_index_dict=None,
+                 y_dict=None, edge_weight_dict=None, graphs=None):
+
+        super().__init__(x_dict, edge_index_dict, y_dict=y_dict, edge_weight_dict=edge_weight_dict)
+        self.node_graph_index_dict = node_graph_index_dict
+        self.edge_graph_index_dict = edge_graph_index_dict
+        self.graphs = graphs
+
+    @property
+    def num_graphs(self):
+
+        is_tensor = tf.is_tensor(list(self.node_graph_index_dict.values())[0])
+
+        num_graphs_list = [
+            tf.reduce_max(node_graph_index) + 1
+            for node_graph_index in self.node_graph_index_dict.values()
+        ]
+
+        num_graphs = tf.reduce_max(tf.stack(num_graphs_list))
+
+        if tf.executing_eagerly() and not is_tensor:
+            return num_graphs.numpy()
+        else:
+            return num_graphs
+            
+            
+
+    # def reorder(self):
+    #     node_sort_index = tf.argsort(self.node_graph_index)
+    #     node_graph_index = tf.gather(self.node_graph_index, node_sort_index)
+    #     x = tf.gather(self.x, node_sort_index)
+    #     if self.y is None:
+    #         y = None
+    #     else:
+    #         y = tf.gather(self.y, node_sort_index)
+
+    #     edge_sort_index = tf.argsort(self.edge_graph_index)
+    #     edge_graph_index = tf.gather(self.edge_graph_index, edge_sort_index)
+    #     edge_index = tf.gather(self.edge_index, edge_sort_index, axis=1)
+
+    #     if self.edge_weight is None:
+    #         edge_weight = None
+    #     else:
+    #         edge_weight = tf.gather(self.edge_weight, edge_sort_index)
+
+    #     return BatchGraph(x, edge_index, node_graph_index, edge_graph_index, y=y, edge_weight=edge_weight)
+
+
+    # def to_graphs(self):
+    #     batch_graph = self.reorder()
+    #     # num_nodes_list = tf.math.segment_sum(tf.ones([self.num_nodes]), self.node_graph_index)
+    #     num_graphs = batch_graph.num_graphs
+    #     num_nodes_list = tf.math.unsorted_segment_sum(tf.ones([batch_graph.num_nodes]), batch_graph.node_graph_index, num_graphs)
+
+    #     num_nodes_before_graph = tf.concat([
+    #         tf.zeros([1]),
+    #         tf.math.cumsum(num_nodes_list)
+    #     ], axis=0).numpy().astype(np.int32).tolist()
+
+    #     # num_edges_list = tf.math.segment_sum(tf.ones([self.num_edges]), self.edge_graph_index)
+    #     num_edges_list = tf.math.unsorted_segment_sum(tf.ones([batch_graph.num_edges]), batch_graph.edge_graph_index, num_graphs)
+    #     num_edges_before_graph = tf.concat([
+    #         tf.zeros([1]),
+    #         tf.math.cumsum(num_edges_list)
+    #     ], axis=0).numpy().astype(np.int32).tolist()
+
+    #     graphs = []
+    #     for i in range(batch_graph.num_graphs):
+    #         if isinstance(batch_graph.x, tf.sparse.SparseTensor):
+    #             x = tf.sparse.slice(
+    #                 batch_graph.x,
+    #                 [num_nodes_before_graph[i], 0],
+    #                 [num_nodes_before_graph[i + 1] - num_nodes_before_graph[i], tf.shape(batch_graph.x)[-1]]
+    #             )
+    #         else:
+    #             x = batch_graph.x[num_nodes_before_graph[i]: num_nodes_before_graph[i + 1]]
+
+    #         if batch_graph.y is None:
+    #             y = None
+    #         else:
+    #             y = batch_graph.y[num_nodes_before_graph[i]: num_nodes_before_graph[i + 1]]
+
+    #         edge_index = batch_graph.edge_index[:, num_edges_before_graph[i]:num_edges_before_graph[i + 1]] - \
+    #                      num_nodes_before_graph[i]
+
+    #         if batch_graph.edge_weight is None:
+    #             edge_weight = None
+    #         else:
+    #             edge_weight = batch_graph.edge_weight[num_edges_before_graph[i]:num_edges_before_graph[i + 1]]
+
+    #         graph = Graph(x=x, edge_index=edge_index, y=y, edge_weight=edge_weight)
+    #         graphs.append(graph)
+    #     return graphs
+
+    @classmethod
+    def from_graphs(cls, graphs):
+
+        node_graph_index_dict = HeteroBatchGraph.build_node_graph_index_dict(graphs)
+        edge_graph_index_dict = HeteroBatchGraph.build_edge_graph_index_dict(graphs)
+
+        x_dict = HeteroBatchGraph.build_x_dict(graphs)
+        edge_index_dict = HeteroBatchGraph.build_edge_index_dict(graphs)
+        y_dict = HeteroBatchGraph.build_y_dict(graphs)
+        edge_weight_dict = HeteroBatchGraph.build_edge_weight_dict(graphs)
+
+        return HeteroBatchGraph(x_dict=x_dict, edge_index_dict=edge_index_dict,
+                          node_graph_index_dict=node_graph_index_dict, edge_graph_index_dict=edge_graph_index_dict,
+                          graphs=graphs, y_dict=y_dict, edge_weight_dict=edge_weight_dict)
+
+    @classmethod
+    def build_node_graph_index_dict(cls, graphs: List[HeteroGraph]):
+        is_tensor = tf.is_tensor(list(graphs[0].edge_index_dict.values())[0])
+
+        ntypes = list(set(chain(*[graph.ntypes for graph in graphs])))
+        node_graph_index_list_dict = {
+            ntype: [] for ntype in ntypes
+        }
+
+        for i, graph in enumerate(graphs):
+            for ntype in graph.ntypes:
+                node_graph_index_list_dict[ntype].append(tf.fill([graph.num_nodes(ntype=ntype)], i))
+
+
+        node_graph_index_dict = {
+            ntype: tf.cast(tf.concat(node_graph_index_list, axis=0), tf.int32)
+            for ntype, node_graph_index_list in node_graph_index_list_dict.items()
+        }
+
+        if tf.executing_eagerly() and not is_tensor:
+            node_graph_index_dict = {
+                ntype: node_graph_index.numpy()
+                for ntype, node_graph_index in node_graph_index_dict.items()
+            }
+
+        return node_graph_index_dict
+    
+
+    @classmethod
+    def build_edge_graph_index_dict(cls, graphs):
+
+        is_tensor = tf.is_tensor(list(graphs[0].edge_index_dict.values())[0])
+        etypes = list(set(chain(*[graph.etypes for graph in graphs])))
+
+        edge_graph_index_list_dict = {etype: [] for etype in etypes}
+
+        for i, graph in enumerate(graphs):
+            for etype in graph.etypes:
+                edge_graph_index_list_dict[etype].append(tf.fill([graph.num_edges(etype=etype)], i))
+
+
+        edge_graph_index_dict = {
+            etype: tf.cast(tf.concat(edge_graph_index_list, axis=0), tf.int32)
+            for etype, edge_graph_index_list in edge_graph_index_list_dict.items()
+        }
+
+        if tf.executing_eagerly() and not is_tensor:
+            edge_graph_index_dict = {
+                etype: edge_graph_index.numpy()
+                for etype, edge_graph_index in edge_graph_index_dict.items()
+            }
+
+        return edge_graph_index_dict
+
+
+    @classmethod
+    def build_x_dict(cls, graphs: List[HeteroGraph]):
+        ntypes = list(set(chain(*[graph.ntypes for graph in graphs])))
+
+        x_dict = {}
+
+        for ntype in ntypes:
+            x_list = [
+                graph.x_dict[ntype] if ntype in graph.x_dict else None
+                for graph in graphs 
+            ]
+
+            first_x = x_list[0]
+            if tf.is_tensor(first_x):
+                if isinstance(first_x, tfs.SparseMatrix):
+                    x = tfs.concat(x_list, axis=0)
+                elif isinstance(first_x, tf.sparse.SparseTensor):
+                    x = tf.sparse.concat(0, x_list)
+                else:
+                    x = tf.concat(x_list, axis=0)
+            else:
+                x = np.concatenate(x_list, axis=0)
+
+            x_dict[ntype] = x
+
+        return x_dict
+
+
+
+
+    @classmethod
+    def build_edge_index_dict(cls, graphs):
+        ntypes = list(set(chain(*[graph.ntypes for graph in graphs])))
+        num_history_nodes_dict = {ntype: 0 for ntype in ntypes}
+
+        etypes = list(set(chain(*[graph.etypes for graph in graphs])))
+        edge_index_list_dict = {etype: [] for etype in etypes}
+
+        is_tensor = tf.is_tensor(list(graphs[0].edge_index_dict.values())[0])
+        
+        for _, graph in enumerate(graphs):
+            for etype, edge_index in graph.edge_index_dict.items():
+                row, col = edge_index[0], edge_index[1]
+            
+                new_edge_index = tf.stack([
+                    row + num_history_nodes_dict[etype[0]],
+                    col + num_history_nodes_dict[etype[-1]]
+                ], axis=0)
+
+                edge_index_list_dict[etype].append(new_edge_index)
+
+            for ntype in graph.ntypes:
+                num_history_nodes_dict[ntype] += graph.num_nodes(ntype=ntype)
+
+        edge_index_dict = {
+            etype: tf.concat(edge_index_list, axis=1)
+            for etype, edge_index_list in edge_index_list_dict.items()
+        }
+
+        if tf.executing_eagerly() and not is_tensor:
+            edge_index_dict = {
+                etype: edge_index.numpy()
+                for etype, edge_index in edge_index_dict.items()
+            }
+
+        return edge_index_dict
+
+
+    @classmethod
+    def build_edge_weight_dict(cls, graphs: List[HeteroGraph]):
+        if graphs[0].edge_weight_dict is None:
+            return None
+        
+        if len(graphs[0].edge_weight_dict) == 0:
+            return {}
+        
+        is_tensor = tf.is_tensor(list(graphs[0].edge_weight_dict.values())[0])
+
+        etypes = list(set(chain(*[graph.etypes for graph in graphs])))
+        edge_weight_list_dict = {etype: [] for etype in etypes}
+
+        for graph in graphs:
+            for etype, edge_weight in graph.edge_weight_dict.items():
+                edge_weight_list_dict[etype].append(edge_weight)
+
+        edge_weight_dict = {
+            etype: tf.concat(edge_weight_list, axis=0)
+            for etype, edge_weight_list in edge_weight_list_dict.items()
+        }
+
+        if tf.executing_eagerly() and not is_tensor:
+            edge_weight_dict = {
+                etype: edge_weight.numpy()
+                for etype, edge_weight in edge_weight_dict.items()
+            }
+
+        return edge_weight_dict
+
+
+    @classmethod
+    def build_y_dict(cls, graphs):
+
+        if graphs[0].y_dict is None:
+            return None
+        
+        if len(graphs[0].y_dict) == 0:
+            return {}
+        
+        y_types = list(set(chain(*[graph.y_dict.keys() for graph in graphs])))
+
+        is_tensor = tf.is_tensor(list(graphs[0].y_dict.values())[0])
+
+        y_list_dict = {y_type: [] for y_type in y_types}
+        
+        for graph in graphs:
+            for y_type, y in graph.y_dict.items():
+                y_list_dict[y_type].append(y)
+
+        y_dict = {
+            y_type: tf.concat(y_list, axis=0)
+            for y_type, y_list in y_list_dict.items()
+        }
+
+        if tf.executing_eagerly() and not is_tensor:
+            y_dict = {
+                y_type: y.numpy()
+                for y_type, y in y_dict.items()
+            }
+
+        return y_dict
+
+
+    def convert_data_to_tensor(self, inplace=False):
+        """
+        Convert all graph data into Tensors. All corresponding properties will be replaces by their Tensor versions.
+
+        :return: The Graph object itself.
+        """
+        if inplace:
+            graph = self
+        else:
+            graph = HeteroBatchGraph(x_dict=self.x_dict, edge_index_dict=self.edge_index_dict,
+                          node_graph_index_dict=self.node_graph_index_dict, edge_graph_index_dict=self.edge_graph_index_dict,
+                          graphs=self.graphs, y_dict=self.y_dict, edge_weight_dict=self.edge_weight_dict)
+        return graph._inplace_convert_data_to_tensor(["x_dict", "edge_index_dict", "edge_weight_dict", "y_dict",
+                                                    "node_graph_index_dict", "edge_graph_index_dict"])
+

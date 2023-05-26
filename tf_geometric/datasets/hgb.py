@@ -3,7 +3,7 @@ import os.path
 import json
 from collections import defaultdict
 import numpy as np
-from tf_geometric.data.graph import HeteroDictGraph
+from tf_geometric.data.graph import HeteroGraph
 from tf_geometric.data.dataset import DownloadableDataset
 
 
@@ -197,7 +197,7 @@ class HGBDataset(DownloadableDataset):
         #     data[n_type].test_mask[n_id] = True
 
 
-        hetero_graph = HeteroDictGraph(x_dict=x_dict,
+        hetero_graph = HeteroGraph(x_dict=x_dict,
                                        edge_index_dict=edge_index_dict,
                                        y_dict=y_dict,
                                        edge_weight_dict=edge_weight_dict)
