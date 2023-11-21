@@ -26,7 +26,7 @@ class GAT(tf.keras.Model):
         :param use_bias: Boolean, whether the layer uses a bias vector.
         :param num_heads: Number of attention heads.
         :param split_value_heads: Boolean. If true, split V as value attention heads, and then concatenate them as output.
-            Else, num_heads replicas of V are used as value attention heads, and the mean of them are used as output.
+            Else, num_heads different V are used as value attention heads, and the mean of them are used as output.
         :param query_activation: Activation function for Q in attention.
         :param key_activation: Activation function for K in attention.
         :param edge_drop_rate: Dropout rate of attention weights.
@@ -71,8 +71,13 @@ class GAT(tf.keras.Model):
         self.key_bias = self.add_weight("key_bias", shape=[self.attention_units],
                                         initializer="zeros", regularizer=self.bias_regularizer)
 
-        self.kernel = self.add_weight("kernel", shape=[num_features, self.units],
-                                      initializer="glorot_uniform", regularizer=self.kernel_regularizer)
+        if self.split_value_heads:
+            self.kernel = self.add_weight("kernel", shape=[num_features, self.units],
+                                          initializer="glorot_uniform", regularizer=self.kernel_regularizer)
+        else:
+            self.kernel = self.add_weight("kernel", shape=[num_features, self.units * self.num_heads],
+                                          initializer="glorot_uniform", regularizer=self.kernel_regularizer)
+
         if self.use_bias:
             self.bias = self.add_weight("bias", shape=[self.units],
                                         initializer="zeros", regularizer=self.bias_regularizer)

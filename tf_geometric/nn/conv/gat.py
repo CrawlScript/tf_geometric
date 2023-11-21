@@ -30,7 +30,7 @@ def gat(x, edge_index,
     :param activation: Activation function to use.
     :param num_heads: Number of attention heads.
     :param split_value_heads: Boolean. If true, split V as value attention heads, and then concatenate them as output.
-        Else, num_heads replicas of V are used as value attention heads, and the mean of them are used as output.
+        Else, num_heads different V are used as value attention heads, and the mean of them are used as output.
     :param edge_drop_rate: Dropout rate of attention weights.
     :param training: Python boolean indicating whether the layer should behave in
         training mode (adding dropout) or in inference mode (doing nothing).
@@ -84,12 +84,7 @@ def gat(x, edge_index,
         .segment_softmax(axis=-1) \
         .dropout(edge_drop_rate, training=training)
 
-    if split_value_heads:
-        V_ = tf.concat(tf.split(V, num_heads, axis=-1), axis=0)
-    else:
-        V_ = V
-        edge_index_ = tf.tile(edge_index, [1, num_heads])
-        sparse_att_adj = SparseMatrix(edge_index_, sparse_att_adj.value, [num_nodes, num_nodes])
+    V_ = tf.concat(tf.split(V, num_heads, axis=-1), axis=0)
 
     h_ = sparse_att_adj @ V_
 
@@ -116,7 +111,7 @@ def gat(x, edge_index,
     if split_value_heads:
         h = tf.concat(tf.split(h_, num_heads, axis=0), axis=-1)
     else:
-        h = h_ / num_heads
+        h = tf.add_n(tf.split(h_, num_heads, axis=0)) / num_heads
 
     if bias is not None:
         h += bias
