@@ -2,6 +2,7 @@
 *.zip
 /test/
 /data/
+/figures/
 /demo/data/
 /demo/*/data/
 /test/keras/
