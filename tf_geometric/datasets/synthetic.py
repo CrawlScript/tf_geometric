@@ -66,6 +66,33 @@ class LimitsOneDataset(Dataset):
         return x, edge_index, y, node_ids, ports
 
 
+class LimitsTwoDataset(Dataset):
+    def __init__(self):
+        super().__init__()
+        self.hidden_units = 16
+        self.num_classes = 2
+        self.num_features = 4
+        self.num_nodes = 8
+        self.graph_class = False
+
+    def load_data(self):
+        num_nodes = 16 # There are two connected components, each with 8 nodes
+
+        ports = ([1,1,2,2,1,1,2,2] * 2 + [3,3,3,3]) * 2
+        colors = [0, 1, 2, 3] * 4
+        y = np.array([0] * 8 + [1] * 8)
+        edge_index = np.array([
+            [0,1,1,2,2,3,3,0, 4,5,5,6,6,7,7,4, 1,3,5,7, 8,9,9,10,10,11,11,8, 12,13,13,14,14,15,15,12, 9,15,11,13], 
+            [1,0,2,1,3,2,0,3, 5,4,6,5,7,6,4,7, 3,1,7,5, 9,8,10,9,11,10,8,11, 13,12,14,13,15,14,12,15, 15,9,13,11]]
+        )
+        x = np.zeros((num_nodes, 4))
+        x[range(num_nodes), colors] = 1
+
+        node_ids =np.random.permutation(np.arange(num_nodes))
+        return x, edge_index, y, node_ids, ports
+
+
+
 
 class LCCDataset(Dataset):
     def __init__(self):
@@ -128,6 +155,50 @@ class LCCDataset(Dataset):
 
         return graphs
         
+
+
+
+class TrianglesDataset(Dataset):
+    def __init__(self):
+        super().__init__()
+        self.hidden_units = 16
+        self.num_classes = 2
+        self.num_features = 1
+        self.num_nodes = 60
+        self.graph_class = False
+
+    def load_data(self):
+        size = self.num_nodes
+        generated = False
+        count = 0
+        while not generated:
+            count += 1
+
+            if count % 1000 == 0:
+                print("count:", count)
+
+            nx_g = nx.random_degree_sequence_graph([3] * size)
+            nx_g = nx_g.to_directed()
+            edge_index = np.array(nx_g.edges).T
+
+            labels = [0] * size
+            for n in range(size):
+                for nb1 in edge_index[1][edge_index[0]==n]:
+                    for nb2 in edge_index[1][edge_index[0]==n]:
+                        if np.logical_and(edge_index[0]==nb1, edge_index[1]==nb2).any():
+                            labels[n] = 1
+            generated = labels.count(0) >= 20 and labels.count(1) >= 20
+        y = np.array(labels)
+
+        ports = _create_ports(edge_index, size)
+        x = _create_x(size) 
+        node_ids = _create_id(size)
+
+        return x, edge_index, y, node_ids, ports
+
+
+
+
 
 
 # graphs = LCC().load_data()
