@@ -129,9 +129,9 @@ We recommend you to get started with some demo.
 
 Requirements:
 + Operation System: Windows / Linux / Mac OS
-+ Python: version >= 3.5 and version != 3.6
++ Python: version >= 3.7 
 + Python Packages:
-    + tensorflow/tensorflow-gpu: >= 1.15.0 or >= 2.3.0
+    + tensorflow/tensorflow-gpu: >= 1.15.0 or >= 2.7.0
     + tf_sparse
     + numpy >= 1.17.4
     + networkx >= 2.1
