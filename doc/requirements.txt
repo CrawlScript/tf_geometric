@@ -9,3 +9,4 @@ tqdm
 Sphinx == 3.5.4
 sphinxcontrib-googleanalytics==0.4
 Jinja2<3.1
+sphinx_rtd_theme
