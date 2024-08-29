@@ -8,3 +8,4 @@ ogb_lite >= 0.0.3
 tqdm
 Sphinx == 3.5.4
 sphinxcontrib-googleanalytics==0.4
+Jinja2<3.1
