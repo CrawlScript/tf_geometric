@@ -30,8 +30,7 @@ author = 'Jun Hu'
 # ones.
 extensions = [
     "sphinx_rtd_theme",
-    "sphinx.ext.autodoc",
-    "sphinxcontrib.googleanalytics"
+    "sphinx.ext.autodoc"
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -62,4 +61,3 @@ html_static_path = ['_static']
 
 
 
-googleanalytics_id = "G-SKJFGQ0JZD"
