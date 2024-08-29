@@ -6,7 +6,6 @@ build:
       python: "3.8"
 
 python:
-   system_packages: true
    install:
       - requirements: doc/requirements.txt
       - method: setuptools
