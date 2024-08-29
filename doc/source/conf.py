@@ -30,7 +30,8 @@ author = 'Jun Hu'
 # ones.
 extensions = [
     "sphinx_rtd_theme",
-    "sphinx.ext.autodoc"
+    "sphinx.ext.autodoc",
+    "sphinxcontrib.googleanalytics"
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -57,3 +58,8 @@ master_doc = 'index'
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+
+
+
+
+googleanalytics_id = "G-SKJFGQ0JZD"
