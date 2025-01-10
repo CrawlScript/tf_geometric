@@ -362,6 +362,10 @@ If you use tf_geometric in a scientific publication, we would appreciate citatio
 
 ## Related Projects
 
++ __MIG-GT:__ "Modality-Independent Graph Neural Networks with Global Transformers for Multimodal Recommendation" (AAAI 2025). URL: [https://github.com/CrawlScript/MIG-GT](https://github.com/CrawlScript/MIG-GT).
++ __RpHGNN:__ “Efficient Heterogeneous Graph Learning via Random Projection” (TKDE 2024). URL: [https://github.com/CrawlScript/RpHGNN](https://github.com/CrawlScript/RpHGNN).
++ __MGDCF:__ "MGDCF: Distance Learning via Markov Graph Diffusion for Neural Collaborative Filtering" (TKDE 2024). URL: [https://github.com/CrawlScript/Torch-MGDCF](https://github.com/CrawlScript/Torch-MGDCF).
 + __tf_sparse:__ We develop [TensorFlow Sparse (tf_sparse)](https://github.com/CrawlScript/tf_sparse) to implement efficient and elegant 
 sparse TensorFlow operations for tf_geometric. URL: [https://github.com/CrawlScript/tf_sparse](https://github.com/CrawlScript/tf_sparse).
 + __GRecX:__ [GRecX](https://github.com/maenzhier/GRecX) is an efficient and unified benchmark for GNN-based recommendation. URL: [https://github.com/maenzhier/GRecX](https://github.com/maenzhier/GRecX).
+

@@ -1,3 +1,12 @@
+
+
+.. raw:: html
+
+   <p align="center">
+   <img src="TF_GEOMETRIC_LOGO.png" width="400"/>
+   </p>
+
+
 tf_geometric
 ============
 
@@ -78,7 +87,7 @@ Node Classification
 * `Graph Convolutional Network (GCN) <demo/demo_gcn.py>`_
 * `Multi-head Graph Attention Network (GAT) <demo/demo_gat.py>`_
 * `Approximate Personalized Propagation of Neural Predictions (APPNP) <demo/demo_appnp.py>`_
-* `Inductive Representation Learning on Large Graphs (GraphSAGE) <demo/demo_graph_sage.py>`_
+* `Inductive Representation Learning on Large Graphs (GraphSAGE) <demo/demo_graph_sage_func.py>`_
 * `Convolutional Neural Networks on Graphs with Fast Localized Spectral Filtering (ChebyNet) <demo/demo_chebynet.py>`_
 * `Simple Graph Convolution (SGC) <demo/demo_sgc.py>`_
 * `Topology Adaptive Graph Convolutional Network (TAGCN) <demo/demo_tagcn.py>`_
@@ -133,10 +142,10 @@ Requirements:
 
 
 * Operation System: Windows / Linux / Mac OS
-* Python: version >= 3.5 and version != 3.6
+* Python: version >= 3.7 
 * Python Packages:
 
-  * tensorflow/tensorflow-gpu: >= 1.15.0 or >= 2.3.0
+  * tensorflow/tensorflow-gpu: >= 1.15.0 or >= 2.7.0
   * tf_sparse
   * numpy >= 1.17.4
   * networkx >= 2.1
@@ -367,6 +376,9 @@ Related Projects
 ----------------
 
 
+* **MIG-GT:** "Modality-Independent Graph Neural Networks with Global Transformers for Multimodal Recommendation" (AAAI 2025). URL: `https://github.com/CrawlScript/MIG-GT <https://github.com/CrawlScript/MIG-GT>`_.
+* **RpHGNN:** “Efficient Heterogeneous Graph Learning via Random Projection” (TKDE 2024). URL: `https://github.com/CrawlScript/RpHGNN <https://github.com/CrawlScript/RpHGNN>`_.
+* **MGDCF:** "MGDCF: Distance Learning via Markov Graph Diffusion for Neural Collaborative Filtering" (TKDE 2024). URL: `https://github.com/CrawlScript/Torch-MGDCF <https://github.com/CrawlScript/Torch-MGDCF>`_.
 * **tf_sparse:** We develop `TensorFlow Sparse (tf_sparse) <https://github.com/CrawlScript/tf_sparse>`_ to implement efficient and elegant 
   sparse TensorFlow operations for tf_geometric. URL: `https://github.com/CrawlScript/tf_sparse <https://github.com/CrawlScript/tf_sparse>`_.
 * **GRecX:** `GRecX <https://github.com/maenzhier/GRecX>`_ is an efficient and unified benchmark for GNN-based recommendation. URL: `https://github.com/maenzhier/GRecX <https://github.com/maenzhier/GRecX>`_.
