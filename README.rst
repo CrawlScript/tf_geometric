@@ -1,12 +1,3 @@
-
-
-.. raw:: html
-
-   <p align="center">
-   <img src="TF_GEOMETRIC_LOGO.png" width="400"/>
-   </p>
-
-
 tf_geometric
 ============
 
