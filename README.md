@@ -368,4 +368,5 @@ If you use tf_geometric in a scientific publication, we would appreciate citatio
 + __tf_sparse:__ We develop [TensorFlow Sparse (tf_sparse)](https://github.com/CrawlScript/tf_sparse) to implement efficient and elegant 
 sparse TensorFlow operations for tf_geometric. URL: [https://github.com/CrawlScript/tf_sparse](https://github.com/CrawlScript/tf_sparse).
 + __GRecX:__ [GRecX](https://github.com/maenzhier/GRecX) is an efficient and unified benchmark for GNN-based recommendation. URL: [https://github.com/maenzhier/GRecX](https://github.com/maenzhier/GRecX).
++ __🐈 MMClaw:__ The Ultra-Lightweight, Pure Python Kernel for Multimodal AI Agents. URL: [https://github.com/CrawlScript/MMClaw](https://github.com/CrawlScript/MMClaw).
 
